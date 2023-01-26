@@ -1,0 +1,3706 @@
+openapi: 3.0.0
+info:
+  title: TEST CRUD API
+  description: Optional multiline or single-line description in HTML.
+  version: "1.0"
+  contact:
+    email: napat.rodniem1994@gmail.com
+  license:
+    name: Oracle
+    url: https://www.oracle.com
+
+paths:
+  /login:
+    get:
+      tags:
+        - "user"
+      summary: "Logs user into the system"
+      description: ""
+      operationId: "loginUser"
+      parameters:
+        - in: query
+          name: username
+          required: true
+          schema:
+            type: string
+            example: testlogin01
+          description: Username for login
+        - in: query
+          name: password
+          description: "The password for login in clear text"
+          required: true
+          schema:
+            type: string
+            example: 64A1C8D87E854C7F1F056772F38BB89A
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Invalid username/password supplied"
+        201:
+          description: "Not found Data"
+        500:
+          description: "Database connection problem"
+
+  /loginuser:
+    get:
+      tags:
+        - "checker"
+      summary: "Logs user (checker) into the system"
+      description: ""
+      parameters:
+        - in: query
+          name: username
+          required: true
+          schema:
+            type: string
+            example: "10654004"
+          description: Username for login
+        - in: query
+          name: password
+          description: "The password for login in clear text"
+          required: true
+          schema:
+            type: string
+            example: "R@mire007"
+        - in: query
+          name: channal
+          description: "The channal for login (0: for store, 1: for checker)"
+          required: true
+          schema:
+            type: number
+            example: 1
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Invalid username/password supplied"
+        201:
+          description: "Not found Data"
+        500:
+          description: "Database connection problem"
+  /user:
+    get:
+      tags:
+        - "user"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorize request
+
+  /getdipchiptoken:
+    get:
+      tags:
+        - "DIPCHIP"
+      security:
+        - bearerAuth: []
+      summary: This return Token For dipchip
+      description: Returning a Object
+      responses:
+        200:
+          description: Success
+        401:
+          description: Bad Request
+  /quotation:
+    get:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: "Get quotaion"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "pageno"
+          description: "This is pageno for return data"
+          schema:
+            type: number
+        - in: "query"
+          name: "status"
+          description: "This is pageno for return data"
+          schema:
+            type: string
+            example: Z
+      responses:
+        200:
+          description: "successful operation"
+        201:
+          description: "Not found Data"
+        204:
+          description: "No Record Found"
+        400:
+          description: "Invalid username/password supplied"
+        500:
+          description: "Database connection problem"
+    post:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: "Create a new Quotaion"
+      description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/quotation"
+      responses:
+        "200":
+          description: "Sucess"
+        "400":
+          description: "Invalid input"
+
+  /updatequotationimage:
+    post:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: "Create and Update image to Quotaion"
+      description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/updatequotationimage"
+      responses:
+        "400":
+          description: "Invalid input"
+
+  /updatedraft:
+    post:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: "Create and Update image to Quotaion"
+      description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/updatedraft"
+      responses:
+        "400":
+          description: "Invalid input"
+
+  /updateQuotationImageonlyinsert:
+    post:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: "Create image to Quotaion"
+      description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/updatequotationimage"
+      responses:
+        "400":
+          description: "Invalid input"
+
+  /bypassquotation:
+    post:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: "insert bypass record"
+      description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/bypassquotation"
+      responses:
+        "200":
+          description: "success"
+        "405":
+          description: "Invalid input"
+
+  /bypassquotationbychecker:
+    post:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: "insert bypass record"
+      description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/bypassquotationbychecker"
+      responses:
+        "200":
+          description: "success"
+        "405":
+          description: "Invalid input"
+
+  /attachdeliverapprove:
+    post:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: "create referenct image of deliver approve"
+      description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/deliverapproverparam"
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "All error (duplicate, timeout, insert wrong format, etc ...)"
+      deprecated: true
+
+  /attachdeliverapproveandconsent:
+    post:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: "create referenct image of deliver approve"
+      description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/deliverapproverparam"
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "All error (duplicate, timeout, insert wrong format, etc ...)"
+
+  /getattachimagedeliverbyid/{id}:
+    get:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            example: "99a27232-ce14-4b82-b5d0-f187b24f3465"
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "All error (duplicate, timeout, insert wrong format, etc ...)"
+
+  /quotationbyid/{id}:
+    get:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: This is get quotation by id
+      description: Returning quotation and all reference Record
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "sucess"
+        "404":
+          description: "record not found"
+        "500":
+          description: "server error"
+
+  /canclequotation/{id}:
+    get:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: cancle quotation status
+      description: stamp quo_status 3 to quotation
+      parameters:
+        - in: path
+          name: quotationid
+          required: true
+          schema:
+            type: string
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "sucess"
+        "400":
+          description: "error"
+
+  /activeepaper:
+    get:
+      tags:
+        - "quotation"
+      summary: active e-paper status
+      description: update E-paper status of quotation
+      parameters:
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "sucess"
+        "400":
+          description: "all type error"
+
+  /checkimagerequire:
+    get:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      description: check image require
+      parameters:
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+            example: "1c4f2992-6931-4277-8b3e-00c795bf2ffb"
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "sucess"
+        "400":
+          description: "all type error"
+
+  /getinsurancedetailbyid:
+    get:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: "Get address position "
+      description: ""
+      parameters:
+        - in: "query"
+          name: "applicationid"
+          description: "This is application id"
+          schema:
+            type: string
+            example: "0110202206010001"
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "return error"
+
+  # Collection
+  /getcontractlist:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get data from collection
+      description: load data from "Database
+      parameters:
+        - in: "query"
+          name: "pageno"
+          description: "This is name"
+          schema:
+            type: number
+            example: 1
+        - in: "query"
+          name: "name"
+          description: "This is name"
+          schema:
+            type: string
+            example: ณภัทร
+        - in: "query"
+          name: "surname"
+          description: "this is surname"
+          schema:
+            type: string
+            example: รอดเนียม
+        - in: "query"
+          name: "applicationid"
+          description: "this is applicationid"
+          schema:
+            type: string
+            example: "110202200000005"
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+      deprecated: true
+
+  /getviewcontractlist:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get data from collection
+      description: load data from "Database
+      parameters:
+        - in: "query"
+          name: "pageno"
+          description: "This is name"
+          schema:
+            type: number
+            example: 1
+        - in: "query"
+          name: "name"
+          description: "This is name"
+          schema:
+            type: string
+            example: ณภัทร
+        - in: "query"
+          name: "surname"
+          description: "this is surname"
+          schema:
+            type: string
+            example: รอดเนียม
+        - in: "query"
+          name: "applicationid"
+          description: "this is applicationid"
+          schema:
+            type: string
+            example: "110202200000005"
+        - in: "query"
+          name: "due"
+          description: "this is applicationid"
+          schema:
+            type: string
+            example: "01"
+        - in: "query"
+          name: "carcheckstatus"
+          description: "this is applicationid"
+          schema:
+            type: number
+            example: 3
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /getnegotiationlist:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get negotiation"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "pageno"
+          description: "This is pageno"
+          schema:
+            type: number
+        - in: "query"
+          name: "applicationid"
+          description: "This is application id"
+          schema:
+            type: string
+            example: "101088406"
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+
+  /gethistorypaymentlist:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get payment history record"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "pageno"
+          description: "This is pageno"
+          schema:
+            type: number
+            example: 1
+        - in: "query"
+          name: "applicationid"
+          description: "This is application id"
+          schema:
+            type: string
+            example: "110202200000005"
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "return error"
+
+  /getaddresscustlist:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get Address customer record"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "pageno"
+          description: "This is pageno"
+          schema:
+            type: number
+            example: 1
+        - in: "query"
+          name: "applicationid"
+          description: "This is application id"
+          schema:
+            type: string
+            example: "110202200000005"
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "return error"
+
+  /getaddressncblist:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get Address customer record (NCB)"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "pageno"
+          description: "This is pageno"
+          schema:
+            type: number
+            example: 1
+        - in: "query"
+          name: "idcode"
+          description: "Citizen id"
+          schema:
+            type: string
+            example: "2894563101256"
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "return error"
+
+  /getfollowuppaymentlist:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get followup history record"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "pageno"
+          description: "This is pageno"
+          schema:
+            type: number
+            example: 1
+        - in: "query"
+          name: "applicationid"
+          description: "This is application id"
+          schema:
+            type: string
+            example: "110202200000005"
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "return error"
+
+  /getlalon:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get la/lon position "
+      description: ""
+      parameters:
+        - in: "query"
+          name: "applicationid"
+          description: "This is application id"
+          schema:
+            type: string
+            example: "110202200000005"
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "return error"
+
+  /getaddressinfo:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get address position "
+      description: ""
+      parameters:
+        - in: "query"
+          name: "contract_no"
+          description: "This is application id"
+          schema:
+            type: string
+            example: "110202200000014"
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "return error"
+
+  /getphonenolist:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get phone no of customer list"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "pageno"
+          description: "This is pageno"
+          schema:
+            type: number
+            example: 1
+        - in: "query"
+          name: "cust_id"
+          description: "This is cust_id"
+          schema:
+            type: string
+            example: "100020232"
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "return error"
+
+  /getphonenolistcust:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get phone no of customer list"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "pageno"
+          description: "This is pageno"
+          schema:
+            type: number
+            example: 1
+        - in: "query"
+          name: "cust_id"
+          description: "This is cust_id"
+          schema:
+            type: string
+            example: "100020232"
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "return error"
+      deprecated: true
+
+  /insertnegolist:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "insertnegolist"
+      description: ""
+      requestBody:
+        description: item of list to create
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hp_no:
+                  type: string
+                cust_id:
+                  type: string
+      responses:
+        200:
+          description: "successful create negotiation record and call track info"
+
+  /getnegotiationbyid:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get negotiation by id"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "applicationid"
+          description: "This is applicationid"
+          schema:
+            type: number
+            example: 110202200000014
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "other errror ststus"
+
+  /getmotocycle:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get motocycle by id (hp_no)"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "hp_no"
+          description: "This is hp_no"
+          schema:
+            type: number
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "other errror ststus"
+
+  /getbrand:
+    get:
+      tags:
+        - "product"
+      security:
+        - bearerAuth: []
+      summary: This return a motocycle brand in list object
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "404":
+          description: "error not found"
+        "500":
+          description: "internal server Error"
+  /getmodel:
+    get:
+      tags:
+        - "product"
+      security:
+        - bearerAuth: []
+      summary: This return a motocycle model in list object
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "404":
+          description: "error not found"
+        "500":
+          description: "internal server Error"
+
+  /MPLS_getbrand:
+    get:
+      tags:
+        - "product"
+      security:
+        - bearerAuth: []
+      summary: This return a motocycle brand in list object
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "404":
+          description: "error not found"
+        "500":
+          description: "internal server Error"
+
+  /MPLS_getmodel:
+    get:
+      tags:
+        - "product"
+      security:
+        - bearerAuth: []
+      summary: This return a motocycle model in list object
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "404":
+          description: "error not found"
+        "500":
+          description: "internal server Error"
+
+  /getimagebyid/{id}:
+    get:
+      tags:
+        - "image"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "internal server Error"
+
+  /getsignImgbyid/{id}:
+    get:
+      tags:
+        - "image"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "internal server Error"
+
+  /getDealerSignaturebyid/{id}:
+    get:
+      tags:
+        - "image"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "internal server Error"
+
+  /getimagelistbyid/{id}:
+    get:
+      tags:
+        - "image"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "internal server Error"
+      deprecated: true
+
+  /getattachfile1/{id}:
+    get:
+      tags:
+        - "image"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "internal server Error"
+      deprecated: true
+
+  #BTW tag
+  /getpremrolemenu:
+    get:
+      tags:
+        - "BTW"
+      security:
+        - bearerAuth: []
+      summary: This return role permission
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: menu_id
+          schema:
+            type: string
+            example: "M108"
+          description: MENU ID of page to get role premission
+      responses:
+        "200":
+          description: "success"
+        "400":
+          description: "No Found Permission"
+
+  /getsearchmrta:
+    get:
+      tags:
+        - "BTW"
+      security:
+        - bearerAuth: []
+      summary: This return record mrta
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: customername
+          schema:
+            type: string
+            example: "วรกุล"
+          description: Customer name
+        - in: query
+          name: customersname
+          schema:
+            type: string
+            example: "จันทะรังษี"
+          description: Customer surname
+        - in: query
+          name: idcardnum
+          schema:
+            type: string
+            example: "3650200696547"
+          description: CITICEN ID Card of customer
+        - in: query
+          name: application_no
+          schema:
+            type: string
+            example: "0110202206010001"
+          description: Application NO of Customer
+        - in: query
+          name: contractno
+          schema:
+            type: string
+            example: "110202206010001"
+          description: Contract No of customer
+      responses:
+        "200":
+          description: "success"
+        "400":
+          description: "No Found Permission"
+
+  /getmrtainfo:
+    get:
+      tags:
+        - "BTW"
+      security:
+        - bearerAuth: []
+      summary: This return record mrta
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: application_num
+          schema:
+            type: string
+            example: "0110202206010001"
+          description: Application NO of Customer
+      responses:
+        "200":
+          description: "success"
+        "400":
+          description: "No Found Permission"
+
+  #Master Tag
+  /MasterRate:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: pro_code
+          schema:
+            type: string
+            example: "01"
+          description: Pro code of Product
+        - in: query
+          name: size_model
+          schema:
+            type: string
+            example: "03"
+          description: "ไซส์โมเดลที่ได้จาก getSizeModel"
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No Rate Found"
+        "500":
+          description: "internal server Error"
+
+  /MasterTerm:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: pro_code
+          schema:
+            type: string
+            example: "01"
+          description: Pro code of Product
+        - in: query
+          name: size_model
+          schema:
+            type: string
+            example: "03"
+          description: "จำนวนงวดที่ได้จาก getSizeModel"
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No Rate Found"
+        "500":
+          description: "internal server Error"
+
+  /getTermNew:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: pro_code
+          schema:
+            type: string
+            example: "01"
+          description: Pro code of Product
+        - in: query
+          name: size_model
+          schema:
+            type: string
+            example: "03"
+          description: "จำนวนงวดที่ได้จาก getSizeModel"
+        - in: query
+          name: rate
+          schema:
+            type: number
+            example: 1.12
+          description: ""
+        - in: query
+          name: net_finance
+          schema:
+            type: number
+            example: 60000
+          description: "ยอดกู้รวมเบี้ยประกัน (ถ้ามี)"
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No Rate Found"
+        "500":
+          description: "internal server Error"
+
+  /MPLS_master_term:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: pro_code
+          schema:
+            type: string
+            example: "01"
+          description: Pro code of Product
+        - in: query
+          name: size_model
+          schema:
+            type: string
+            example: "03"
+          description: "จำนวนงวดที่ได้จาก getSizeModel"
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "internal server Error"
+
+  /MasterPaymentCount:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: pro_code
+          schema:
+            type: string
+            example: "01"
+          description: Pro code of Product
+        - in: query
+          name: brand_code
+          schema:
+            type: string
+            example: "04"
+          description: Pro code of Product
+        - in: query
+          name: model_code
+          schema:
+            type: string
+            example: "0025"
+          description: Pro code of Product
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No Payment Count Found"
+        "500":
+          description: "internal server Error"
+
+  /MasterTitle:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No Title Found"
+        "500":
+          description: "internal server Error"
+
+  /getTitletimeout:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "500": 
+          description: "fail"
+        "408":
+          description: "Request timed out"
+
+  /getnegomasterstatus:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No Title Found"
+        "500":
+          description: "internal server Error"
+
+  /MasterImageType:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getImageTypeAttach:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "internal server Error"
+
+  /getMaxLtv:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: factory_price
+          schema:
+            type: string
+            example: "92555"
+          description: factory_price of Product
+        - in: query
+          name: bussi_code
+          schema:
+            type: string
+            example: "001"
+          description: businessCode of Product
+        - in: query
+          name: pro_code
+          schema:
+            type: string
+            example: "01"
+          description: pro_code of Product
+        - in: query
+          name: brand_code
+          schema:
+            type: string
+            example: "04"
+          description: brand_code of Product
+        - in: query
+          name: model_code
+          schema:
+            type: string
+            example: "0036"
+          description: model_code of Product
+        - in: query
+          name: dl_code
+          schema:
+            type: string
+            example: "20220004"
+          description: dl_code (Dealer Code)
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getcoverageTotalloss:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a coverage total loss Object
+      parameters:
+        - in: query
+          name: p_insurance_code
+          schema:
+            type: string
+            example: "10001"
+          description: p_insurance_code of Product
+        - in: query
+          name: p_max_ltv
+          schema:
+            type: number
+            example: 123743
+          description: p_max_ltv of Product
+
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No coverage total loss Found"
+        "500":
+          description: "internal server Error"
+
+  /sendsmscheck:
+    get:
+      tags:
+        - "third-party"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: quotationid
+          schema:
+            type: string
+            example: "94fe8b41-c2ad-4ad0-b90d-2e6133672776"
+
+        - in: query
+          name: phone_no
+          schema:
+            type: string
+            example: "0952483338"
+
+        - in: query
+          name: sms_message
+          schema:
+            type: string
+            example: "Test Text ส่ง sms"
+
+        - in: query
+          name: sender
+          schema:
+            type: string
+            example: "TBS."
+
+        - in: query
+          name: force
+          schema:
+            type: string
+            example: "Standard"
+
+      responses:
+        "200":
+          description: "success"
+        "404":
+          description: "All Error"
+
+  /sendsmsconfirmpayment:
+    get:
+      tags:
+        - "third-party"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: phone_no
+          schema:
+            type: string
+            example: "0952483338"
+
+        - in: query
+          name: sms_message
+          schema:
+            type: string
+            example: "Test Text ส่ง sms"
+
+        - in: query
+          name: sender
+          schema:
+            type: string
+            example: "TBS."
+
+        - in: query
+          name: force
+          schema:
+            type: string
+            example: "Standard"
+
+      responses:
+        "200":
+          description: "success"
+        "404":
+          description: "All Error"
+
+  /testsendsmscheck:
+    get:
+      tags:
+        - "TEST"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: quotationid
+          schema:
+            type: string
+            example: "94fe8b41-c2ad-4ad0-b90d-2e6133672776"
+
+        - in: query
+          name: phone_no
+          schema:
+            type: string
+            example: "0952483338"
+
+        - in: query
+          name: sms_message
+          schema:
+            type: string
+            example: "Test Text ส่ง sms"
+
+        - in: query
+          name: sender
+          schema:
+            type: string
+            example: "TBS."
+
+        - in: query
+          name: force
+          schema:
+            type: string
+            example: "Standard"
+
+      responses:
+        "200":
+          description: "success"
+        "460":
+          description: "All Error"
+
+  /testexcecuteresponse:
+    get:
+      tags:
+        - "TEST"
+      summary: This return a single Object
+      description: Returning a Object
+
+      responses:
+        "200":
+          description: "success"
+        "400":
+          description: "All Error"
+
+  /getInsuranceold:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: factory_price
+          schema:
+            type: string
+            example: "92555"
+          description: factory_price of Product
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+      deprecated: true
+
+  /getInsurance:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: max_ltv
+          schema:
+            type: string
+            example: "95000"
+          description: max_ltv of Product
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getmrtainsurance:
+    get:
+      tags:
+        - "MRTA"
+      security:
+        - bearerAuth: []
+      summary: This return MTRA insurance Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: out_stand
+          schema:
+            type: number
+            example: 30000
+          description: (term * monthly)
+        - in: query
+          name: age
+          schema:
+            type: number
+            example: 16
+          description: อายุ
+        - in: query
+          name: gender
+          schema:
+            type: number
+            example: 1
+          description: เพศ
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /checkmrtarecent:
+    get:
+      tags:
+        - "MRTA"
+      security:
+        - bearerAuth: []
+      summary: This return MTRA quotation record Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: quotationid
+          schema:
+            type: string
+            example: e1b8797d-207f-43a2-a434-e219c5ef5e9b
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /confirmqrpayment:
+    get:
+      tags:
+        - "MRTA"
+      security:
+        - bearerAuth: []
+      summary: update MTRA quotation record Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: application_num
+          schema:
+            type: string
+            example: "0110202209160002"
+        - in: query
+          name: contract_no
+          schema:
+            type: string
+            example: "110202200010071"
+      responses:
+        "200":
+          description: "success"
+        "400":
+          description: "No MasterImgae Found"
+
+  /getmrtaseller:
+    get:
+      tags:
+        - "MRTA"
+      security:
+        - bearerAuth: []
+      summary: This return MRTA seller Object
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getInsurer:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getInsuranceYear:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: insurer_code
+          schema:
+            type: string
+            example: "0001"
+          description: insurer Codde
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getRateSheet:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: brand_code
+          schema:
+            type: string
+            example: "03"
+        - in: query
+          name: model_code
+          schema:
+            type: string
+            example: "0001"
+        - in: query
+          name: dealer_code
+          schema:
+            type: string
+            example: "20220001"
+        - in: query
+          name: busi_code
+          schema:
+            type: string
+            example: "001"
+        - in: query
+          name: insurance_code
+          schema:
+            type: string
+            example: "10002"
+        - in: query
+          name: insurance_year
+          schema:
+            type: number
+            example: 2
+
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getPaymentValue:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: net_finance
+          schema:
+            type: string
+            example: "92555"
+          description: net_finance of Product
+        - in: query
+          name: term
+          schema:
+            type: string
+            example: "24"
+          description: term of Product
+        - in: query
+          name: rate
+          schema:
+            type: string
+            example: "1.25"
+          description: rate of Product
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getagefrombirthdate:
+    get:
+      tags:
+        - "calculate"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: birthdate
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "18/4/1994"
+      responses:
+        "200":
+          description: "success"
+
+  /getoracleoutstand:
+    get:
+      tags:
+        - "calculate"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: application_num
+          required: true
+          schema:
+            type: string
+            example: "0110202209160002"
+      responses:
+        "200":
+          description: "success"
+
+  /MasterDealer:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: pro_code
+          schema:
+            type: string
+            example: "01"
+          description: รหัสสินค้า
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /MasterProvince:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Master Province objects
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getSizeModel:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Size of product objects
+      parameters:
+        - in: query
+          name: pro_code
+          schema:
+            type: string
+            example: "01"
+          description: รหัสสินค้า
+        - in: query
+          name: brand_code
+          schema:
+            type: string
+            example: "02"
+          description: รุ่น
+        - in: query
+          name: model_code
+          schema:
+            type: string
+            example: "0002"
+          description: โมเดล
+        - in: query
+          name: dealer_code
+          schema:
+            type: string
+            example: "20220001"
+          description: รหัสร้านค้า
+        - in: query
+          name: busi_code
+          schema:
+            type: string
+            example: "001"
+          description: รหัส
+        - in: query
+          name: factory_price
+          schema:
+            type: number
+            example: 163000
+          description: ราคาโรงงาน
+        # - in: query
+        #   name: current_date
+        #   schema:
+        #     type: string
+        #     format: date
+        #     description: Creation date
+        #     example: "2022-05-17"
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getOccupation:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description:
+        Returning Master Occupation objects
+        # - in: query
+        #   name: current_date
+        #   schema:
+        #     type: string
+        #     format: date
+        #     description: Creation date
+        #     example: "2022-05-17"
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getMasterStatus:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning Master Occupation objects
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getdopastatusbyid:
+    get:
+      tags:
+        - "quotation"
+      parameters:
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+            example: "e6d73ad4-bf0f-485d-8751-532e1585ba68"
+      summary: This return a single Object
+      description: Returning Citizen card Check status (DOPA)
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getbranch:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning Branch objects
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getMariedStatus:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning Maried Status objects
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getHouseType:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning House Type objects
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getHouseOwnerType:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning Branch objects
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getcarcheckstatus:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning Carcheck status list objects
+      responses:
+        "200":
+          description: "success"
+
+  /testGetTime:
+    get:
+      tags:
+        - "TEST"
+      summary: This return a single Object
+      description: Returning a Master Province objects
+      responses:
+        "200":
+          description: "success"
+
+  /testiappservice:
+    get:
+      tags:
+        - "TEST"
+      summary: This return a single ObjectS
+      description: Returning a Object
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "internal server Error"
+
+  /smssendtest:
+    post:
+      tags:
+        - "TEST"
+      summary: ""
+      description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/smssendtest"
+      responses:
+        "400":
+          description: "Invalid input"
+
+  /getipserver:
+    get:
+      tags:
+        - "TEST"
+      summary: ""
+      description: ""
+      responses:
+        "400":
+          description: "Invalid input"
+        "200":
+          description: "success get IP"
+
+  /getipfromhttp:
+    get:
+      tags:
+        - "TEST"
+      summary: ""
+      description: ""
+      responses:
+        "400":
+          description: "Invalid input"
+        "200":
+          description: "success get IP"
+
+  /bypasssms:
+    post:
+      tags:
+        - "PROVIDER"
+      summary: ""
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                phoneno:
+                  type: string
+                message:
+                  type: string
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /updatenegolalon:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                applicationid:
+                  type: string
+                latitude:
+                  type: string
+                longitude:
+                  type: string
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /sendemailsmtp:
+    post:
+      tags:
+        - "EMAIL"
+      summary: ""
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                email:
+                  type: string
+                message:
+                  type: string
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /forgetpassword:
+    post:
+      tags:
+        - "EMAIL"
+      summary: ""
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                email:
+                  type: string
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /resetpassword:
+    post:
+      tags:
+        - "user"
+      summary: ""
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                username:
+                  type: string
+                oldpassword:
+                  type: string
+                newpassword:
+                  type: string
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /saveqrpayment:
+    post:
+      tags:
+        - "MRTA"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                application_num:
+                  type: string
+                  example: "0110202209160002"
+                quotationid:
+                  type: string
+                  example: e1b8797d-207f-43a2-a434-e219c5ef5e9b
+                insurance_code:
+                  type: string
+                  example: 10003
+                insurance_year:
+                  type: string
+                  example: 4
+                insurer_code:
+                  type: string
+                  example: 0003
+                insurance_seller:
+                  type: string
+                  example: "654018"
+                premium_mrta:
+                  type: string
+                  example: 3260
+                out_stand:
+                  type: number
+                  example: 110520
+                gender:
+                  type: number
+                  example: 1
+                age:
+                  type: number
+                  example: 28
+
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /portallogin:
+    get:
+      tags:
+        - "portal"
+      summary: "Logs portal user into the system"
+      description: ""
+      operationId: "loginUser"
+      parameters:
+        - in: query
+          name: birthdate
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "18/4/1994"
+          description: birthdate of customer
+        - in: query
+          name: telephone_no
+          description: "telephoneno of customer"
+          required: true
+          schema:
+            type: string
+            example: "0952483338"
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Invalid data / not found"
+      deprecated: true
+
+  /viewportallogin:
+    get:
+      tags:
+        - "portal"
+      summary: "Logs portal user into the system"
+      description: ""
+      operationId: "loginUser"
+      parameters:
+        - in: query
+          name: birthdate
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "18/4/1994"
+          description: birthdate of customer
+        - in: query
+          name: telephone_no
+          description: "telephoneno of customer"
+          required: true
+          schema:
+            type: string
+            example: "0952483338"
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Invalid data / not found"
+
+  /genpdfinsurance:
+    get:
+      tags:
+        - "portal"
+      security:
+        - bearerAuth: []
+      summary: "gen pdf"
+      description: "gen pdf (jspdf npm package)"
+      # parameters:
+      #   - in: query
+      #     name: contract_no
+      #     required: true
+      #     schema:
+      #       type: string
+      #       format: date
+      #       example: '110202200000172'
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+      deprecated: true
+
+  /viewgenpdfinsurance:
+    get:
+      tags:
+        - "portal"
+      security:
+        - bearerAuth: []
+      summary: "gen pdf"
+      description: "gen pdf (jspdf npm package)"
+      # parameters:
+      #   - in: query
+      #     name: contract_no
+      #     required: true
+      #     schema:
+      #       type: string
+      #       format: date
+      #       example: '110202200000172'
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /genbarcodeqr:
+    get:
+      tags:
+        - "portal"
+      security:
+        - bearerAuth: []
+      summary: "gen pdf"
+      description: "gen pdf (jspdf npm package)"
+      # parameters:
+      #   - in: query
+      #     name: contract_no
+      #     required: true
+      #     schema:
+      #       type: string
+      #       format: date
+      #       example: '110202200000172'
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+      deprecated: true
+
+  /viewgenbarcodeqr:
+    get:
+      tags:
+        - "portal"
+      security:
+        - bearerAuth: []
+      deprecated: true
+      summary: "gen pdf"
+      description: "gen pdf (jspdf npm package)"
+      # parameters:
+      #   - in: query
+      #     name: contract_no
+      #     required: true
+      #     schema:
+      #       type: string
+      #       format: date
+      #       example: '110202200000172'
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /viewgenbarcodeqrrefpay:
+    get:
+      tags:
+        - "portal"
+      security:
+        - bearerAuth: []
+      summary: "gen pdf"
+      description: "gen pdf (jspdf npm package)"
+      # parameters:
+      #   - in: query
+      #     name: contract_no
+      #     required: true
+      #     schema:
+      #       type: string
+      #       format: date
+      #       example: '110202200000172'
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /genmrtaqr:
+    get:
+      tags:
+        - "MRTA"
+      security:
+        - bearerAuth: []
+      summary: "gen BARCODE and qr"
+      description: "gen BARCODE and qr"
+      parameters:
+        - in: query
+          name: application_num
+          schema:
+            type: string
+            example: "0110202206010001"
+          description: เลขที่ application number
+        - in: query
+          name: premium_mrta
+          schema:
+            type: number
+            example: 6750
+          description: ค่าเบี้ย mrta
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /genqrcodenego:
+    get:
+      tags:
+        - "COLLECTION"
+      security:
+        - bearerAuth: []
+      summary: "gen BARCODE and qr"
+      description: "gen BARCODE and qr"
+      parameters:
+        - in: query
+          name: ref_pay_num
+          schema:
+            type: string
+            example: "2022000000113"
+          description: เลข ref pay code
+        - in: query
+          name: type
+          schema:
+            type: string
+            example: 20
+          description: รหัส payment
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /genadvanceqrpayment:
+    get:
+      tags:
+        - "MRTA"
+      security:
+        - bearerAuth: []
+      summary: "gen qr"
+      description: "gen qr"
+      parameters:
+        - in: query
+          name: application_num
+          schema:
+            type: string
+            example: "0110202209150001"
+          description: เลขที่ application number
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /gentotallossqrpayment:
+    get:
+      tags:
+        - "MRTA"
+      security:
+        - bearerAuth: []
+      summary: "gen qr"
+      description: "gen qr"
+      parameters:
+        - in: query
+          name: application_num
+          schema:
+            type: string
+            example: "0110202209150001"
+          description: เลขที่ application number
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /checkjwtportal:
+    get:
+      tags:
+        - "portal"
+      security:
+        - bearerAuth: []
+      summary: "Check JWT Authorize"
+      description: "Check JWT Authorize"
+
+      responses:
+        "200":
+          description: "success Token"
+        "403":
+          description: "Invalid token"
+
+  /compressimage:
+    post:
+      tags:
+        - "util"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      requestBody:
+        $ref: "#/components/requestBodies/compressimage"
+      responses:
+        "200":
+          description: "success"
+        "400":
+          description: "Error"
+
+  # econsent
+  /MPLS_getimagetocompareiapp:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: get citizen card image and face image
+      parameters:
+        - in: query
+          name: quotationid
+          schema:
+            type: string
+            example: "209af045-89ae-4151-8b19-4360e5f91932"
+          description: เลขที่ quotation_key
+      responses:
+        "200":
+          description: "success"
+
+  /MPLS_cancle_quotation:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: flag cancle to quotation (quo_status == 3)
+      parameters:
+        - in: query
+          name: quotationid
+          schema:
+            type: string
+            example: "8bcc13f7-78e0-43d5-9b0b-433c10c64053"
+          description: เลขที่ quotation_key
+      responses:
+        "200":
+          description: "success"
+
+  /MPLS_get_refid:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: get refid of OTP
+
+      responses:
+        "200":
+          description: "success"
+
+  /MPLS_check_phonevalid:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Check verify Phone number of quotation
+      parameters:
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+            example: 4e5bc31f-b243-4916-ac81-97d6e88953b1
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /MPLS_validation_otp_phonenumber:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Check verify Phone number of quotation
+      parameters:
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+            example: 4e5bc31f-b243-4916-ac81-97d6e88953b1
+          description: ID of Quotation
+        - in: query
+          name: otp_value
+          required: true
+          schema:
+            type: string
+            example: 175591
+          description: OTP number
+        - in: query
+          name: phone_no
+          required: true
+          schema:
+            type: string
+            example: 0952483338
+          description: OTP number
+      responses:
+        "200":
+          description: "success"
+        "201":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /MPLS_validation_otp_econsent:
+    post:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Check verify Phone number of quotation
+      requestBody:
+        $ref: "#/components/requestBodies/MPLS_econsentverify"
+      responses:
+        "200":
+          description: "success"
+
+  /MPLS_create_or_update_credit:
+    post:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Creaate Credit (MPLS_CREDIT)
+      requestBody:
+        $ref: "#/components/requestBodies/MPLS_create_or_update_credit"
+      responses:
+        "200":
+          description: "success"
+
+  /MPLS_getimagefilebyid:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: get image file of quotation by id
+      parameters:
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+            example: 90c26a14-e0d9-47df-8caf-310ac411a64e
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "success"
+
+  /bypassquotation2:
+    post:
+      tags:
+        - "quotation"
+      security:
+        - bearerAuth: []
+      summary: "insert bypass record"
+      description: ""
+      requestBody:
+        $ref: "#/components/requestBodies/bypassquotation"
+      responses:
+        "200":
+          description: "success"
+        "405":
+          description: "Invalid input"
+
+  /MPLS_update_phone_number:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Update phone number to quotation record
+      parameters:
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+            example: aa41a951-2bb6-47ca-80c5-e7ad71a4f811
+          description: ID of Quotation
+        - in: query
+          name: phone_number
+          required: true
+          schema:
+            type: string
+            example: "175591"
+          description: phone_number
+
+      responses:
+        "200":
+          description: "success"
+
+  /MPLS_check_application_no:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Update phone number to quotation record
+      parameters:
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+            example: aa41a951-2bb6-47ca-80c5-e7ad71a4f811
+          description: ID of Quotation
+
+      responses:
+        "200":
+          description: "success"
+
+  /MPLS_gen_application_no:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Update phone number to quotation record
+      parameters:
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+            example: aa41a951-2bb6-47ca-80c5-e7ad71a4f811
+          description: ID of Quotation
+
+      responses:
+        "200":
+          description: "success"
+
+  /MPLS_getservertime:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Get Server current time
+
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "Error with message"
+
+  /MPLS_is_check_face_valid:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Get Server current time
+      parameters: 
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+            example: 209af045-89ae-4151-8b19-4360e5f91932
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "Error with message"
+
+  /MPLS_stamp_check_face_valid:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Get Server current time
+      parameters: 
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+            example: 209af045-89ae-4151-8b19-4360e5f91932
+          description: ID of Quotation
+        - in: query
+          name: reason
+          description: "Reason of face compare"
+          required: true
+          schema:
+            type: string
+            example: test1
+        - in: query
+          name: status
+          description: "Result of face compare (boolean)"
+          required: true
+          schema:
+            type: string
+            example: 'Y'
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "Error with message"
+
+  /MPLS_get_dopa_valid_status:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Get dopa valid status
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "Error with message"
+
+components:
+  requestBodies:
+
+    MPLS_econsentverify:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              item:
+                $ref: "#components/schemas/MPLS_econsentverify"
+              econsentimage:
+                type: string
+                format: binary
+
+    MPLS_create_or_update_credit:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              item:
+                $ref: "#components/schemas/MPLS_create_or_update_credit"
+
+    compressimage:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              image_id:
+                type: string
+                format: binary
+
+    smssendtest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              items:
+                $ref: "#components/schemas/smssendtest"
+
+    bypassquotation:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              quotationid:
+                type: string
+              customersig_image:
+                type: string
+                format: binary
+              witnesssig_image:
+                type: string
+                format: binary
+
+    bypassquotationbychecker:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              quotationid:
+                type: string
+              firstname:
+                type: string
+              lastname:
+                type: string
+              customersig_image:
+                type: string
+                format: binary
+              witnesssig_image:
+                type: string
+                format: binary
+
+    deliverapproverparam:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              quotationid:
+                type: string
+                example: "99a27232-ce14-4b82-b5d0-f187b24f3465"
+              dealername:
+                type: string
+                example: "วิชัย บริการ"
+              firstImage:
+                type: string
+                format: binary
+              secondImage:
+                type: string
+                format: binary
+              thirdImage:
+                type: string
+                format: binary
+              forthImage:
+                type: string
+                format: binary
+              dealerSign:
+                type: string
+                format: binary
+    quotation:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              item:
+                $ref: "#components/schemas/quotation"
+              citizenid_image:
+                type: string
+                format: binary
+              houseregis_image:
+                type: string
+                format: binary
+              face_image:
+                type: string
+                format: binary
+              house_image:
+                type: string
+                format: binary
+              store_image:
+                type: string
+                format: binary
+              salarycertificate_image:
+                type: string
+                format: binary
+              workcertificate_image:
+                type: string
+                format: binary
+              salarypayment_image:
+                type: string
+                format: binary
+              bookbank_image:
+                type: string
+                format: binary
+              motocyclelicense_image:
+                type: string
+                format: binary
+              signature_image:
+                type: string
+                format: binary
+    updatequotationimage:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              item:
+                $ref: "#components/schemas/updatequotationimage"
+              citizenid_image:
+                type: string
+                format: binary
+              houseregis_image:
+                type: string
+                format: binary
+              face_image:
+                type: string
+                format: binary
+              house_image:
+                type: string
+                format: binary
+              store_image:
+                type: string
+                format: binary
+              salarycertificate_image:
+                type: string
+                format: binary
+              workcertificate_image:
+                type: string
+                format: binary
+              salarypayment_image:
+                type: string
+                format: binary
+              bookbank_image:
+                type: string
+                format: binary
+              motocyclelicense_image:
+                type: string
+                format: binary
+    updatedraft:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              item:
+                $ref: "#components/schemas/updatedraft"
+              citizenid_image:
+                type: string
+                format: binary
+              houseregis_image:
+                type: string
+                format: binary
+              face_image:
+                type: string
+                format: binary
+              house_image:
+                type: string
+                format: binary
+              store_image:
+                type: string
+                format: binary
+              salarycertificate_image:
+                type: string
+                format: binary
+              workcertificate_image:
+                type: string
+                format: binary
+              salarypayment_image:
+                type: string
+                format: binary
+              bookbank_image:
+                type: string
+                format: binary
+              motocyclelicense_image:
+                type: string
+                format: binary
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+
+    MPLS_econsentverify:
+      type: object
+      properties:
+        quotationid:
+          type: string
+          example: 'abc'
+        otp_value:
+          type: string
+          example: '123456'
+        phone_no:
+          type: string
+          example: '0952483338'
+
+    MPLS_create_or_update_credit:
+      type: object
+      properties:
+        quotationid:
+          type: string
+          example: '80bb232e-b92b-47e2-95d5-33fdeb7a5c18'
+        brand_code:
+          type: string
+          example: '01'
+        brand_name:
+          type: string
+          example: 'Honda'
+        model_code:
+          type: string
+          example: '0022'
+        model_name:
+          type: string
+          example: 'ACB125CBTL TH#CLICK125i'
+        color_name:
+          type: string
+          example: 'ดำ'
+        loan_amount:
+          type: number
+          example: 50000
+        product_value:
+          type: number
+          example: 51164
+        interest_rate:
+          type: number
+          example: 0.99
+        payment_value:
+          type: number
+          example: 2654
+        payment_round_count:
+          type: number
+          example: 24
+        insurance_code:
+          type: string
+          example: '10001'
+        insurance_year:
+          type: number
+          example: 2
+        insurance_plan_price:
+          type: number
+          example: 1450
+        is_include_loanamount:
+          type: number
+          example: 1
+        factory_price:
+          type: number
+          example: 51164
+        size_model:
+          type: string
+          example: '01'
+        insurer_code:
+          type: string
+          example: '0001'
+        insurer_name:
+          type: string
+          example: 'บริษัท กรุงเทพประกันภัย จำกัด (มหาชน)'
+
+    smssendtest:
+      type: object
+      properties:
+        value1:
+          type: string
+        value2:
+          type: string
+        value3:
+          type: string
+
+    updatequotationimage:
+      type: object
+      properties:
+        quotationid:
+          type: string
+          example: "test"
+
+    updatedraft:
+      type: object
+      properties:
+        quotationid:
+          type: string
+          example: "test"
+
+    quotation:
+      type: object
+      properties:
+        idcard_num:
+          type: string
+          example: "1229900584011"
+        phone_number:
+          type: string
+          example: "0952483338"
+        title_code:
+          type: string
+          example: "001"
+        title_name:
+          type: string
+          example: "นาย"
+        first_name:
+          type: string
+          example: "ทดสอบ"
+        last_name:
+          type: string
+          example: "ควอเตชั่น"
+        birth_date:
+          type: string
+          format: date
+          example: "18/4/1994"
+        ciz_issued_date:
+          type: string
+          format: date
+          example: "1/7/2018"
+        ciz_expired_date:
+          type: string
+          format: date
+          example: "17/4/2027"
+        ciz_address:
+          type: string
+          example: "309 หมู่ 2 ต.ในคลองบางปลากด อ.พระสมุทรเจดีย์"
+        ciz_sub_district:
+          type: string
+          example: "ในคลองบางปลากด"
+        ciz_district:
+          type: string
+          example: "พระสมุทรเจดีย์"
+        ciz_province_name:
+          type: string
+          example: "สมุทรปราการ"
+        ciz_province_code:
+          type: string
+          example: "012"
+        liv_address:
+          type: string
+          example: "309 หมู่ 2 ต.ในคลองบางปลากด อ.พระสมุทรเจดีย์"
+        liv_sub_district:
+          type: string
+          example: "ในคลองบางปลากด"
+        liv_district:
+          type: string
+          example: "พระสมุทรเจดีย์"
+        liv_province_name:
+          type: string
+          example: "สมุทรปราการ"
+        liv_province_code:
+          type: string
+          example: "012"
+        cont_address:
+          type: string
+          example: "309 หมู่ 2 ต.ในคลองบางปลากด อ.พระสมุทรเจดีย์"
+        cont_sub_district:
+          type: string
+          example: "ในคลองบางปลากด"
+        cont_district:
+          type: string
+          example: "พระสมุทรเจดีย์"
+        cont_province_name:
+          type: string
+          example: "สมุทรปราการ"
+        cont_province_code:
+          type: string
+          example: "012"
+        work_address:
+          type: string
+          example: "309 หมู่ 2 ต.ในคลองบางปลากด อ.พระสมุทรเจดีย์"
+        work_sub_district:
+          type: string
+          example: "ในคลองบางปลากด"
+        work_district:
+          type: string
+          example: "พระสมุทรเจดีย์"
+        work_province_name:
+          type: string
+          example: "สมุทรปราการ"
+        work_province_code:
+          type: string
+          example: "012"
+        quo_status:
+          type: number
+          example: 0
+        e_paper:
+          type: string
+          example: "N"
+        # Credit
+        brand_code:
+          type: string
+          example: "001"
+        brand_name:
+          type: string
+          example: "Yamaha"
+        model_code:
+          type: string
+          example: "0105"
+        model_name:
+          type: string
+          example: "Fino"
+        color_code:
+          type: string
+          example: "0042"
+        color_name:
+          type: string
+          example: "Pearl Red"
+        loan_amount:
+          type: number
+          example: 30000
+        product_value:
+          type: number
+          example: 45000
+        down_payment:
+          type: number
+          example: 4000
+        interest_rate:
+          type: number
+          example: 0.25
+        payment_value:
+          type: number
+          example: 4000
+        payment_round_count:
+          type: number
+          example: 15
+        # Career
+        main_career_name:
+          type: string
+          example: "รับราชการ"
+        main_career_code:
+          type: string
+          example: "5001"
+        main_workplace_name:
+          type: string
+          example: "สำนักงานกรมการคลัง"
+        main_position:
+          type: string
+          example: "เจ้าหน้าที่ตรวจสอบ"
+        main_department:
+          type: string
+          example: "ฝ่ายตรวจสอบ"
+        main_experience_year:
+          type: number
+          example: 5
+        main_experience_month:
+          type: number
+          example: 6
+        main_salary_per_month:
+          type: number
+          example: 25000
+        main_salary_per_day:
+          type: number
+          example: 1000
+        main_leader_name:
+          type: string
+          example: "สมชาย ใจสมดี"
+        main_work_per_week:
+          type: number
+          example: 6
+        is_sub_career:
+          type: number
+          example: 1
+        sub_career_name:
+          type: string
+          example: "ขายของ online"
+        sub_career_code:
+          type: string
+          example: "10010"
+        sub_workplace_name:
+          type: string
+          example: "บ้าน"
+        sub_position:
+          type: string
+          example: ""
+        sub_department:
+          type: string
+          example: ""
+        sub_experience_year:
+          type: number
+          example: 2
+        sub_experience_month:
+          type: number
+          example: 4
+        sub_salary_per_month:
+          type: number
+          example: 6000
+        sub_salary_per_day:
+          type: number
+          example: 750
+        sub_leader_name:
+          type: string
+          example: ""
+        sub_work_per_week:
+          type: number
+          example: 2
+        #purpose
+        purpose_buy:
+          type: string
+          example: "001"
+        purpose_buy_name:
+          type: string
+          example: "สมสรี ลาซาน"
+        reason_buy:
+          type: string
+          example: "002"
+        reason_buy_etc:
+          type: string
+          example: "Other reason ..."
+        car_user:
+          type: string
+          example: "004"
+        car_user_name:
+          type: string
+          example: "นารา จิตไมตรี"
+        car_user_relation:
+          type: string
+          example: "Other realation ..."
+        car_user_name_2:
+          type: string
+          example: "นารา จิตไมตรี"
+        car_user_citizen_id:
+          type: string
+          example: "3110132341223"
+        car_user_home_no:
+          type: string
+          example: "311"
+        car_user_home_name:
+          type: string
+          example: "งามมนตรี"
+        car_user_room_no:
+          type: string
+          example: "202"
+        car_user_floor:
+          type: string
+          example: "4"
+        car_user_soi:
+          type: string
+          example: "งามมนตรี 3"
+        car_user_moo:
+          type: string
+          example: "2"
+        car_user_road:
+          type: string
+          example: "จตุรมิตร"
+        car_user_sub_district:
+          type: string
+          example: "ห้วยขวาง"
+        car_user_district:
+          type: string
+          example: "ห้วยขวาง"
+        car_user_province_name:
+          type: string
+          example: "กรุงเทพมหานคร"
+        car_user_province_code:
+          type: string
+          example: "001"
+        car_user_postal_code:
+          type: string
+          example: "10400"
+        car_user_phone_no:
+          type: string
+          example: "0941141114"
+        first_referral_fullname:
+          type: string
+          example: "อภินันท์ จันทกร"
+        first_referral_house_no:
+          type: string
+          example: "112"
+        first_referral_moo:
+          type: string
+          example: "4"
+        first_referral_house_name:
+          type: string
+          example: "พฤกษา 5"
+        first_referral_room_no:
+          type: string
+          example: "141"
+        first_referral_floor:
+          type: string
+          example: "7"
+        first_referral_soi:
+          type: string
+          example: "รังสิต 8"
+        first_referral_road:
+          type: string
+          example: "รังสิต-องครักษ์"
+        first_referral_sub_district:
+          type: string
+          example: "บึงยี่โถ"
+        first_referral_district:
+          type: string
+          example: "ธัญบุรี"
+        first_referral_province_name:
+          type: string
+          example: "ปทุมธานี"
+        first_referral_province_code:
+          type: string
+          example: "012"
+        first_referral_postal_code:
+          type: string
+          example: "12130"
+        first_referral_phone_no:
+          type: string
+          example: "0911111122"
+        second_referral_fullname:
+          type: string
+          example: "คมคาย คารม"
+        second_referral_house_no:
+          type: string
+          example: "131"
+        second_referral_moo:
+          type: string
+          example: ""
+        second_referral_house_name:
+          type: string
+          example: "hua hin view"
+        second_referral_room_no:
+          type: string
+          example: "91"
+        second_referral_floor:
+          type: string
+          example: "2"
+        second_referral_soi:
+          type: string
+          example: "ภิรมย์ภัคดี"
+        second_referral_road:
+          type: string
+          example: "ภิรมย์ภัคดี 3"
+        second_referral_sub_district:
+          type: string
+          example: "หนองแก"
+        second_referral_district:
+          type: string
+          example: "หัวหิน"
+        second_referral_province_name:
+          type: string
+          example: "ประจวบขีรีขันธ์"
+        second_referral_province_code:
+          type: string
+          example: "041"
+        second_referral_postal_code:
+          type: string
+          example: "77110"
+        second_referral_phone_no:
+          type: string
+          example: "0922222211"
+        #consent
+        consent_customer_name:
+          type: string
+          example: "ณภัทร รอดเนียม"
+        consent_first_name:
+          type: string
+          example: "ณภัทร"
+        consent_last_name:
+          type: string
+          example: "รอดเนียม"
+        is_disclosure_consent:
+          type: number
+          example: 1
+        is_personal_disclosure_consent:
+          type: number
+          example: 1
+        is_credit_consent:
+          type: number
+          example: 1
+        is_final_consent:
+          type: number
+          example: 1
+        #attach File (name and type)
+        citizenid_image_name:
+          type: string
+          example: ""
+        houseregis_image_name:
+          type: string
+          example: ""
+        face_image_name:
+          type: string
+          example: ""
+        hosue_image_name:
+          type: string
+          example: ""
+        store_image_name:
+          type: string
+          example: ""
+        salarycertificate_image_name:
+          type: string
+          example: ""
+        workcertificate_image_name:
+          type: string
+          example: ""
+        salarypayment_image_name:
+          type: string
+          example: ""
+        bookbank_image_name:
+          type: string
+          example: ""
+        motocycle_image_name:
+          type: string
+          example: ""
+        citizenid_image_type:
+          type: string
+          example: ""
+        houseregis_image_type:
+          type: string
+          example: ""
+        face_image_type:
+          type: string
+          example: ""
+        hosue_image_type:
+          type: string
+          example: ""
+        store_image_type:
+          type: string
+          example: ""
+        salarycertificate_image_type:
+          type: string
+          example: ""
+        workcertificate_image_type:
+          type: string
+          example: ""
+        salarypayment_image_type:
+          type: string
+          example: ""
+        bookbank_image_type:
+          type: string
+          example: ""
+        motocycle_image_type:
+          type: string
+          example: ""
+        # imagecode:
+        #   type: array
+        #   items:
+        #         type: object
+        #         properties:
+        #           image_code:
+        #             type: string
+        #           image_header:
+        #             type: string
+        #           client_field_name:
+        #             type: string
+        #           image_id:
+        #             type: number
+
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
