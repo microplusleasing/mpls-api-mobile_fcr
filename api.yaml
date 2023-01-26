@@ -106,7 +106,7 @@ paths:
           description: Success
         401:
           description: Bad Request
-  /quotation:
+  /getquotationlist:
     get:
       tags:
         - "quotation"
@@ -137,6 +137,7 @@ paths:
           description: "Invalid username/password supplied"
         500:
           description: "Database connection problem"
+  /createquotation:
     post:
       tags:
         - "quotation"

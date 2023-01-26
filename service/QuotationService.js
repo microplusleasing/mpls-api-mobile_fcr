@@ -29,7 +29,7 @@ log4js.configure({
     }
 });
 
-async function getquotation(req, res, next) {
+async function getquotationlist(req, res, next) {
     let connection;
     try {
         const decoded = jwt_decode(req.headers.authorization)
@@ -386,7 +386,18 @@ async function getquotation(req, res, next) {
                         bindparamsresult.indexstart = indexstart
                         bindparamsresult.indexend = indexend
 
-                        sqlqueryresult = `SELECT QUO.*,GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CME.REF_PAY_NUM, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME,
+                        sqlqueryresult = `SELECT 
+                        QUO_ID, QUO.IDCARD_NUM, QUO.PHONE_NUMBER, QUO.TITLE_CODE, QUO.TITLE_NAME, QUO.
+                        FIRST_NAME, QUO.LAST_NAME, QUO.BIRTH_DATE, QUO.CIZ_ISSUED_DATE, QUO.CIZ_EXPIRED_DATE, QUO.
+                        CIZ_ADDRESS, QUO.CIZ_SUB_DISTRICT, QUO.CIZ_DISTRICT, QUO.CIZ_PROVINCE_NAME, QUO.CIZ_PROVINCE_CODE, QUO.
+                        QUO_STATUS, QUO.QUO_LIVING_PLACE_ID, QUO.QUO_CONTRACT_PLACE_ID, QUO.QUO_WORKING_PLACE_ID, QUO.QUO_CREDIT_ID, QUO.
+                        USER_ID, QUO.CREATED_TIME, QUO.LAST_UPDATED_TIME, QUO.QUO_KEY_APP_ID, QUO.CIZ_POSTAL_CODE, QUO.
+                        APPLICATION_NUM, QUO.CIZ_ISSUED_PLACE, QUO.SL_CODE, QUO.CHECKER_CODE, QUO.CHANNAL_TYPE, QUO.
+                        EMAIL, QUO.CIZ_AGE, QUO.CIZ_GENDER, QUO.DIPCHIP_UUID, QUO.CIZ_NICKNAME, QUO.
+                        CIZ_HOUSE_TYPE, QUO.CIZ_HOUSE_OWNER_TYPE, QUO.CIZ_STAYED_YEAR, QUO.CIZ_STAYED_MONTH, QUO.CIZ_MARIED_STATUS, QUO.
+                        QUO_APP_REF_NO, QUO.QUO_ECONSENT_FLAG, QUO.CIZ_PHONE_VALID_STATUS, QUO.OTP_PHONE_VERIFY, QUO.QUO_DOPA_STATUS, QUO.
+                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, 
+                        GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CME.REF_PAY_NUM, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME,
                         ROW_NUMBER() OVER (ORDER BY QUO.CREATED_TIME DESC) LINE_NUMBER
                         FROM MPLS_QUOTATION QUO 
                         LEFT JOIN (SELECT LOAN_RESULT_CODE AS LR_STATUS , 
@@ -461,7 +472,18 @@ async function getquotation(req, res, next) {
                         bindparamsresult.indexstart = indexstart
                         bindparamsresult.indexend = indexend
 
-                        sqlqueryresult = `SELECT QUO.*, GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME,
+                        sqlqueryresult = `SELECT 
+                        QUO_ID, QUO.IDCARD_NUM, QUO.PHONE_NUMBER, QUO.TITLE_CODE, QUO.TITLE_NAME, QUO.
+                        FIRST_NAME, QUO.LAST_NAME, QUO.BIRTH_DATE, QUO.CIZ_ISSUED_DATE, QUO.CIZ_EXPIRED_DATE, QUO.
+                        CIZ_ADDRESS, QUO.CIZ_SUB_DISTRICT, QUO.CIZ_DISTRICT, QUO.CIZ_PROVINCE_NAME, QUO.CIZ_PROVINCE_CODE, QUO.
+                        QUO_STATUS, QUO.QUO_LIVING_PLACE_ID, QUO.QUO_CONTRACT_PLACE_ID, QUO.QUO_WORKING_PLACE_ID, QUO.QUO_CREDIT_ID, QUO.
+                        USER_ID, QUO.CREATED_TIME, QUO.LAST_UPDATED_TIME, QUO.QUO_KEY_APP_ID, QUO.CIZ_POSTAL_CODE, QUO.
+                        APPLICATION_NUM, QUO.CIZ_ISSUED_PLACE, QUO.SL_CODE, QUO.CHECKER_CODE, QUO.CHANNAL_TYPE, QUO.
+                        EMAIL, QUO.CIZ_AGE, QUO.CIZ_GENDER, QUO.DIPCHIP_UUID, QUO.CIZ_NICKNAME, QUO.
+                        CIZ_HOUSE_TYPE, QUO.CIZ_HOUSE_OWNER_TYPE, QUO.CIZ_STAYED_YEAR, QUO.CIZ_STAYED_MONTH, QUO.CIZ_MARIED_STATUS, QUO.
+                        QUO_APP_REF_NO, QUO.QUO_ECONSENT_FLAG, QUO.CIZ_PHONE_VALID_STATUS, QUO.OTP_PHONE_VERIFY, QUO.QUO_DOPA_STATUS, QUO.
+                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, 
+                        GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME,
                         ROW_NUMBER() OVER (ORDER BY QUO.CREATED_TIME DESC) LINE_NUMBER
                         FROM MPLS_QUOTATION QUO
                         LEFT JOIN (SELECT LOAN_RESULT_CODE AS LR_STATUS , 
@@ -539,7 +561,18 @@ async function getquotation(req, res, next) {
 
                         bindparamsresult.indexstart = indexstart
                         bindparamsresult.indexend = indexend
-                        sqlqueryresult = `SELECT QUO.*, GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CME.REF_PAY_NUM, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME,
+                        sqlqueryresult = `SELECT 
+                        QUO_ID, QUO.IDCARD_NUM, QUO.PHONE_NUMBER, QUO.TITLE_CODE, QUO.TITLE_NAME, QUO.
+                        FIRST_NAME, QUO.LAST_NAME, QUO.BIRTH_DATE, QUO.CIZ_ISSUED_DATE, QUO.CIZ_EXPIRED_DATE, QUO.
+                        CIZ_ADDRESS, QUO.CIZ_SUB_DISTRICT, QUO.CIZ_DISTRICT, QUO.CIZ_PROVINCE_NAME, QUO.CIZ_PROVINCE_CODE, QUO.
+                        QUO_STATUS, QUO.QUO_LIVING_PLACE_ID, QUO.QUO_CONTRACT_PLACE_ID, QUO.QUO_WORKING_PLACE_ID, QUO.QUO_CREDIT_ID, QUO.
+                        USER_ID, QUO.CREATED_TIME, QUO.LAST_UPDATED_TIME, QUO.QUO_KEY_APP_ID, QUO.CIZ_POSTAL_CODE, QUO.
+                        APPLICATION_NUM, QUO.CIZ_ISSUED_PLACE, QUO.SL_CODE, QUO.CHECKER_CODE, QUO.CHANNAL_TYPE, QUO.
+                        EMAIL, QUO.CIZ_AGE, QUO.CIZ_GENDER, QUO.DIPCHIP_UUID, QUO.CIZ_NICKNAME, QUO.
+                        CIZ_HOUSE_TYPE, QUO.CIZ_HOUSE_OWNER_TYPE, QUO.CIZ_STAYED_YEAR, QUO.CIZ_STAYED_MONTH, QUO.CIZ_MARIED_STATUS, QUO.
+                        QUO_APP_REF_NO, QUO.QUO_ECONSENT_FLAG, QUO.CIZ_PHONE_VALID_STATUS, QUO.OTP_PHONE_VERIFY, QUO.QUO_DOPA_STATUS, QUO.
+                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, 
+                        GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CME.REF_PAY_NUM, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME,
                         ROW_NUMBER() OVER (ORDER BY QUO.CREATED_TIME DESC) LINE_NUMBER
                         FROM MPLS_QUOTATION QUO 
                         LEFT JOIN (SELECT LOAN_RESULT_CODE AS LR_STATUS , 
@@ -612,7 +645,18 @@ async function getquotation(req, res, next) {
                         bindparamsresult.channalstamp = channalstamp
                         bindparamsresult.indexstart = indexstart
                         bindparamsresult.indexend = indexend
-                        sqlqueryresult = `SELECT QUO.*, GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME, 
+                        sqlqueryresult = `SELECT 
+                        QUO_ID, QUO.IDCARD_NUM, QUO.PHONE_NUMBER, QUO.TITLE_CODE, QUO.TITLE_NAME, QUO.
+                        FIRST_NAME, QUO.LAST_NAME, QUO.BIRTH_DATE, QUO.CIZ_ISSUED_DATE, QUO.CIZ_EXPIRED_DATE, QUO.
+                        CIZ_ADDRESS, QUO.CIZ_SUB_DISTRICT, QUO.CIZ_DISTRICT, QUO.CIZ_PROVINCE_NAME, QUO.CIZ_PROVINCE_CODE, QUO.
+                        QUO_STATUS, QUO.QUO_LIVING_PLACE_ID, QUO.QUO_CONTRACT_PLACE_ID, QUO.QUO_WORKING_PLACE_ID, QUO.QUO_CREDIT_ID, QUO.
+                        USER_ID, QUO.CREATED_TIME, QUO.LAST_UPDATED_TIME, QUO.QUO_KEY_APP_ID, QUO.CIZ_POSTAL_CODE, QUO.
+                        APPLICATION_NUM, QUO.CIZ_ISSUED_PLACE, QUO.SL_CODE, QUO.CHECKER_CODE, QUO.CHANNAL_TYPE, QUO.
+                        EMAIL, QUO.CIZ_AGE, QUO.CIZ_GENDER, QUO.DIPCHIP_UUID, QUO.CIZ_NICKNAME, QUO.
+                        CIZ_HOUSE_TYPE, QUO.CIZ_HOUSE_OWNER_TYPE, QUO.CIZ_STAYED_YEAR, QUO.CIZ_STAYED_MONTH, QUO.CIZ_MARIED_STATUS, QUO.
+                        QUO_APP_REF_NO, QUO.QUO_ECONSENT_FLAG, QUO.CIZ_PHONE_VALID_STATUS, QUO.OTP_PHONE_VERIFY, QUO.QUO_DOPA_STATUS, QUO.
+                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, 
+                        GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME, 
                         ROW_NUMBER() OVER (ORDER BY QUO.CREATED_TIME DESC) LINE_NUMBER
                         FROM MPLS_QUOTATION QUO
                         LEFT JOIN (SELECT LOAN_RESULT_CODE AS LR_STATUS , 
@@ -709,7 +753,7 @@ async function createQuotation(req, res, next) {
         // === check userid token === 
 
         logger.error(`No userid contain in token`)
-        if(!userid) {
+        if (!userid) {
             return res.status(400).send({
                 status: 400,
                 message: `No userid contain in token`,
@@ -1002,7 +1046,7 @@ async function createQuotation(req, res, next) {
                     // expireDate: ciz_form.get('expireDate')?.value ? ciz_form.get('expireDate')?.value : '',
                     // issuePlace: ciz_form.get('issuePlace')?.value ? ciz_form.get('issuePlace')?.value : '',
                     // mariedStatus: ciz_form.get('mariedStatus')?.value ? ciz_form.get('mariedStatus')?.value : '',
-              
+
                     // address: ciz_form.get('address')?.value ? ciz_form.get('address')?.value : '',
                     // district: ciz_form.get('district')?.value ? ciz_form.get('district')?.value : '',
                     // subDistrict: ciz_form.get('subDistrict')?.value ? ciz_form.get('subDistrict')?.value : '',
@@ -1011,7 +1055,7 @@ async function createQuotation(req, res, next) {
                     // postalCode: ciz_form.get('postalCode')?.value ? ciz_form.get('postalCode')?.value : '',
                     // cizcardimage: this.cizcardtab.cizCardImage_string ? this.cizcardtab.cizCardImage_string : '',
                     // dipchipuuid: dipchipuuid ? dipchipuuid : ''
-                    
+
                     QUO_KEY_APP_ID: quotationKeyid,
                     USER_ID: userid,
                     IDCARD_NUM: idcard_num,
@@ -1600,7 +1644,7 @@ async function createQuotation(req, res, next) {
 
                 // === add require image type for quotation (28/10/2022) ===
                 if (!(isidcardinclude && iscustomerfaceinclude && iscizcardimagesign && isncbconsent)) {
-                       logger.error(`user ${userid} : กรุณาแนบภาพบัตรประชาชนลูกค้า , รูปภาพหน้าลูกค้าพร้อมบัตรประชาชน , สำเนาบัตรประชาชนพร้อมลายเซ็นรับรองถูกต้อง , และ NCB Consent ก่อนสร้างใบคำขอ`)
+                    logger.error(`user ${userid} : กรุณาแนบภาพบัตรประชาชนลูกค้า , รูปภาพหน้าลูกค้าพร้อมบัตรประชาชน , สำเนาบัตรประชาชนพร้อมลายเซ็นรับรองถูกต้อง , และ NCB Consent ก่อนสร้างใบคำขอ`)
                     return res.status(400).send({
                         status: 400,
                         // message: `กรุณาแนบภาพบัตรประชาชนลูกค้า และ รูปภาพหน้าลูกค้าพร้อมบัตรประชาชน`,
@@ -1813,7 +1857,7 @@ async function updateQuotationImage(req, res, next) {
         const userid = token.ID
 
         // === check userid (21/10/2022) ===
-        if(!userid) {
+        if (!userid) {
             return res.status(400).send({
                 status: 400,
                 message: `ไม่พบ userid (token)`,
@@ -1921,13 +1965,13 @@ async function updateQuotationImage(req, res, next) {
             typecase,
             ciz_gender,
             // === add field (nickname, maried status, stayed year, stayed month, house type , house owner typed) (15/11/2022) ===
-            nickname,maried_status, house_type, stayed_month, stayed_year, house_owner_type
+            nickname, maried_status, house_type, stayed_month, stayed_year, house_owner_type
         } = parseFormdata
 
         console.log(`quotationid: ${quotationid}`)
 
         // === check quotationid ====
-        if(!quotationid) {
+        if (!quotationid) {
             logger.error(`user ${userid} : ไม่พบ quotationid parameter`)
             return res.status(400).send({
                 status: 400,
@@ -2268,7 +2312,7 @@ async function updateQuotationImage(req, res, next) {
                         logger.error(`user ${userid}, quotationid : ${quotationid} : Check image type is problem : ${e.message ? e.message : 'No return message'}'}`)
                         return res.status(400).send({
                             status: 400,
-                            message: `Check image type is problem : ${e.message ? e.message: 'No return message'}`,
+                            message: `Check image type is problem : ${e.message ? e.message : 'No return message'}`,
                             data: []
                         })
                     }
@@ -3488,7 +3532,7 @@ async function updateinactiveimagetype(image_key) {
 async function getquotationbyid(req, res, next) {
 
     // ==== already log4js ====
-    
+
     let connection;
     const logger = log4js.getLogger("view");
     try {
@@ -3502,8 +3546,8 @@ async function getquotationbyid(req, res, next) {
         var quotationid = req.params.id
 
         // === check userid params === 
-        
-        if(!userid) {
+
+        if (!userid) {
             return res.status(400).send({
                 status: 400,
                 message: `ไม่มีค่า user id สำหรับยืนยันตน`
@@ -3512,7 +3556,7 @@ async function getquotationbyid(req, res, next) {
 
         // === check quotationid params ===
 
-        if(!quotationid) {
+        if (!quotationid) {
             logger.error(`user ${userid} : ไม่มีค่า quotationd`)
             return res.status(400).send({
                 status: 400,
@@ -4197,7 +4241,7 @@ async function updatedraft(req, res, next) {
             coverage_total_loss, max_ltv, price_include_vat, engine_number, chassis_number,
             engine_no_running, chassis_no_running, sl_code, ciz_gender,
             // === add field (nickname, maried status, stayed year, stayed month, house type , house owner typed) (15/11/2022) ===
-            nickname,maried_status, house_type, stayed_month, stayed_year, house_owner_type
+            nickname, maried_status, house_type, stayed_month, stayed_year, house_owner_type
         } = parseFormdata
 
         console.log(`quotationid: ${quotationid}`)
@@ -4246,8 +4290,8 @@ async function updatedraft(req, res, next) {
         })
 
         // === check result data quotation (20/10/2022) ===
-        
-        if(resultChkValidate.rows.length == 0) {
+
+        if (resultChkValidate.rows.length == 0) {
             logger.error(`user ${userid} : ไม่พบรายการตาม quotationid`)
             return res.status(400).send({
                 status: 400,
@@ -5392,7 +5436,7 @@ async function getdopastatusbyid(req, res, next) {
     }
 }
 
-module.exports.getquotation = getquotation
+module.exports.getquotationlist = getquotationlist
 module.exports.createquotation = createQuotation
 module.exports.getquotationbyid = getquotationbyid
 module.exports.updateQuotationImage = updateQuotationImage
