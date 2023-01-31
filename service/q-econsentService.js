@@ -2309,7 +2309,15 @@ async function MPLS_validation_otp_econsent(req, res, next) {
 
         const econsentbuffer = econsentimage ? imagetobuffer(econsentimage) : null
 
-        const { quotationid, otp_value, phone_no } = parseFormdata
+        const {
+            quotationid,
+            otp_value,
+            phone_no,
+            consent_datetime,
+            application_no,
+            transaction_no,
+            citizen_id
+        } = parseFormdata
 
         if (quotationid == '' || otp_value == '' && phone_no !== '' && econsentimage) {
             return res.status(200).send({
@@ -2389,8 +2397,10 @@ async function MPLS_validation_otp_econsent(req, res, next) {
                     } else {
                         // MPLS_OTP_LOG
                         console.log(`log_otP_cretae`)
+
                         let updateotplog;
                         let updatequotation;
+                        let createlogeconsent;
                         try {
                             updateotplog = await connection.execute(`
                                     UPDATE MPLS_OTP_LOG 
@@ -2418,6 +2428,34 @@ async function MPLS_validation_otp_econsent(req, res, next) {
 
                             console.log(`update quotaiton success : ${updatequotation.rowsAffected}`)
 
+                            // === create  econsent log ====
+
+                            createlogeconsent = await connection.execute(`
+                                INSERT INTO MPLS_ECONSENT_LOG (
+                                    TRANSACTION_NO,
+                                    CONSENT_DATETIME,
+                                    CITIZEN_ID,
+                                    QUOTATION_ID,
+                                    APPLICATION_NUM 
+                                ) 
+                                VALUES 
+                                ( 
+                                    :TRANSACTION_NO,
+                                    :CONSENT_DATETIME,
+                                    :CITIZEN_ID,
+                                    :QUOTATION_ID,
+                                    :APPLICATION_NUM 
+                                 )
+                            `, {
+                                TRANSACTION_NO: transaction_no,
+                                CONSENT_DATETIME: (new Date(consent_datetime)) ?? null,
+                                CITIZEN_ID: citizen_id,
+                                QUOTATION_ID: quotationid,
+                                APPLICATION_NUM: application_no
+                            })
+
+                            console.log(`create econsent log success : ${createlogeconsent.rowsAffected}`)
+
                         } catch (e) {
                             console.error(e)
                             return res.status(200).send({
@@ -2430,7 +2468,7 @@ async function MPLS_validation_otp_econsent(req, res, next) {
                         console.log(`updatequotation.rowsAffected : ${updatequotation.rowsAffected}`)
 
 
-                        if (!(updateotplog.rowsAffected == 1 && updatequotation.rowsAffected == 1)) {
+                        if (!(updateotplog.rowsAffected == 1 && updatequotation.rowsAffected == 1 && createlogeconsent.rowsAffected == 1)) {
                             return res.status(200).send({
                                 status: false,
                                 message: `ไม่สามารถบันทึกค่าสถานะได้ (update status fail)`

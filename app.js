@@ -32,6 +32,7 @@ const mrtaService = require('./service/mrtaService')
 const dipchipService = require('./service/dipchipService')
 const btwService = require('./service/btwService')
 const imageUtilService = require('./service/_imageUtilService')
+const welcomeCallService = require('./service/welcomeCallService')
 const bodyParser = require("body-parser")
 const swaggerJSDoc = YAML.load("./api.yaml")
 const test2 = require('./service/test2')
@@ -62,7 +63,7 @@ app.get('/portallogin', portalService.portallogin) // === deprecate ===
 
 app.get('/viewportallogin', portalService.viewportallogin)
 
-app.get('/loginuser', loginUserservice.loginUserService) // === avalible === 
+app.get('/loginuser', loginUserservice.loginUser) // === avalible === 
 
 app.get('/getquotationlist', auth, quotationservice.getquotationlist)
 
@@ -102,23 +103,23 @@ app.post('/MPLS_create_or_update_credit', auth, qeconsentService.MPLS_create_or_
 
 app.post('/MPLS_create_or_update_careerandpurpose', auth, qeconsentService.MPLS_create_or_update_careerandpurpose)
 
-app.get('/MPLS_getimagefilebyid', auth , qeconsentService.MPLS_getimagefilebyid)
+app.get('/MPLS_getimagefilebyid', auth, qeconsentService.MPLS_getimagefilebyid)
 
-app.post('/MPLS_create_image_attach_file', auth , qeconsentService.MPLS_create_image_attach_file)
+app.post('/MPLS_create_image_attach_file', auth, qeconsentService.MPLS_create_image_attach_file)
 
-app.post('/MPLS_update_image_attach_file', auth , qeconsentService.MPLS_update_image_attach_file)
+app.post('/MPLS_update_image_attach_file', auth, qeconsentService.MPLS_update_image_attach_file)
 
-app.post('/MPLS_delete_image_attach_file', auth , qeconsentService.MPLS_delete_image_attach_file)
+app.post('/MPLS_delete_image_attach_file', auth, qeconsentService.MPLS_delete_image_attach_file)
 
-app.get('/MPLS_update_flag_image_attach_file', auth , qeconsentService.MPLS_update_flag_image_attach_file)
+app.get('/MPLS_update_flag_image_attach_file', auth, qeconsentService.MPLS_update_flag_image_attach_file)
 
-app.post('/MPLS_create_consent', auth , qeconsentService.MPLS_create_consent)
+app.post('/MPLS_create_consent', auth, qeconsentService.MPLS_create_consent)
 
-app.post('/MPLS_create_send_car_deliver_and_loyalty_consent', auth , qeconsentService.MPLS_create_send_car_deliver_and_loyalty_consent)
+app.post('/MPLS_create_send_car_deliver_and_loyalty_consent', auth, qeconsentService.MPLS_create_send_car_deliver_and_loyalty_consent)
 
 app.get('/MPLS_gen_application_no', auth, qeconsentService.MPLS_gen_application_no)
 
-app.get('/MPLS_getservertime', auth , qeconsentService.MPLS_getservertime)
+app.get('/MPLS_getservertime', auth, qeconsentService.MPLS_getservertime)
 
 app.get('/MPLS_getbrand', auth, masterService.MPLS_getbrand)
 
@@ -126,11 +127,11 @@ app.get('/MPLS_getmodel', auth, masterService.MPLS_getmodel)
 
 app.post('/MPLS_upload_customer_face', auth, qeconsentService.MPLS_upload_customer_face)
 
-app.get('/MPLS_is_check_face_valid' , auth , qeconsentService.MPLS_is_check_face_valid)
+app.get('/MPLS_is_check_face_valid', auth, qeconsentService.MPLS_is_check_face_valid)
 
-app.post('/MPLS_stamp_check_face_valid' , auth , qeconsentService.MPLS_stamp_check_face_valid)
+app.post('/MPLS_stamp_check_face_valid', auth, qeconsentService.MPLS_stamp_check_face_valid)
 
-app.get('/MPLS_get_dopa_valid_status' , auth , qeconsentService.MPLS_get_dopa_valid_status)
+app.get('/MPLS_get_dopa_valid_status', auth, qeconsentService.MPLS_get_dopa_valid_status)
 
 app.post('/updatequotationimage', auth, quotationservice.updateQuotationImage)
 
@@ -168,7 +169,7 @@ app.get('/MasterTerm', auth, masterService.getTerm)
 
 app.get('/getTermNew', auth, masterService.getTermNew)
 
-app.get('/MPLS_master_term', auth,MPLS_masterService.MPLS_master_term )
+app.get('/MPLS_master_term', auth, MPLS_masterService.MPLS_master_term)
 
 app.get('/MasterPaymentCount', auth, masterService.getPaymentCount) // === not available (21/11/2022) === 
 
@@ -341,6 +342,10 @@ app.get('/getHouseType', auth, masterService.getHouseType)
 app.get('/getHouseOwnerType', auth, masterService.getHouseOwnerType)
 
 // === util service ===
+
+// === welcome call service ===
+app.get('/generatetokenWelcomeCall', auth, welcomeCallService.generatetokenWelcomeCall)
+
 
 // *** image util ***
 

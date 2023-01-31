@@ -19,7 +19,7 @@ log4js.configure({
     },
 });
 
-async function loginUserService(req, res, next) {
+async function loginUser(req, res, next) {
     let connection;
     const { username, password, channal } = req.query
     // console.log(`this is userID : ${username}`)
@@ -654,7 +654,7 @@ async function sendemailsmtp(req, res, next) {
 
 
 
-module.exports.loginUserService = loginUserService
+module.exports.loginUser = loginUser
 module.exports.sendemailsmtp = sendemailsmtp
 module.exports.forgetpassword = forgetpassword
 module.exports.resetpassword = resetpassword
