@@ -750,9 +750,19 @@ async function MPLS_create_or_update_citizendata(req, res, next) {
     let connection;
     const token = req.user
     const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
 
     const logger = log4js.getLogger("create");
     try {
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
 
         // === Get data on multipart/form-data ===  
         let fileData
@@ -2627,7 +2637,20 @@ async function MPLS_validation_otp_econsent_non(req, res, next) {
 async function MPLS_check_application_no(req, res, next) {
 
     let connection;
+    const token = req.user
+    const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
+
     try {
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
 
         const { quotationid } = req.query
 
@@ -2877,8 +2900,18 @@ async function MPLS_create_or_update_credit(req, res, next) {
     let connection;
     const token = req.user
     const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
 
     try {
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
 
         let fileData
         let formData
@@ -3234,8 +3267,19 @@ async function MPLS_create_or_update_careerandpurpose(req, res, next) {
     let connection;
     const token = req.user
     const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
 
     try {
+
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
 
         let fileData
         let formData
@@ -3714,8 +3758,23 @@ async function MPLS_getimagefilebyid(req, res, next) {
 }
 
 async function MPLS_create_image_attach_file(req, res, next) {
+
     let connection;
+    const token = req.user
+    const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
+
     try {
+
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
 
         let fileData
         let formData
@@ -3917,7 +3976,21 @@ async function MPLS_create_image_attach_file(req, res, next) {
 
 async function MPLS_update_image_attach_file(req, res, next) {
     let connection;
+    const token = req.user
+    const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
+
     try {
+
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
 
         let fileData
         let formData
@@ -4350,7 +4423,20 @@ async function MPLS_update_flag_image_attach_file(req, res, next) {
 
 async function MPLS_create_consent(req, res, next) {
     let connection;
+    const token = req.user
+    const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
     try {
+
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
 
         let fileData
         let formData
@@ -4576,7 +4662,22 @@ async function MPLS_create_consent(req, res, next) {
 async function MPLS_create_send_car_deliver_and_loyalty_consent(req, res, next) {
 
     let connection;
+    const token = req.user
+    const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin;
+
     try {
+
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
+
         let fileData
         let formData
         // const form = formidable({ multiples: true })
@@ -5048,8 +5149,23 @@ async function MPLS_getimagetocompareiappbuffer(req, res, next) {
 }
 
 async function MPLS_upload_customer_face(req, res, next) {
+
     let connection;
+    const token = req.user
+    const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
+
     try {
+
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
 
         let fileData
         let formData
@@ -5421,8 +5537,22 @@ async function MPLS_is_check_face_valid(req, res, next) {
 async function MPLS_stamp_check_face_valid(req, res, next) {
 
     let connection;
+    const token = req.user
+    const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
+    
     try {
 
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
+        
         let fileData
         let formData
         // const form = formidable({ multiples: true })
