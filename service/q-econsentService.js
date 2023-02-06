@@ -10,7 +10,7 @@ const _util = require('./_selfutil');
 const log4js = require("log4js");
 const sdk = require('api')('@thaibulksms/v1.0#dfe7qml3crqtee');
 const e = require('express');
-const _mplsUtil = require('./_MPLSutil')
+const _mplsUtil = require('./_MPLSutil');
 
 log4js.configure({
     appenders: {
@@ -2489,8 +2489,9 @@ async function MPLS_validation_otp_econsent(req, res, next) {
 
                                 // *** send sms for verify success ***
                                 sdk.auth(process.env.SMS_API_KEY, process.env.SMS_API_SECRET)
-
-                                const message = `test ดูหลักฐานคลิก ...`
+                                
+                                const urlimage = `https://web-portal-uat.microplusleasing.com/e-consent?application_num=${application_no}`
+                                const message = `ดูหลักฐานเอกสารการให้ความยินยอม คลิก ${urlimage}`
 
                                 responseSendsms = await sdk.post('/sms', {
                                     msisdn: phone_no,
