@@ -282,7 +282,7 @@ paths:
         "201":
           description: "All error (duplicate, timeout, insert wrong format, etc ...)"
 
-  /quotationbyid/{id}:
+  /getquotationbyid/{id}:
     get:
       tags:
         - "quotation"
