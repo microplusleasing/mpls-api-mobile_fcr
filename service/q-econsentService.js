@@ -4522,6 +4522,7 @@ async function MPLS_create_consent(req, res, next) {
             INSERT INTO MPLS_CONSENT (
                 CONS_QUO_KEY_APP_ID, APP_KEY_ID, 
                 CUSTOMER_NAME, FRIST_NAME, LAST_NAME, 
+                IS_CREDIT_CONSENT,
                 IDENTITY_APPROVE_CONSENT_VALUE, 
                 MOTOR_INSURANCE_CONSENT_VALUE, 
                 NMOTOR_INSURANCE_CONSENT_VALUE, 
@@ -4537,6 +4538,7 @@ async function MPLS_create_consent(req, res, next) {
                 (
                   :CONS_QUO_KEY_APP_ID, :APP_KEY_ID, 
                   :CUSTOMER_NAME, :FRIST_NAME, :LAST_NAME, 
+                  :IS_CREDIT_CONSENT, 
                 :IDENTITY_APPROVE_CONSENT_VALUE, 
                   :MOTOR_INSURANCE_CONSENT_VALUE, 
                   :NMOTOR_INSURANCE_CONSENT_VALUE, 
@@ -4554,6 +4556,7 @@ async function MPLS_create_consent(req, res, next) {
                 CUSTOMER_NAME: reqData.consent_customer_name,
                 FRIST_NAME: reqData.consent_first_name,
                 LAST_NAME: reqData.consent_last_name,
+                IS_CREDIT_CONSENT: reqData.is_credit_consent,
                 IDENTITY_APPROVE_CONSENT_VALUE: reqData.identity_approve_consent_value,
                 MOTOR_INSURANCE_CONSENT_VALUE: reqData.motor_insurance_consent_value,
                 NMOTOR_INSURANCE_CONSENT_VALUE: reqData.nmotor_insurance_consent_value,
