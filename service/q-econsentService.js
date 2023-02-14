@@ -2119,6 +2119,81 @@ async function MPLS_check_econsent(req, res, next) {
     }
 }
 
+async function MPLS_get_witness_econsent(req, res, next) {
+
+    // === only use for get witness name in channal type = store only ===
+    let connection;
+    try {
+
+        const token = req.user
+        const userid = token.username
+        const channal = token.channal
+
+        if (userid == '' || userid == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบข้อมูล username ของ user`,
+                data: []
+            })
+        }
+
+        if (channal == 'checker') {
+            return res.status(200).send({
+                statsu: 500,
+                message: `ไม่สามารถทำรายการได้เนื่องจาก channal type ไม่ตรงกับประเภทการ login`,
+                data: []
+            })
+        }
+
+
+        connection = await oracledb.getConnection(config.database)
+
+        const returnName = await connection.execute(`
+                SELECT  E.EMP_NAME AS FNAME, E.EMP_LNAME AS LNAME, E.EMP_NAME ||' '|| E.EMP_LNAME AS CHECKER_NAME
+                FROM  BTW.X_DEALER_P DP,BTW.EMP E
+                WHERE  E.EMP_ID = DP.CHECKER_CODE
+                AND   DP.DL_CODE = :username
+                `, {
+            username: userid
+        }, { outFormat: oracledb.OBJECT })
+
+        if (returnName.rows.length == 0) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบชื่อพนักงานที่ประจำอยู่ที่ร้านนี้`
+            })
+        } else {
+            // === success get witness name (employee name) ===
+            const resData = returnName.rows
+            console.log(`resData : ${JSON.stringify(resData)}`)
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: `ทำรายการสำเร็จ`,
+                data: lowerResData
+            })
+        }
+
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No message'}`,
+            data: []
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return next(e);
+            }
+        }
+    }
+}
+
 async function MPLS_create_otp_econsent(req, res, next) {
 
     let connection;
@@ -2489,7 +2564,7 @@ async function MPLS_validation_otp_econsent(req, res, next) {
 
                                 // *** send sms for verify success ***
                                 sdk.auth(process.env.SMS_API_KEY, process.env.SMS_API_SECRET)
-                                
+
                                 const urlimage = `https://web-portal-uat.microplusleasing.com/e-consent?application_num=${application_no}`
                                 const message = `ดูหลักฐานเอกสารการให้ความยินยอม คลิก ${urlimage}`
 
@@ -5067,6 +5142,89 @@ async function MPLS_getimagetocompareiapp(req, res, next) {
     }
 }
 
+async function MPLS_getimagetocompareiapp_unlock(req, res, next) {
+
+    let connection;
+    try {
+
+        const reqData = req.query
+
+        if (!reqData.quotationid) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบเลข quotation`,
+                data: []
+            })
+        }
+
+        oracledb.fetchAsBuffer = [oracledb.BLOB];
+        connection = await oracledb.getConnection(config.database)
+
+        const resultsimage = await connection.execute(`
+                            SELECT quo.CIZCARD_IMAGE AS file1, mif.IMAGE_FILE AS file2, quo.IS_DIPCHIP_CHANNAL 
+                            FROM mpls_quotation quo
+                            LEFT JOIN (select 
+                                        IMGF_QUO_APP_KEY_ID,IMAGE_FILE 
+                                        from mpls_image_file
+                                        where image_code = '11'
+                                        and active_status = 'Y'
+                                    ) mif
+                            ON quo.quo_key_app_id = mif.IMGF_QUO_APP_KEY_ID
+                            WHERE quo.quo_key_app_id = :quotationid
+        `, {
+            quotationid: reqData.quotationid
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        // === valid data ===
+
+        if (resultsimage.rows.length == 0) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบรายการ quotation ตามเลขที่กำหนด`,
+                data: []
+            })
+        }
+
+        const fileimage = resultsimage.rows[0]
+
+
+        const b64 = fileimage.FILE1 !== null ? Buffer.from(fileimage.FILE1).toString('base64') : null
+        const b64_2 = fileimage.FILE2 !== null ? Buffer.from(fileimage.FILE2).toString('base64') : null
+        const isdipchipchannal = fileimage.IS_DIPCHIP_CHANNAL
+
+        return res.status(200).send({
+            status: 200,
+            message: `success`,
+            data: {
+                file1: b64,
+                file2: b64_2,
+                is_dipchip_channal: isdipchipchannal
+            }
+        })
+
+
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : e ${e.message ? e.message : 'no message'}`,
+            data: []
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return next(e);
+            }
+        }
+    }
+}
+
 async function MPLS_getimagetocompareiappbuffer(req, res, next) {
 
     let connection;
@@ -5538,6 +5696,70 @@ async function MPLS_is_check_face_valid(req, res, next) {
     }
 }
 
+async function MPLS_is_check_face_valid_unlock(req, res, next) {
+
+    let connection;
+    try {
+
+        const reqData = req.query
+
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(`
+            SELECT * FROM MPLS_FACE_COMPARE
+            WHERE FC_QUO_KEY_APP_ID = :QUOTATIONID
+        `
+            , {
+                QUOTATIONID: reqData.quotationid
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: {
+                    isvalid: false
+                }
+            })
+        } else {
+
+            const isdipchip = result.rows[0].IS_DIPCHIP == 'Y' ? true : false
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: {
+                    isvalid: true,
+                    isdipchip: isdipchip,
+                    reason: result.rows[0].REASON,
+                    status: result.rows[0].STATUS
+                }
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No message'}`,
+            data: []
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 500,
+                    message: `Fail during close connection (oracledb) : ${e.message ? e.message : 'No return message'}`,
+                    data: []
+                })
+            }
+        }
+    }
+}
+
 async function MPLS_stamp_check_face_valid(req, res, next) {
 
     let connection;
@@ -5545,7 +5767,7 @@ async function MPLS_stamp_check_face_valid(req, res, next) {
     const userid = token.ID
     // const username = token.username
     const radmin = token.radmin
-    
+
     try {
 
         // === check permission ===
@@ -5556,7 +5778,7 @@ async function MPLS_stamp_check_face_valid(req, res, next) {
                 data: []
             })
         }
-        
+
         let fileData
         let formData
         // const form = formidable({ multiples: true })
@@ -5739,6 +5961,224 @@ async function MPLS_get_dopa_valid_status(req, res, next) {
         }
     }
 }
+
+async function MPLS_get_dopa_valid_status_unlock(req, res, next) {
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(`
+                select DISTINCT checkcardstatus_id as status_code from  dopa_checkcardstatus_p
+                where ECONSENT_STATUS = 'Y'
+                order by checkcardstatus_id asc
+`
+            , {
+
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        const statusCodes = (result.rows).map((object) => object.STATUS_CODE);
+        const statusCodesstrings = statusCodes.map((number) => number.toString());
+
+
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 500,
+                message: 'No dopa valid status',
+                data: []
+            })
+        } else {
+            const resData = result.rows
+            // const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: {
+                    status_code: statusCodesstrings
+                }
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No message'}`,
+            data: []
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return next(e);
+            }
+        }
+    }
+}
+
+async function MPLS_canclequotation(req, res, next) {
+
+    let connection;
+
+    try {
+        const quotationid = req.params.quotationid
+        const token = req.user
+        const userid = token.username
+
+        connection = await oracledb.getConnection(config.database)
+
+        if (!quotationid) {
+            return res.status(200).send({
+                status: 500,
+                message: `กรุณาระบุไอดีของใบคำขอ`,
+                data: []
+            })
+        }
+        connection = await oracledb.getConnection(
+            config.database
+        )
+
+        const resultQuo = await connection.execute(`
+            SELECT QUO_STATUS, APPLICATION_NUM 
+            FROM MPLS_QUOTATION
+            WHERE QUO_KEY_APP_ID = :quotationid
+        `, {
+            quotationid: quotationid
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (resultQuo.rows.length !== 0) {
+            // ==== check validate condition for cancle quotation ==== 
+            const quoitem = resultQuo.rows[0]
+
+            if (quoitem.APPLICATION_NUM && quoitem.QUO_STATUS == 1) {
+                // logger.error("")
+                return res.status(200).send({
+                    status: 500,
+                    message: `ใบคำขอได้ถูกสร้างในระบบ ORACLE แล้ว ไม่สามารถยกเลิกได้`,
+                    data: []
+                })
+            } else {
+                // === valid pass ===
+
+                // ==== update status to quotation for cancle quotation ====
+                // === ORACLE cancle (only case contain application_id (e-consent)) add-on (13/02/2023) ===
+
+                if (quoitem.application_no !== '' || quoitem.application_no !== null) {
+
+                    // === call function from oracle here ====
+                    const updateOracleStatus = await connection.execute(`
+                    DECLARE
+                        status VARCHAR(1);
+    
+                        BEGIN
+                        :status := BTW.FUNC_CANCELAPP_BY_TABLET (:quotaitonid , 'ยกเลิกจากฝั่งTablet' , :userid );
+    
+                        END;
+                    `, {
+                        quotaitonid: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: quotationid },
+                        userid: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: userid },
+                        status: { dir: oracledb.BIND_OUT, type: oracledb.STRING }
+
+                    })
+
+                    if (updateOracleStatus.outBinds.status == 'Y') {
+                        // === update flag (mpls_quotation) when update function on oracle success ===
+                        const resultUpdatequotation = await connection.execute(`
+                        UPDATE MPLS_QUOTATION
+                        SET QUO_STATUS = 3
+                        WHERE QUO_KEY_APP_ID = :quotationid
+                    `, {
+                            quotationid: quotationid
+                        }, {
+                            autoCommit: true
+                        })
+
+
+                        if (resultUpdatequotation) {
+                            // console.log(`update quotation status (cancle) success : ${resultUpdatequotation.rowsAffected}`)
+                            return res.status(200).send({
+                                status: 200,
+                                message: `ยกเลิกเคสสำเร็จ`,
+                                data: []
+                            })
+                        } else {
+                            return res.status(200).send({
+                                status: 500,
+                                message: `อัพเดทสถานะใบคำขอไม่สำเร็จ (MPLS_QUOTATION)`
+                            })
+                        }
+                    } else if (updateOracleStatus.outBinds.status == 'N') {
+                        return res.status(200).send({
+                            status: 500,
+                            message: `ยกเลิกใบคำขอไม่สำเร็จ (update FUNC_CANCLEAPP_BY_TABLET return 'N')`,
+                            data: []
+                        })
+                    } else {
+                        return res.status(200).send({
+                            status: 500,
+                            message: `ยกเลิกใบคำขอไม่สำเร็จ (status return : ${updateOracleStatus.outBinds.status ? updateOracleStatus.outBinds.status : 'No status return'}`,
+                            data: []
+                        })
+                    }
+                } else {
+                    const resultUpdatequotation = await connection.execute(`
+                        UPDATE MPLS_QUOTATION
+                        SET QUO_STATUS = 3
+                        WHERE QUO_KEY_APP_ID = :quotationid
+                    `, {
+                        quotationid: quotationid
+                    }, {
+                        autoCommit: true
+                    })
+
+
+                    if (resultUpdatequotation) {
+                        // console.log(`update quotation status (cancle) success : ${resultUpdatequotation.rowsAffected}`)
+                        return res.status(200).send({
+                            status: 200,
+                            message: `ยกเลิกเคสสำเร็จ`,
+                            data: []
+                        })
+                    } else {
+                        return res.status(200).send({
+                            status: 500,
+                            message: `อัพเดทสถานะใบคำขอไม่สำเร็จ (MPLS_QUOTATION)`
+                        })
+                    }
+                }
+            }
+
+        } else {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบรายการใบคำขอนี้ ยกเลิกไม่ได้`
+            })
+        }
+
+
+
+    } catch (e) {
+        console.error(e);
+        return next(e)
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return next(e);
+            }
+        }
+    }
+
+}
+
 module.exports.MPLS_dipchip = MPLS_dipchip
 module.exports.MPLS_dipchipnoneconsent = MPLS_dipchipnoneconsent
 module.exports.MPLS_create_or_update_citizendata = MPLS_create_or_update_citizendata
@@ -5749,6 +6189,7 @@ module.exports.MPLS_create_otp_phoneno = MPLS_create_otp_phoneno
 module.exports.MPLS_validation_otp_phonenumber = MPLS_validation_otp_phonenumber
 
 module.exports.MPLS_check_econsent = MPLS_check_econsent
+module.exports.MPLS_get_witness_econsent = MPLS_get_witness_econsent
 module.exports.MPLS_create_otp_econsent = MPLS_create_otp_econsent
 module.exports.MPLS_validation_otp_econsent = MPLS_validation_otp_econsent
 module.exports.MPLS_validation_otp_econsent_non = MPLS_validation_otp_econsent_non
@@ -5775,8 +6216,13 @@ module.exports.MPLS_get_refid = MPLS_get_refid // === USE _mplsUtil.internal_MPL
 
 // === face comparison ===
 module.exports.MPLS_getimagetocompareiapp = MPLS_getimagetocompareiapp
+module.exports.MPLS_getimagetocompareiapp_unlock = MPLS_getimagetocompareiapp_unlock
 module.exports.MPLS_getimagetocompareiappbuffer = MPLS_getimagetocompareiappbuffer
 module.exports.MPLS_upload_customer_face = MPLS_upload_customer_face
 module.exports.MPLS_is_check_face_valid = MPLS_is_check_face_valid
+module.exports.MPLS_is_check_face_valid_unlock = MPLS_is_check_face_valid_unlock
 module.exports.MPLS_stamp_check_face_valid = MPLS_stamp_check_face_valid
 module.exports.MPLS_get_dopa_valid_status = MPLS_get_dopa_valid_status
+module.exports.MPLS_get_dopa_valid_status_unlock = MPLS_get_dopa_valid_status_unlock
+
+module.exports.MPLS_canclequotation = MPLS_canclequotation

@@ -2911,6 +2911,20 @@ paths:
         "500":
           description: "Error with message"
 
+  /MPLS_get_witness_econsent:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Get employee of store name
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "Error with message"
+
 components:
   requestBodies:
 

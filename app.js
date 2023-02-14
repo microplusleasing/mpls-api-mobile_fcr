@@ -77,6 +77,8 @@ app.post('/MPLS_create_or_update_citizendata', auth, qeconsentService.MPLS_creat
 
 app.get('/MPLS_getimagetocompareiapp', auth, qeconsentService.MPLS_getimagetocompareiapp)
 
+app.get('/MPLS_getimagetocompareiapp_unlock', qeconsentService.MPLS_getimagetocompareiapp_unlock)
+
 app.get('/MPLS_cancle_quotation', auth, qeconsentService.MPLS_cancle_quotation)
 
 app.get('/MPLS_get_refid', auth, qeconsentService.MPLS_get_refid)
@@ -88,6 +90,8 @@ app.get('/MPLS_check_phonevalid', auth, qeconsentService.MPLS_check_phonevalid)
 app.get('/MPLS_validation_otp_phonenumber', auth, qeconsentService.MPLS_validation_otp_phonenumber)
 
 app.get('/MPLS_check_econsent', auth, qeconsentService.MPLS_check_econsent)
+
+app.get('/MPLS_get_witness_econsent', auth, qeconsentService.MPLS_get_witness_econsent)
 
 app.get('/MPLS_create_otp_econsent', auth, qeconsentService.MPLS_create_otp_econsent)
 
@@ -129,9 +133,15 @@ app.post('/MPLS_upload_customer_face', auth, qeconsentService.MPLS_upload_custom
 
 app.get('/MPLS_is_check_face_valid', auth, qeconsentService.MPLS_is_check_face_valid)
 
+app.get('/MPLS_is_check_face_valid_unlock', qeconsentService.MPLS_is_check_face_valid_unlock)
+
 app.post('/MPLS_stamp_check_face_valid', auth, qeconsentService.MPLS_stamp_check_face_valid)
 
 app.get('/MPLS_get_dopa_valid_status', auth, qeconsentService.MPLS_get_dopa_valid_status)
+
+app.get('/MPLS_get_dopa_valid_status_unlock', qeconsentService.MPLS_get_dopa_valid_status_unlock)
+
+app.get('/MPLS_canclequotation/:quotationid', auth,  qeconsentService.MPLS_canclequotation)
 
 app.post('/updatequotationimage', auth, quotationservice.updateQuotationImage)
 
@@ -356,16 +366,16 @@ app.post('/compressimage', imageUtilService.compressimage)
 // process.env.PORT
 // process.env.API_PORT
 
-app.listen(process.env.API_PORT, () => {
-  // console.log(ip.address());
-  console.log(`UP & running on port ${process.env.API_PORT}`)
-})
-
-
-// app.listen(process.env.PORT, () => {
+// app.listen(process.env.API_PORT, () => {
 //   // console.log(ip.address());
-//   console.log(`UP & running on port ${process.env.PORT}`)
+//   console.log(`UP & running on port ${process.env.API_PORT}`)
 // })
+
+
+app.listen(process.env.PORT, () => {
+  // console.log(ip.address());
+  console.log(`UP & running on port ${process.env.PORT}`)
+})
 
 
 

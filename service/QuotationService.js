@@ -36,7 +36,6 @@ async function getquotationlist(req, res, next) {
 
 
         const {
-            pageno,
             status,
             searchname,
             searchidcardnum,
@@ -44,6 +43,9 @@ async function getquotationlist(req, res, next) {
             searchpaystatus
         } = req.query
 
+        let pageno = req.query.pageno
+
+        pageno = pageno ? pageno : 1
 
         // const userid = decoded.ID
         const indexstart = (pageno - 1) * 10 + 1
@@ -396,7 +398,7 @@ async function getquotationlist(req, res, next) {
                         EMAIL, QUO.CIZ_AGE, QUO.CIZ_GENDER, QUO.DIPCHIP_UUID, QUO.CIZ_NICKNAME, QUO.
                         CIZ_HOUSE_TYPE, QUO.CIZ_HOUSE_OWNER_TYPE, QUO.CIZ_STAYED_YEAR, QUO.CIZ_STAYED_MONTH, QUO.CIZ_MARIED_STATUS, QUO.
                         QUO_APP_REF_NO, QUO.QUO_ECONSENT_FLAG, QUO.CIZ_PHONE_VALID_STATUS, QUO.OTP_PHONE_VERIFY, QUO.QUO_DOPA_STATUS, QUO.
-                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, 
+                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, QUO.OTP_CONSENT_VERIFY, 
                         GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CME.REF_PAY_NUM, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME,
                         ROW_NUMBER() OVER (ORDER BY QUO.CREATED_TIME DESC) LINE_NUMBER
                         FROM MPLS_QUOTATION QUO 
@@ -482,7 +484,7 @@ async function getquotationlist(req, res, next) {
                         EMAIL, QUO.CIZ_AGE, QUO.CIZ_GENDER, QUO.DIPCHIP_UUID, QUO.CIZ_NICKNAME, QUO.
                         CIZ_HOUSE_TYPE, QUO.CIZ_HOUSE_OWNER_TYPE, QUO.CIZ_STAYED_YEAR, QUO.CIZ_STAYED_MONTH, QUO.CIZ_MARIED_STATUS, QUO.
                         QUO_APP_REF_NO, QUO.QUO_ECONSENT_FLAG, QUO.CIZ_PHONE_VALID_STATUS, QUO.OTP_PHONE_VERIFY, QUO.QUO_DOPA_STATUS, QUO.
-                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, 
+                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, QUO.OTP_CONSENT_VERIFY, 
                         GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME,
                         ROW_NUMBER() OVER (ORDER BY QUO.CREATED_TIME DESC) LINE_NUMBER
                         FROM MPLS_QUOTATION QUO
@@ -571,7 +573,7 @@ async function getquotationlist(req, res, next) {
                         EMAIL, QUO.CIZ_AGE, QUO.CIZ_GENDER, QUO.DIPCHIP_UUID, QUO.CIZ_NICKNAME, QUO.
                         CIZ_HOUSE_TYPE, QUO.CIZ_HOUSE_OWNER_TYPE, QUO.CIZ_STAYED_YEAR, QUO.CIZ_STAYED_MONTH, QUO.CIZ_MARIED_STATUS, QUO.
                         QUO_APP_REF_NO, QUO.QUO_ECONSENT_FLAG, QUO.CIZ_PHONE_VALID_STATUS, QUO.OTP_PHONE_VERIFY, QUO.QUO_DOPA_STATUS, QUO.
-                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, 
+                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, QUO.OTP_CONSENT_VERIFY, 
                         GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CME.REF_PAY_NUM, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME,
                         ROW_NUMBER() OVER (ORDER BY QUO.CREATED_TIME DESC) LINE_NUMBER
                         FROM MPLS_QUOTATION QUO 
@@ -655,7 +657,7 @@ async function getquotationlist(req, res, next) {
                         EMAIL, QUO.CIZ_AGE, QUO.CIZ_GENDER, QUO.DIPCHIP_UUID, QUO.CIZ_NICKNAME, QUO.
                         CIZ_HOUSE_TYPE, QUO.CIZ_HOUSE_OWNER_TYPE, QUO.CIZ_STAYED_YEAR, QUO.CIZ_STAYED_MONTH, QUO.CIZ_MARIED_STATUS, QUO.
                         QUO_APP_REF_NO, QUO.QUO_ECONSENT_FLAG, QUO.CIZ_PHONE_VALID_STATUS, QUO.OTP_PHONE_VERIFY, QUO.QUO_DOPA_STATUS, QUO.
-                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, 
+                        QUO_FACE_COMPARE_VERIFY, QUO.IS_DIPCHIP_CHANNAL, QUO.QUO_HOUSE_REGIS_PLACE_ID, QUO.OTP_CONSENT_VERIFY, 
                         GET_SL_NAME(QUO.SL_CODE) AS DL_NAME, LR.LR_STATUSTEXT, CN.PAY_STATUS, PV.PROV_NAME AS BRANCH_NAME, 
                         ROW_NUMBER() OVER (ORDER BY QUO.CREATED_TIME DESC) LINE_NUMBER
                         FROM MPLS_QUOTATION QUO
@@ -4019,7 +4021,7 @@ async function canclequotation(req, res, next) {
 
 
         if (resultUpdatequotation) {
-            console.log(`update quotation status (cancle) success : ${resultUpdatequotation.rowsAffected}`)
+            // console.log(`update quotation status (cancle) success : ${resultUpdatequotation.rowsAffected}`)
             return res.status(200).send({
                 status: 200,
                 message: `ยกเลิกเคสสำเร็จ`,
