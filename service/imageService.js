@@ -28,6 +28,7 @@ async function getimagebyid(req, res, next) {
             SELECT IMAGE_NAME, IMAGE_TYPE, IMAGE_CODE, IMAGE_FILE 
             FROM MPLS_IMAGE_FILE
             WHERE ACTIVE_STATUS = 'Y'  
+            AND IMAGE_CODE NOT IN '11'
             AND IMGF_QUO_APP_KEY_ID = :IMGF_QUO_APP_KEY_ID  
         `, {
             IMGF_QUO_APP_KEY_ID: id

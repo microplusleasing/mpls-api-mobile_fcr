@@ -756,7 +756,7 @@ async function createQuotation(req, res, next) {
 
         logger.error(`No userid contain in token`)
         if (!userid) {
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `No userid contain in token`,
                 data: []
@@ -1113,7 +1113,7 @@ async function createQuotation(req, res, next) {
         } catch (e) {
             console.log(`error create quotation : ${e}`)
             logger.error(`user ${userid} : สร้างใบคำขอไม่สำเร็จ : ${e.message ? e.message : `No message`}`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `สร้างใบคำขอไม่สำเร็จ : ${e.message ? e.message : `No message`}`
             })
@@ -1151,7 +1151,7 @@ async function createQuotation(req, res, next) {
         } catch (e) {
             console.log(`error create living place : ${e}`)
             logger.error(`user ${userid} : ข้อมูลที่อยู่ปัจจุบันไม่ถูกต้อง : ${e.message ? e.message : `No message`}`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ข้อมูลที่อยู่ปัจจุบันไม่ถูกต้อง : ${e.message ? e.message : `No message`}`
             })
@@ -1184,7 +1184,7 @@ async function createQuotation(req, res, next) {
         } catch (e) {
             console.log(`error create Contact place : ${e}`)
             logger.error(`user ${userid} : ข้อมูลที่อยู่ที่ติดต่อได้ไม่ถูกต้อง : ${e.message ? e.message : `No message`}`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ข้อมูลที่อยู่ที่ติดต่อได้ไม่ถูกต้อง : ${e.message ? e.message : `No message`}`
             })
@@ -1217,7 +1217,7 @@ async function createQuotation(req, res, next) {
         } catch (e) {
             console.log(`error create Contact place : ${e}`)
             logger.error(`user ${userid} : ข้อมูลที่อยู่ที่ติดต่อได้ไม่ถูกต้อง : ${e.message ? e.message : `No message`}`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ข้อมูลที่อยู่ที่ติดต่อได้ไม่ถูกต้อง : ${e.message ? e.message : `No message`}`
             })
@@ -1249,7 +1249,7 @@ async function createQuotation(req, res, next) {
         } catch (e) {
             console.log(`error create work place : ${e}`)
             logger.error(`user ${userid} : ข้อมูลที่อยู่ที่ทำงานไม่ถูกต้อง : ${e.message ? e.message : `No message`}`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 404,
                 message: `ข้อมูลที่อยู่ที่ทำงานไม่ถูกต้อง : ${e.message ? e.message : `No message`}`
             })
@@ -1355,7 +1355,7 @@ async function createQuotation(req, res, next) {
         } catch (e) {
             console.log(`error create credit : ${e}`)
             logger.error(`user ${userid} : ข้อมูลผลิตภัณฑ์/วงเงินสินเชื่อไม่ถูกต้อง : ${e.message ? e.message : `No message`}`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ข้อมูลผลิตภัณฑ์/วงเงินสินเชื่อไม่ถูกต้อง : ${e.message ? e.message : `No message`}`
             })
@@ -1413,7 +1413,7 @@ async function createQuotation(req, res, next) {
         } catch (e) {
             console.log(`error create career : ${e}`)
             logger.error(`user ${userid} : ข้อมูลอาชีพและรายได้ไม่ถูกต้อง : ${e.message ? e.message : `No message`}`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ข้อมูลอาชีพและรายได้ไม่ถูกต้อง : ${e.message ? e.message : `No message`}`
             })
@@ -1471,7 +1471,7 @@ async function createQuotation(req, res, next) {
         catch (e) {
             console.log(`error create consent : ${e}`)
             logger.error(`user ${userid} : ข้อมูลเอกสารสัญญาไม่ถูกต้อง : ${e.message ? e.message : `No message`}`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ข้อมูลเอกสารสัญญาไม่ถูกต้อง : ${e.message ? e.message : `No message`}`
             })
@@ -1529,7 +1529,7 @@ async function createQuotation(req, res, next) {
         } catch (e) {
             console.log(`error create Purpose : ${e}`)
             logger.error(`user ${userid} : ข้อมูลวัตถุประสงค์ในการเช่าซื้อ/บุคคลอ้างอิง ไม่ถูกต้อง : ${e.message ? e.message : `No message`}`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ข้อมูลวัตถุประสงค์ในการเช่าซื้อ/บุคคลอ้างอิง ไม่ถูกต้อง : ${e.message ? e.message : `No message`}`
             })
@@ -1632,7 +1632,7 @@ async function createQuotation(req, res, next) {
             } catch (e) {
                 console.log(`error create attach file v2 : ${e}`)
                 logger.error(`user ${userid} : ข้อมูลเอกสารประกอบการสมัครสินเชื่อไม่ถูกต้อง (รูปภาพ): ${e.message ? e.message : `No message`}`)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `ข้อมูลเอกสารประกอบการสมัครสินเชื่อไม่ถูกต้อง (รูปภาพ): ${e.message ? e.message : `No message`}`
                 })
@@ -1647,7 +1647,7 @@ async function createQuotation(req, res, next) {
                 // === add require image type for quotation (28/10/2022) ===
                 if (!(isidcardinclude && iscustomerfaceinclude && iscizcardimagesign && isncbconsent)) {
                     logger.error(`user ${userid} : กรุณาแนบภาพบัตรประชาชนลูกค้า , รูปภาพหน้าลูกค้าพร้อมบัตรประชาชน , สำเนาบัตรประชาชนพร้อมลายเซ็นรับรองถูกต้อง , และ NCB Consent ก่อนสร้างใบคำขอ`)
-                    return res.status(400).send({
+                    return res.status(200).send({
                         status: 400,
                         // message: `กรุณาแนบภาพบัตรประชาชนลูกค้า และ รูปภาพหน้าลูกค้าพร้อมบัตรประชาชน`,
                         message: `กรุณาแนบภาพบัตรประชาชนลูกค้า , รูปภาพหน้าลูกค้าพร้อมบัตรประชาชน , สำเนาบัตรประชาชนพร้อมลายเซ็นรับรองถูกต้อง , และ NCB Consent ก่อนสร้างใบคำขอ`,
@@ -1686,7 +1686,7 @@ async function createQuotation(req, res, next) {
 
                 } else {
                     logger.error(`user ${userid} : แนบไฟล์ภาพอย่างน้อย 1 ภาพ`)
-                    return res.status(400).send({
+                    return res.status(200).send({
                         status: 400,
                         message: `แนบไฟล์ภาพอย่างน้อย 1 ภาพ`,
                         data: []
@@ -1696,7 +1696,7 @@ async function createQuotation(req, res, next) {
             } catch (e) {
                 console.log(`error create attach file v2 : ${e}`)
                 logger.error(`user ${userid} : ข้อมูลเอกสารประกอบการสมัครสินเชื่อไม่ถูกต้อง (รูปภาพ): ${e.message ? e.message : `No message`}`)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `ข้อมูลเอกสารประกอบการสมัครสินเชื่อไม่ถูกต้อง (รูปภาพ): ${e.message ? e.message : `No message`}`
                 })
@@ -1755,7 +1755,7 @@ async function createQuotation(req, res, next) {
             catch (e) {
                 console.log(`error create consent : ${e}`)
                 logger.error(`user ${userid} : ข้อมูล OCR (สแกนบัตรประชาชน) ไม่ถูกต้อง : ${e.message ? e.message : `No message`}`)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `ข้อมูล OCR (สแกนบัตรประชาชน) ไม่ถูกต้อง : ${e.message ? e.message : `No message`}`
                 })
@@ -1775,7 +1775,7 @@ async function createQuotation(req, res, next) {
         } catch (e) {
             console.err(e.message)
             logger.error(`user ${userid} : สร้างใบคำขอไม่สำเร็จ (commit fail) : ${e.message ? e.message : `No message`}`)
-            res.send(400).send({
+            res.send(200).send({
                 status: 400,
                 message: `สร้างใบคำขอไม่สำเร็จ (commit fail)`,
                 data: []
@@ -1796,9 +1796,10 @@ async function createQuotation(req, res, next) {
                 logger.error(`user ${userid} : ไม่พบรายการ Quotation ที่สร้างสำเร็จ`)
                 const noresultFormatJson = {
                     status: 400,
-                    message: 'ไม่พบรายการ Quotation ที่สร้างสำเร็จ'
+                    message: 'ไม่พบรายการ Quotation ที่สร้างสำเร็จ',
+                    data: []
                 }
-                res.status(400).send(noresultFormatJson)
+               return res.status(200).send(noresultFormatJson)
             } else {
                 let resData = resultQuotation.rows
                 const lowerResData = tolowerService.arrayobjtolower(resData)
@@ -1812,11 +1813,11 @@ async function createQuotation(req, res, next) {
                     result[key.toLowerCase()] = val;
                 });
 
-                res.status(200).json(returnDatalowerCase);
+                return res.status(200).json(returnDatalowerCase);
             }
         } else {
             logger.error(`user ${userid} : ไม่พบรายการ Quotation ที่สร้างสำเร็จ`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ไม่พบรายการ Quotation ที่สร้างสำเร็จ`,
                 data: []
@@ -1842,7 +1843,6 @@ async function createQuotation(req, res, next) {
 async function updateQuotationImage(req, res, next) {
 
     // === already log4js ===
-
     let connection;
     const logger = log4js.getLogger("update")
     try {
@@ -1860,7 +1860,7 @@ async function updateQuotationImage(req, res, next) {
 
         // === check userid (21/10/2022) ===
         if (!userid) {
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ไม่พบ userid (token)`,
                 data: []
@@ -1975,7 +1975,7 @@ async function updateQuotationImage(req, res, next) {
         // === check quotationid ====
         if (!quotationid) {
             logger.error(`user ${userid} : ไม่พบ quotationid parameter`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ไม่พบ quotationid parameter`,
                 data: []
@@ -2040,7 +2040,7 @@ async function updateQuotationImage(req, res, next) {
         if (app_no != null) {
             console.log(`Record is in another stage, cant't update Dat`)
             logger.error(`user ${userid}, quotationid : ${quotationid} : (Record is in another stage, cant't update Data)`)
-            return res.status(405).send({
+            return res.status(200).send({
                 status: 405,
                 message: `Record is in another stage, cant't update Data`,
                 data: []
@@ -2048,7 +2048,7 @@ async function updateQuotationImage(req, res, next) {
         } else if (resultChkValidate.rows.length !== 1) {
             console.log(`Invalid Record Duplicate`)
             logger.error(`user ${userid}, quotationid : ${quotationid} : เลขใบคำขอซ้ำในระบบ โปรดติดต่อเจ้าหน้าที่`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `เลขใบคำขอซ้ำในระบบ โปรดติดต่อเจ้าหน้าที่`,
                 data: []
@@ -2085,7 +2085,7 @@ async function updateQuotationImage(req, res, next) {
 
             } catch (e) {
                 logger.error(`user ${userid}, quotationid : ${quotationid} : Error between Check recent upload image. : ${e.message ? e.message : 'No return message'}`)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `Error between Check recent upload image. : ${e.message ? e.message : 'No return message'}`,
                     data: []
@@ -2095,7 +2095,7 @@ async function updateQuotationImage(req, res, next) {
 
         if (app_no) {
             logger.error(`user ${userid}, quotationid : ${quotationid} : Invalid condition`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `Invalid condition`, // === เงื่่อนไขการบันทึกเคสไม่ถูกต้อง ===
                 data: []
@@ -2258,7 +2258,7 @@ async function updateQuotationImage(req, res, next) {
                                     if (isidcardinclude && iscustomerfaceinclude && iscizcardimagesign && isncbconsent) {
 
                                     } else {
-                                        return res.status(400).send({
+                                        return res.status(200).send({
                                             status: 400,
                                             // message: `กรุณาแนบภาพบัตรประชาชนลูกค้า และ รูปภาพหน้าลูกค้าพร้อมบัตรประชาชน ก่อนสร้างใบคำขอ`, (OLD CHECK ON SQL RETURN 4 VALUE TO CHECK EACH CONDITION , NOW RETURN 'B' AND NULL)
                                             message: `กรุณาแนบภาพบัตรประชาชนลูกค้า , รูปภาพหน้าลูกค้าพร้อมบัตรประชาชน , สำเนาบัตรประชาชนพร้อมลายเซ็นรับรองถูกต้อง , และ NCB Consent ก่อนสร้างใบคำขอ`,
@@ -2273,7 +2273,7 @@ async function updateQuotationImage(req, res, next) {
                                     if (isidcardinclude) {
 
                                     } else {
-                                        return res.status(400).send({
+                                        return res.status(200).send({
                                             status: 400,
                                             message: `กรุณาแนบภาพบัตรประชาชนลูกค้า ก่อนสร้างใบคำขอ`,
                                             data: []
@@ -2288,7 +2288,7 @@ async function updateQuotationImage(req, res, next) {
                                     if (iscustomerfaceinclude) {
 
                                     } else {
-                                        return res.status(400).send({
+                                        return res.status(200).send({
                                             status: 400,
                                             message: `กรุณาแนบรูปภาพหน้าลูกค้าพร้อมบัตรประชาชน ก่อนสร้างใบคำขอ`,
                                             data: []
@@ -2312,7 +2312,7 @@ async function updateQuotationImage(req, res, next) {
 
                     } catch (e) {
                         logger.error(`user ${userid}, quotationid : ${quotationid} : Check image type is problem : ${e.message ? e.message : 'No return message'}'}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `Check image type is problem : ${e.message ? e.message : 'No return message'}`,
                             data: []
@@ -2362,7 +2362,7 @@ async function updateQuotationImage(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid}, quotationid: ${quotationid} : Can't update image record with error status: ${e.message ? e.message : `no status`}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `Can't update image record with error status: ${e.message ? e.message : `no status`}`
                         })
@@ -2403,7 +2403,7 @@ async function updateQuotationImage(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid}, quotationid: ${quotationid} : อัพโหลดไฟล์ภาพไม่สำเร็จ : ${e.message ? e.message : `no status`}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `อัพโหลดไฟล์ภาพไม่สำเร็จ : ${e.message ? e.message : `no status`}`
                         })
@@ -2528,7 +2528,7 @@ async function updateQuotationImage(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid}, quotationid: ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลทั่วไป) ได้ : ${e.message ? e.message : 'No return message'}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลทั่วไป) ได้ : ${e.message ? e.message : 'No return message'}`
                         })
@@ -2567,7 +2567,7 @@ async function updateQuotationImage(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid}, quotationid: ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่) ได้ : ${e.message ? e.message : 'No return message'}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่) ได้ : ${e.message ? e.message : 'No return message'}`
                         })
@@ -2600,7 +2600,7 @@ async function updateQuotationImage(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid}, quotationid: ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่) ได้ : ${e.message ? e.message : 'No return message'}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่) ได้ : ${e.message ? e.message : 'No return message'}`
                         })
@@ -2633,7 +2633,7 @@ async function updateQuotationImage(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid}, quotationid: ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่ตามทะเบียนบ้านได้) ได้ : ${e.message ? e.message : 'No return message'}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่ตามทะเบียนบ้านได้) ได้ : ${e.message ? e.message : 'No return message'}`
                         })
@@ -2666,7 +2666,7 @@ async function updateQuotationImage(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid}, quotationid: ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่ทำงาน) ได้ : ${e.message ? e.message : 'No return message'}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่ทำงาน) ได้ : ${e.message ? e.message : 'No return message'}`
                         })
@@ -2745,7 +2745,7 @@ async function updateQuotationImage(req, res, next) {
                         } catch (e) {
                             console.error(e)
                             logger.error(`user ${userid}, quotationid: ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้าอาชีพและรายได้ (ข้อมูลอาชีพ) ได้ : ${e.message ? e.message : 'No return message'}`)
-                            return res.status(400).send({
+                            return res.status(200).send({
                                 status: 400,
                                 message: `ไม่สามารถอัพเดทข้อมูลหน้าอาชีพและรายได้ (ข้อมูลอาชีพ) ได้ : ${e.message ? e.message : 'No return message'}`
                             })
@@ -2814,7 +2814,7 @@ async function updateQuotationImage(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid}, quotationid: ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้าข้อมูลผลิตภัณฑ์/วงเงินสินเชื่อได้  : ${e.message ? e.message : 'No return message'}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้าข้อมูลผลิตภัณฑ์/วงเงินสินเชื่อได้ : ${e.message ? e.message : 'No return message'}`
                         })
@@ -2858,7 +2858,7 @@ async function updateQuotationImage(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid}, quotationid: ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้าอาชีพและรายได้ (วัตถุประสงค์ในการเช่าซื้อ/บุคคลอ้างอิง) ได้ : ${e.message ? e.message : 'No return message'}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้าอาชีพและรายได้ (วัตถุประสงค์ในการเช่าซื้อ/บุคคลอ้างอิง) ได้ : ${e.message ? e.message : 'No return message'}`
                         })
@@ -2991,7 +2991,7 @@ async function updateQuotationImage(req, res, next) {
                         } catch (e) {
                             console.error(e)
                             logger.error(`user ${userid}, quotationid: ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้าเอกสารสัญญาได้ (รูปภาพลายเซ็นต์หรือ PDPA) : ${e.message ? e.message : 'No return message'}`)
-                            return res.status(400).send({
+                            return res.status(200).send({
                                 status: 400,
                                 message: `ไม่สามารถอัพเดทข้อมูลหน้าเอกสารสัญญาได้ (รูปภาพลายเซ็นต์หรือ PDPA) : ${e.message ? e.message : 'No return message'}`
                             })
@@ -3039,7 +3039,7 @@ async function updateQuotationImage(req, res, next) {
                         } catch (e) {
                             console.error(e)
                             logger.error(`user ${userid}, quotationid: ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้าเอกสารสัญญาได้ (PDPA only (no image add)) : ${e.message ? e.message : 'No return message'}`)
-                            return res.status(400).send({
+                            return res.status(200).send({
                                 status: 400,
                                 message: `ไม่สามารถอัพเดทข้อมูลหน้าเอกสารสัญญาได้ (PDPA only (no image add)) : ${e.message ? e.message : 'No return message'}`
                             })
@@ -3059,7 +3059,11 @@ async function updateQuotationImage(req, res, next) {
                 } catch (e) {
                     logger.error(`user ${userid}, quotationid: ${quotationid} : commit fail : ${e.message ? e.message : 'No return message'}`)
                     console.err(e.message)
-                    res.send(404).send(e.message)
+                    // res.send(404).send(e.message)
+                    return res.status(200).send({
+                        statsu: 404,
+                        message: `${e.message ? e.message : 'NO message return from api (upadateQuotationimage)'}`
+                    })
                 }
 
                 // === End ===
@@ -3075,9 +3079,10 @@ async function updateQuotationImage(req, res, next) {
                         logger.error(`user ${userid} : No quotation Record`)
                         const noresultFormatJson = {
                             status: 400,
-                            message: 'No quotation Record'
+                            message: 'No quotation Record',
+                            data: []
                         }
-                        res.status(201).send(noresultFormatJson)
+                        return res.status(201).send(noresultFormatJson)
                     } else {
                         let resData = resultQuotation.rows
                         const lowerResData = tolowerService.arrayobjtolower(resData)
@@ -3089,11 +3094,11 @@ async function updateQuotationImage(req, res, next) {
                         let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
                             result[key.toLowerCase()] = val;
                         });
-                        res.status(200).json(returnDatalowerCase);
+                        return res.status(200).json(returnDatalowerCase);
                     }
                 } else {
                     logger.error(`user ${userid} : Can't find record quotation id after select}`)
-                    return res.status(400).send({
+                    return res.status(200).send({
                         status: 400,
                         message: `Can't find record quotation id after select`,
                         data: []
@@ -3102,7 +3107,7 @@ async function updateQuotationImage(req, res, next) {
 
             } catch (e) {
                 logger.error(`user ${userid} : Error between execute image data : ${e.message ? e.message : ''}`)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `Error between execute image data : ${e.message ? e.message : ''}`,
                     data: []
@@ -3201,7 +3206,7 @@ async function updateQuotationImageonlyinsert(req, res, next) {
                     imageCheckCode.push(obj)
                 }
             } else {
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `record invalid condition`,
                     data: []
@@ -3213,7 +3218,7 @@ async function updateQuotationImageonlyinsert(req, res, next) {
             // === update quotation with new image ===
 
         } catch (e) {
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `Error between Check recent upload image.`,
                 data: []
@@ -3304,13 +3309,13 @@ async function updateQuotationImageonlyinsert(req, res, next) {
                         if (setrecentimageinactive) {
                             imageDataCreate.push(image)
                         } else {
-                            return res.status(400).send({
+                            return res.status(200).send({
                                 status: 400,
                                 message: `ไม่สามารถอัพเดทรายการ`
                             })
                         }
                     } catch (e) {
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทรายการ`
                         })
@@ -3413,7 +3418,7 @@ async function updateQuotationImageonlyinsert(req, res, next) {
 
                 } catch (e) {
                     console.error(e)
-                    return res.status(400).send({
+                    return res.status(200).send({
                         status: 400,
                         message: `can't create image recrd with error status: ${e.message ? e.message : `no status`}`
                     })
@@ -3428,7 +3433,12 @@ async function updateQuotationImageonlyinsert(req, res, next) {
                 commitall
             } catch {
                 console.err(err.message)
-                res.send(404).send(err.message)
+                // res.send(404).send(err.message)
+                return res.send(200).send({
+                    status: 400,
+                    message: `${err.message}`,
+                    data: []
+                })
             }
 
             // === End ===
@@ -3443,9 +3453,11 @@ async function updateQuotationImageonlyinsert(req, res, next) {
                 if (resultQuotation.rows.length == 0) {
                     const noresultFormatJson = {
                         status: 400,
-                        message: 'No quotation Record'
+                        message: 'No quotation Record',
+                        data: []
                     }
-                    res.status(201).send(noresultFormatJson)
+                    // res.status(201).send(noresultFormatJson)
+                    return res.status(200).send(noresultFormatJson)
                 } else {
                     let resData = resultQuotation.rows
                     const lowerResData = tolowerService.arrayobjtolower(resData)
@@ -3460,7 +3472,7 @@ async function updateQuotationImageonlyinsert(req, res, next) {
                     res.status(200).json(returnDatalowerCase);
                 }
             } else {
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `Can't find record quotation id after select`,
                     data: []
@@ -3468,7 +3480,7 @@ async function updateQuotationImageonlyinsert(req, res, next) {
             }
 
         } catch (e) {
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `Error between execute image data : ${e.message ? e.message : ''}`,
                 data: []
@@ -4295,7 +4307,7 @@ async function updatedraft(req, res, next) {
 
         if (resultChkValidate.rows.length == 0) {
             logger.error(`user ${userid} : ไม่พบรายการตาม quotationid`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ไม่พบรายการตาม quotationid `,
                 data: []
@@ -4318,7 +4330,7 @@ async function updatedraft(req, res, next) {
 
             logger.error(`user ${userid} , quotationid : ${quotationid} : (Record is in another stage, cant't update Data)`)
             console.log(`Record is in another stage, cant't update Dat`)
-            return res.status(405).send({
+            return res.status(200).send({
                 status: 405,
                 message: `Record is in another stage, cant't update Data`,
                 data: []
@@ -4326,7 +4338,7 @@ async function updatedraft(req, res, next) {
         } else if (resultChkValidate.rows.length !== 1) {
             logger.error(`user ${userid} , quotationid : ${quotationid} : (เลขใบคำขอซ้ำในระบบ โปรดติดต่อเจ้าหน้าที่)`)
             console.log(`Invalid Record Duplicate`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
                 message: `เลขใบคำขอซ้ำในระบบ โปรดติดต่อเจ้าหน้าที่`,
                 data: []
@@ -4363,7 +4375,7 @@ async function updatedraft(req, res, next) {
 
             } catch (e) {
                 logger.error(`user ${userid} , quotationid : ${quotationid} : Error between Check recent upload image. : ${e.message}`)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `Error between Check recent upload image. : ${e.message ? e.message : `No message`}`,
                     data: []
@@ -4373,9 +4385,9 @@ async function updatedraft(req, res, next) {
 
         if (app_no) {
             logger.error(`user ${userid} , quotationid : ${quotationid} : Invalid condition`)
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 400,
-                message: `Invalid condition`, // === เงื่่อนไขการบันทึกเคสไม่ถูกต้อง ===
+                message: `Invalid condition (application_no already exits , can't save data)`, // === เงื่่อนไขการบันทึกเคสไม่ถูกต้อง ===
                 data: []
             })
         } else {
@@ -4559,7 +4571,7 @@ async function updatedraft(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid} , quotationid : ${quotationid} : อัพโหลดไฟล์ภาพไม่สำเร็จ: ${e.message ? e.message : `no status`}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `อัพโหลดไฟล์ภาพไม่สำเร็จ : ${e.message ? e.message : `no status`}`
                         })
@@ -4674,7 +4686,7 @@ async function updatedraft(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid} , quotationid : ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลทั่วไป) ได้ : ${e.message ? e.message : `no status`}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลทั่วไป) ได้ : ${e.message ? e.message : `No message`}`
                         })
@@ -4713,7 +4725,7 @@ async function updatedraft(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid} , quotationid : ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่) ได้ : ${e.message ? e.message : `no status`}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่) ได้ : ${e.message ? e.message : `No message`}`
                         })
@@ -4746,7 +4758,7 @@ async function updatedraft(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid} , quotationid : ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่) ได้ : ${e.message ? e.message : `no status`}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่) ได้ : ${e.message ? e.message : `No message`}`
                         })
@@ -4779,7 +4791,7 @@ async function updatedraft(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid} , quotationid : ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่ตามทะเบียนบ้านได้) ได้ : ${e.message ? e.message : `no status`}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่อยู่ตามทะเบียนบ้านได้) ได้ : ${e.message ? e.message : `No message`}`
                         })
@@ -4812,7 +4824,7 @@ async function updatedraft(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid} , quotationid : ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่ทำงาน) ได้ : ${e.message ? e.message : `no status`}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้ากรอกบัตรประชาชน (ข้อมูลที่ทำงาน) ได้ : ${e.message ? e.message : `No message`}`
                         })
@@ -4891,7 +4903,7 @@ async function updatedraft(req, res, next) {
                         } catch (e) {
                             console.error(e)
                             logger.error(`user ${userid} , quotationid : ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้าอาชีพและรายได้ (ข้อมูลอาชีพ) ได้ : ${e.message ? e.message : `no status`}`)
-                            return res.status(400).send({
+                            return res.status(200).send({
                                 status: 400,
                                 message: `ไม่สามารถอัพเดทข้อมูลหน้าอาชีพและรายได้ (ข้อมูลอาชีพ) ได้ : ${e.message ? e.message : `No message`}`
                             })
@@ -4960,7 +4972,7 @@ async function updatedraft(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid} , quotationid : ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้าข้อมูลผลิตภัณฑ์/วงเงินสินเชื่อได้ : ${e.message ? e.message : `no status`}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้าข้อมูลผลิตภัณฑ์/วงเงินสินเชื่อได้ : ${e.message ? e.message : `No message`}`
                         })
@@ -5004,7 +5016,7 @@ async function updatedraft(req, res, next) {
                     } catch (e) {
                         console.error(e)
                         logger.error(`user ${userid} , quotationid : ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้าอาชีพและรายได้ (วัตถุประสงค์ในการเช่าซื้อ/บุคคลอ้างอิง) ได้ : ${e.message ? e.message : `no status`}`)
-                        return res.status(400).send({
+                        return res.status(200).send({
                             status: 400,
                             message: `ไม่สามารถอัพเดทข้อมูลหน้าอาชีพและรายได้ (วัตถุประสงค์ในการเช่าซื้อ/บุคคลอ้างอิง) ได้ : ${e.message ? e.message : `No message`}`
                         })
@@ -5143,7 +5155,7 @@ async function updatedraft(req, res, next) {
                         } catch (e) {
                             console.error(e)
                             logger.error(`user ${userid} , quotationid : ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้าเอกสารสัญญาได้ (รูปภาพลายเซ็นต์หรือ PDPA) : ${e.message ? e.message : `no status`}`)
-                            return res.status(400).send({
+                            return res.status(200).send({
                                 status: 400,
                                 message: `ไม่สามารถอัพเดทข้อมูลหน้าเอกสารสัญญาได้ (รูปภาพลายเซ็นต์หรือ PDPA) : ${e.message ? e.message : `No message`}`
                             })
@@ -5191,7 +5203,7 @@ async function updatedraft(req, res, next) {
                         } catch (e) {
                             console.error(e)
                             logger.error(`user ${userid} , quotationid : ${quotationid} : ไม่สามารถอัพเดทข้อมูลหน้าเอกสารสัญญาได้ (PDPA only) : ${e.message ? e.message : `no status`}`)
-                            return res.status(400).send({
+                            return res.status(200).send({
                                 status: 400,
                                 message: `ไม่สามารถอัพเดทข้อมูลหน้าเอกสารสัญญาได้ (PDPA only) : ${e.message ? e.message : `No message`}`
                             })
@@ -5246,7 +5258,7 @@ async function updatedraft(req, res, next) {
                     }
                 } else {
                     logger.error(`user ${userid} , quotationid : ${quotationid} : Can't find record quotation id after select`)
-                    return res.status(400).send({
+                    return res.status(200).send({
                         status: 400,
                         message: `Can't find record quotation id after select`,
                         data: []

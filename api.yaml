@@ -1244,7 +1244,7 @@ paths:
       responses:
         "200":
           description: "success"
-        "500": 
+        "500":
           description: "fail"
         "408":
           description: "Request timed out"
@@ -1348,7 +1348,7 @@ paths:
         "500":
           description: "internal server Error"
 
-  /getcoverageTotalloss:
+  /getcoverageTotallossold:
     get:
       tags:
         - "master"
@@ -1369,6 +1369,61 @@ paths:
             type: number
             example: 123743
           description: p_max_ltv of Product
+
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No coverage total loss Found"
+        "500":
+          description: "internal server Error"
+
+  /getcoverageTotalloss:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a coverage total loss Object
+      parameters:
+        - in: query
+          name: insurance_code
+          schema:
+            type: string
+            example: "10001"
+          description: insurance_code of Product
+        - in: query
+          name: factory_price
+          schema:
+            type: number
+            example: 123743
+          description: factory price of Product
+        - in: query
+          name: bussi_code
+          schema:
+            type: string
+            example: '001'
+          description: Bussiness code
+        - in: query
+          name: brand_code
+          schema:
+            type: string
+            example: '01'
+          description: brand code of Product
+        - in: query
+          name: model_code
+          schema:
+            type: string
+            example: '01'
+          description: model code of product    
+        - in: query
+          name: dl_code
+          schema:
+            type: string
+            example: '20220002'
+          description: dealer code
+
 
       responses:
         "200":
@@ -1544,7 +1599,7 @@ paths:
           description: "internal server Error"
       deprecated: true
 
-  /getInsurance:
+  /getInsuranceold2:
     get:
       tags:
         - "master"
@@ -1559,6 +1614,53 @@ paths:
             type: string
             example: "95000"
           description: max_ltv of Product
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "No MasterImgae Found"
+        "500":
+          description: "internal server Error"
+
+  /getInsurance:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning a Object
+      parameters:
+        - in: query
+          name: factory_price
+          schema:
+            type: number
+            example: 30000
+          description: factory price of product
+        - in: query
+          name: bussi_code
+          schema:
+            type: string
+            example: "001"
+          description: bussiness code
+        - in: query
+          name: brand_code
+          schema:
+            type: string
+            example: "01"
+          description: brand code
+        - in: query
+          name: model_code
+          schema:
+            type: string
+            example: "001"
+          description: model code
+        - in: query
+          name: dl_code
+          schema:
+            type: string
+            example: "20220002"
+          description: dealer code
       responses:
         "200":
           description: "success"
@@ -2847,7 +2949,7 @@ paths:
         - bearerAuth: []
       summary: This return a single Object
       description: Get Server current time
-      parameters: 
+      parameters:
         - in: query
           name: quotationid
           required: true
@@ -2869,7 +2971,7 @@ paths:
         - bearerAuth: []
       summary: This return a single Object
       description: Get Server current time
-      parameters: 
+      parameters:
         - in: query
           name: quotationid
           required: true
@@ -2890,7 +2992,7 @@ paths:
           required: true
           schema:
             type: string
-            example: 'Y'
+            example: "Y"
       responses:
         "200":
           description: "success"
@@ -2927,7 +3029,6 @@ paths:
 
 components:
   requestBodies:
-
     MPLS_econsentverify:
       required: true
       content:
@@ -3163,41 +3264,40 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
-
     MPLS_econsentverify:
       type: object
       properties:
         quotationid:
           type: string
-          example: 'abc'
+          example: "abc"
         otp_value:
           type: string
-          example: '123456'
+          example: "123456"
         phone_no:
           type: string
-          example: '0952483338'
+          example: "0952483338"
 
     MPLS_create_or_update_credit:
       type: object
       properties:
         quotationid:
           type: string
-          example: '80bb232e-b92b-47e2-95d5-33fdeb7a5c18'
+          example: "80bb232e-b92b-47e2-95d5-33fdeb7a5c18"
         brand_code:
           type: string
-          example: '01'
+          example: "01"
         brand_name:
           type: string
-          example: 'Honda'
+          example: "Honda"
         model_code:
           type: string
-          example: '0022'
+          example: "0022"
         model_name:
           type: string
-          example: 'ACB125CBTL TH#CLICK125i'
+          example: "ACB125CBTL TH#CLICK125i"
         color_name:
           type: string
-          example: 'ดำ'
+          example: "ดำ"
         loan_amount:
           type: number
           example: 50000
@@ -3215,7 +3315,7 @@ components:
           example: 24
         insurance_code:
           type: string
-          example: '10001'
+          example: "10001"
         insurance_year:
           type: number
           example: 2
@@ -3230,13 +3330,13 @@ components:
           example: 51164
         size_model:
           type: string
-          example: '01'
+          example: "01"
         insurer_code:
           type: string
-          example: '0001'
+          example: "0001"
         insurer_name:
           type: string
-          example: 'บริษัท กรุงเทพประกันภัย จำกัด (มหาชน)'
+          example: "บริษัท กรุงเทพประกันภัย จำกัด (มหาชน)"
 
     smssendtest:
       type: object

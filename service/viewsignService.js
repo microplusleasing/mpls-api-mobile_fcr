@@ -92,6 +92,23 @@ async function verifyviewsignimage(req, res, next) {
 
         console.log(`this is quotationid : ${quotationid}`)
         console.log(`this is userid : ${userid}`)
+        
+
+        if (quotationid == '' || quotationid == null || quotationid == undefined || quotationid == 'quotationid') {
+            return res.status(400).send({
+                status: 400,
+                message: `mission parameter (quotationid)`,
+                data: []
+            })
+        }
+
+        if (userid == '' || userid == null || userid == undefined || userid == 'undefined') {
+            return res.status(400).send({
+                status: 400,
+                message: `mission parameter (userid)`,
+                data: []
+            })
+        }
 
         connection = await oracledb.getConnection(
             config.database

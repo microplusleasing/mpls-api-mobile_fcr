@@ -199,6 +199,8 @@ app.get('/testGetTime', testService.testTime)
 
 app.get('/getMaxLtv', auth, calculateService.getMaxLtv)
 
+app.get('/getcoverageTotallossold', auth, calculateService.getcoverageTotallossold)
+
 app.get('/getcoverageTotalloss', auth, calculateService.getcoverageTotalloss)
 
 app.get('/getInsuranceold', auth, masterService.getInsuranceold)
@@ -366,16 +368,16 @@ app.post('/compressimage', imageUtilService.compressimage)
 // process.env.PORT
 // process.env.API_PORT
 
-app.listen(process.env.API_PORT, () => {
-  // console.log(ip.address());
-  console.log(`UP & running on port ${process.env.API_PORT}`)
-})
-
-
-// app.listen(process.env.PORT, () => {
+// app.listen(process.env.API_PORT, () => {
 //   // console.log(ip.address());
-//   console.log(`UP & running on port ${process.env.PORT}`)
+//   console.log(`UP & running on port ${process.env.API_PORT}`)
 // })
+
+
+app.listen(process.env.PORT, () => {
+  // console.log(ip.address());
+  console.log(`UP & running on port ${process.env.PORT}`)
+})
 
 
 
