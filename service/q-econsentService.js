@@ -746,6 +746,7 @@ async function MPLS_create_or_update_citizendata(req, res, next) {
     // 3. สร้าง quotation โดยการ key ข้อมูลเอง (quotationid = '' and dipchip_uuid = '')
 
     // *** ไม่ได้รองรับการสร้างเคสผ่าน dipchip (ใช้ api MPLS_dipchip แทน) เช็คจาก (quotationid = '' and dipchip_uuid is not null) ***
+    // *** เพิ่มเงื่อนไขการเพิ่มข้อมูล postalCode จากบัตรประชาชนกรณีที่ไม่มีค่ารหัสไปรษณีย์เวลา dipchip (add-on) 20/02/2023 ***
 
     let connection;
     const token = req.user
@@ -883,7 +884,8 @@ async function MPLS_create_or_update_citizendata(req, res, next) {
                                 CIZ_HOUSE_TYPE = :CIZ_HOUSE_TYPE,
                                 CIZ_HOUSE_OWNER_TYPE = :CIZ_HOUSE_OWNER_TYPE,
                                 CIZ_STAYED_YEAR = :CIZ_STAYED_YEAR,
-                                CIZ_STAYED_MONTH = :CIZ_STAYED_MONTH
+                                CIZ_STAYED_MONTH = :CIZ_STAYED_MONTH,
+                                CIZ_POSTAL_CODE = :CIZ_POSTAL_CODE
                             WHERE
                                 QUO_KEY_APP_ID = :QUO_KEY_APP_ID
                                 AND DIPCHIP_UUID = :DIPCHIP_UUID       
@@ -898,6 +900,7 @@ async function MPLS_create_or_update_citizendata(req, res, next) {
                                 CIZ_HOUSE_OWNER_TYPE: reqData.house_owner_type,
                                 CIZ_STAYED_YEAR: reqData.stayed_year,
                                 CIZ_STAYED_MONTH: reqData.stayed_month,
+                                CIZ_POSTAL_CODE: reqData.postalCode,
                                 QUO_KEY_APP_ID: reqData.quotationid,
                                 DIPCHIP_UUID: dipchipid
                             }
@@ -2219,7 +2222,7 @@ async function MPLS_create_otp_econsent(req, res, next) {
 
         sdk.auth(process.env.SMS_API_KEY, process.env.SMS_API_SECRET)
 
-        const message = `OTP Code: ${otpnumber} (RefCode ${refid}) เพื่อยืนยันตัวตนขอสินเชื่อกับไมโครพลัสลิสซิ่ง (ภายใน 5 นาที)`
+        const message = `OTP Code: ${otpnumber} (RefCode ${refid}) เพื่อให้ความยินยอมในการเปิดเผยข้อมูลเครดิตบูโร (ภายใน 5 นาที)`
 
         responseSendsms = await sdk.post('/sms', {
             msisdn: phone_no,
@@ -4662,10 +4665,12 @@ async function MPLS_create_consent(req, res, next) {
             update_quotation = await connection.execute(`
                 UPDATE MPLS_QUOTATION 
                 SET QUO_STATUS = :QUO_STATUS, 
+                    E_PAPER = :E_PAPER, 
                     QUO_CONSENT_ID = :QUO_CONSENT_ID
                 WHERE QUO_KEY_APP_ID = :QUO_KEY_APP_ID
         `, {
                 QUO_STATUS: 0,
+                E_PAPER: reqData.e_paper_consent_value == 1 ? 'Y' : 'N',
                 QUO_CONSENT_ID: consentuuid,
                 QUO_KEY_APP_ID: reqData.quotationid
 
@@ -6069,7 +6074,9 @@ async function MPLS_canclequotation(req, res, next) {
                 // ==== update status to quotation for cancle quotation ====
                 // === ORACLE cancle (only case contain application_id (e-consent)) add-on (13/02/2023) ===
 
-                if (quoitem.application_no !== '' || quoitem.application_no !== null) {
+                console.log(`application_num : ${quoitem.APPLICATION_NUM}`)
+
+                if (quoitem.APPLICATION_NUM) {
 
                     // === call function from oracle here ====
                     const updateOracleStatus = await connection.execute(`
