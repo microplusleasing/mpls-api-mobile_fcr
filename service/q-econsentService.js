@@ -43,6 +43,12 @@ async function MPLS_dipchip(req, res, next) {
         // === Get data on multipart/form-data ===  
         let fileData
         let formData
+
+        const token = req.user
+        const userid = token.ID
+        const channalstamp = token.channal === 'checker' ? 'C' : token.channal === 'dealer' ? 'S' : '';
+
+
         // const form = formidable({ multiples: true })
         const form = new multiparty.Form()
         await new Promise(function (resolve, reject) {
@@ -253,7 +259,7 @@ async function MPLS_dipchip(req, res, next) {
                 CIZ_PROVINCE_CODE: reqData.provinceCode,
                 CIZ_POSTAL_CODE: reqData.postalCode,
                 QUO_APP_REF_NO: otprefid,
-                CHANNAL_TYPE: 'C',
+                CHANNAL_TYPE: channalstamp,
                 CIZ_AGE: reqData.age ?? null,
                 IS_DIPCHIP_CHANNAL: 'Y',
                 QUO_DOPA_STATUS: 'Y',
@@ -423,6 +429,7 @@ async function MPLS_dipchipnoneconsent(req, res, next) {
     let connection;
     const token = req.user
     const userid = token.ID
+    const channalstamp = token.channal === 'checker' ? 'C' : token.channal === 'dealer' ? 'S' : '';
 
     const logger = log4js.getLogger("create");
     try {
@@ -572,7 +579,7 @@ async function MPLS_dipchipnoneconsent(req, res, next) {
                 CIZ_PROVINCE_CODE: reqData.provinceCode,
                 CIZ_POSTAL_CODE: reqData.postalCode,
                 QUO_APP_REF_NO: otprefid,
-                CHANNAL_TYPE: 'C',
+                CHANNAL_TYPE: channalstamp,
                 CIZ_AGE: reqData.age ?? null,
                 POLICY_AGE: (reqData.age && reqData.age < 20) ? 'N' : 'Y',
                 IS_DIPCHIP_CHANNAL: 'Y',
@@ -753,6 +760,7 @@ async function MPLS_create_or_update_citizendata(req, res, next) {
     const userid = token.ID
     // const username = token.username
     const radmin = token.radmin
+    const channalstamp = token.channal === 'checker' ? 'C' : token.channal === 'dealer' ? 'S' : '';
 
     const logger = log4js.getLogger("create");
     try {
@@ -963,7 +971,7 @@ async function MPLS_create_or_update_citizendata(req, res, next) {
                                 CIZ_PROVINCE_NAME: reqData.provinceName,
                                 CIZ_PROVINCE_CODE: reqData.provinceCode,
                                 CIZ_POSTAL_CODE: reqData.postalCode,
-                                CHANNAL_TYPE: 'C',
+                                CHANNAL_TYPE: channalstamp,
                                 CIZ_AGE: reqData.age ?? null,
                                 POLICY_AGE: (reqData.age && reqData.age < 20) ? 'N' : 'Y',
                                 EMAIL: reqData.email,
