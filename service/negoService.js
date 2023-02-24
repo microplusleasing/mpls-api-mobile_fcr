@@ -646,7 +646,8 @@ async function getnegotiationbyid(req, res, next) {
                 coll_info_monthly_view.ROLLBACK_CALL,
                 CUST_INFO.IDCARD_NUM,
                 x_cust_mapping_ext.CREATE_CONTRACT_DATE,
-                x_cust_mapping_ext.REF_PAY_NUM
+                x_cust_mapping_ext.REF_PAY_NUM,
+                cust_info.BIRTH_DATE
         FROM coll_info_monthly_view,
                 black1,
                 title_p,
