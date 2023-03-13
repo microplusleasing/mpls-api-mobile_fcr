@@ -688,8 +688,8 @@ async function getnegotiationbyid(req, res, next) {
         // })
 
         if (resultnego.rows.length == 0) {
-            return res.status(404).send({
-                status: 404,
+            return res.status(200).send({
+                status: 400,
                 message: `ไม่เจอรายการสัญญาที่เลือก`,
                 data: []
             })
@@ -711,7 +711,7 @@ async function getnegotiationbyid(req, res, next) {
 
     } catch (e) {
         console.error(e)
-        return res.status(400).send({
+        return res.status(200).send({
             status: 400,
             message: `error with message : ${e.message}`
         })
@@ -727,7 +727,7 @@ async function getnegotiationbyid(req, res, next) {
     }
 }
 
-async function getmotocycle(req, res, next) {
+async function getmotocyclenego(req, res, next) {
     let connection;
     try {
 
@@ -856,7 +856,7 @@ async function getmotocycle(req, res, next) {
 
         if (resultmotorcycle.rows.length == 0) {
             return res.status(200).send({
-                status: 404,
+                status: 200,
                 message: `ไม่เจอรายการรุ่นรถตามเลขสัญญา`,
                 data: []
             })
@@ -1036,7 +1036,7 @@ async function gethistorypaymentlist(req, res, next) {
 
         if (resultCountHistory.rows[0].COUNT == 0) {
             return res.status(200).send({
-                status: 404,
+                status: 200,
                 message: 'ไม่พบประวัติการชำระเงิน',
                 data: []
             })
@@ -1049,6 +1049,9 @@ async function gethistorypaymentlist(req, res, next) {
                 SELECT * FROM (
                     SELECT COLL_RECIEPT.HP_NO,TRUNC(COLL_RECIEPT.RECIEPT_D)RECIEPT_D,
                             COLL_RECIEPT.INST_NO,COLL_RECIEPT.inst_due, COLL_RECIEPT.cash,COLL_RECIEPT.out_stand,COLL_PAYMENT_P.PAY_NAME,
+                            COLL_RECIEPT.PAY_CODE, 
+                            COLL_RECIEPT.INST_NO AS ROUND_PAYMENT, 
+                            BTW.PKG_MONTH_END.GET_OUTSTAND_BALANCE('N',:applicationid,to_char(sysdate,'dd/mm/yyyy'),null,'BTW.') AS OUT_STAND_MAIN,
                             ROW_NUMBER() OVER (ORDER BY RECIEPT_D DESC) LINE_NUMBER 
                             FROM COLL_RECIEPT,COLL_PAYMENT_P 
                             WHERE COLL_RECIEPT.pay_code = COLL_PAYMENT_P.pay_code 
@@ -1066,8 +1069,8 @@ async function gethistorypaymentlist(req, res, next) {
 
 
                 if (resulstHistoryList.rows.length == 0) {
-                    return res.stauts(404).send({
-                        status: 404,
+                    return res.stauts(200).send({
+                        status: 200,
                         message: `ไม่พบประวัติการชำระเงินของสัญญานี้`
                     })
                 } else {
@@ -1096,7 +1099,7 @@ async function gethistorypaymentlist(req, res, next) {
 
             } catch (e) {
                 console.error(e)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `การเรียกดูประวัติการชำระเงินผิดพลาด : ${e.message}`
                 })
@@ -1105,7 +1108,7 @@ async function gethistorypaymentlist(req, res, next) {
 
     } catch (e) {
         console.error(e)
-        return res.status(400).send({
+        return res.status(200).send({
             status: 400,
             message: `การเรียกดูประวัติการชำระเงินผิดพลาด (count error): ${e.message}`
         })
@@ -1162,7 +1165,7 @@ async function getaddresscustlist(req, res, next) {
 
         if (resultCountdata.rows[0].COUNT == 0) {
             return res.status(200).send({
-                status: 404,
+                status: 200,
                 message: 'ไม่พบรายการที่อยู่ภายใต้สัญญา',
                 data: []
             })
@@ -1204,8 +1207,8 @@ async function getaddresscustlist(req, res, next) {
                 })
 
                 if (resultAddressList.rows.length == 0) {
-                    return res.status(404).send({
-                        status: 404,
+                    return res.status(200).send({
+                        status: 200,
                         message: `ไม่พบรายการที่อยู่ตามเลขที่สัญญา`,
                         data: []
                     })
@@ -1233,7 +1236,7 @@ async function getaddresscustlist(req, res, next) {
 
             } catch (e) {
                 console.error(e)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `เกิดข้อผิดพลาดในการหาที่อยู่ตามเลขสัญญา : ${e.message}`
                 })
@@ -1242,7 +1245,7 @@ async function getaddresscustlist(req, res, next) {
 
     } catch (e) {
         console.error(e)
-        return res.status(400).send({
+        return res.status(200).send({
             status: 400,
             message: `ไม่สามารถหาข้อมูลที่อยู่ที่ผูกกับสัญญาได้ (Count not found) : ${e.message}`
         })
@@ -1289,7 +1292,7 @@ async function getaddressncblist(req, res, next) {
 
         if (resultCountncblivingdata.rows[0].COUNT == 0) {
             return res.status(200).send({
-                status: 404,
+                status: 200,
                 message: 'ไม่พบรายการที่อยู่จากการสืบค้น NCB',
                 data: []
             })
@@ -1325,8 +1328,8 @@ async function getaddressncblist(req, res, next) {
                 })
 
                 if (resultAddressNCBList.rows.length == 0) {
-                    return res.status(404).send({
-                        status: 404,
+                    return res.status(200).send({
+                        status: 200,
                         message: `ไม่พบรายการที่อยู่จากการสืบค้น NCB`,
                         data: []
                     })
@@ -1354,7 +1357,7 @@ async function getaddressncblist(req, res, next) {
 
             } catch (e) {
                 console.error(e)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `เกิดข้อผิดพลาดในการหาที่อยู่ตามเลขสัญญา : ${e.message}`
                 })
@@ -1363,7 +1366,7 @@ async function getaddressncblist(req, res, next) {
 
     } catch (e) {
         console.error(e)
-        return res.status(400).send({
+        return res.status(200).send({
             status: 400,
             message: `ไม่สามารถหาข้อมูลที่อยู่ที่ผูกกับสัญญาได้ (Count not found) : ${e.message}`
         })
@@ -1453,7 +1456,7 @@ async function getphonenolist(req, res, next) {
 
         if (resultCountphone.rows[0].COUNT == 0) {
             return res.status(200).send({
-                status: 404,
+                status: 200,
                 message: 'ไม่พบรายการเบอร์โทรของลูกค้า',
                 data: []
             })
@@ -1521,8 +1524,8 @@ async function getphonenolist(req, res, next) {
                 })
 
                 if (resultphoneList.rows.length == 0) {
-                    return res.status(404).send({
-                        status: 404,
+                    return res.status(200).send({
+                        status: 200,
                         message: `ไม่พบรายการเบอร์โทรของลูกค้า`,
                         data: []
                     })
@@ -1550,7 +1553,7 @@ async function getphonenolist(req, res, next) {
 
             } catch (e) {
                 console.error(e)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `เกิดข้อผิดพลาดในการหาเบอร์โทรของลูกค้า : ${e.message}`
                 })
@@ -1559,7 +1562,7 @@ async function getphonenolist(req, res, next) {
 
     } catch (e) {
         console.error(e)
-        return res.status(400).send({
+        return res.status(200).send({
             status: 400,
             message: `ไม่สามารถหาเบอร์โทรของลูกค้าได้ (Count not found) : ${e.message}`
         })
@@ -1608,7 +1611,7 @@ async function getphonenolistcust(req, res, next) {
 
         if (resultCountphone.rows[0].COUNT == 0) {
             return res.status(200).send({
-                status: 404,
+                status: 200,
                 message: 'ไม่พบรายการเบอร์โทรของลูกค้า',
                 data: []
             })
@@ -1639,8 +1642,8 @@ async function getphonenolistcust(req, res, next) {
                 })
 
                 if (resultphoneList.rows.length == 0) {
-                    return res.status(404).send({
-                        status: 404,
+                    return res.status(200).send({
+                        status: 200,
                         message: `ไม่พบรายการเบอร์โทรของลูกค้า`,
                         data: []
                     })
@@ -1668,7 +1671,7 @@ async function getphonenolistcust(req, res, next) {
 
             } catch (e) {
                 console.error(e)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `เกิดข้อผิดพลาดในการหาเบอร์โทรของลูกค้า : ${e.message}`
                 })
@@ -1677,7 +1680,7 @@ async function getphonenolistcust(req, res, next) {
 
     } catch (e) {
         console.error(e)
-        return res.status(400).send({
+        return res.status(200).send({
             status: 400,
             message: `ไม่สามารถหาเบอร์โทรของลูกค้าได้ (Count not found) : ${e.message}`
         })
@@ -1845,7 +1848,7 @@ async function getfollowuppaymentlist(req, res, next) {
 
         if (resultCountfollow.rows[0].COUNT == 0) {
             return res.status(200).send({
-                status: 404,
+                status: 200,
                 message: 'ไม่พบรายการติดตามที่อยู่ภายใต้สัญญา',
                 data: []
             })
@@ -1883,8 +1886,8 @@ async function getfollowuppaymentlist(req, res, next) {
                 })
 
                 if (resultFollowupList.rows.length == 0) {
-                    return res.status(404).send({
-                        status: 404,
+                    return res.status(200).send({
+                        status: 200,
                         message: `ไม่พบรายการที่อยู่ตามเลขที่สัญญา`,
                         data: []
                     })
@@ -1912,7 +1915,7 @@ async function getfollowuppaymentlist(req, res, next) {
 
             } catch (e) {
                 console.error(e)
-                return res.status(400).send({
+                return res.status(200).send({
                     status: 400,
                     message: `เกิดข้อผิดพลาดในการหาประวัติการติดตามตามเลขสัญญา : ${e.message}`
                 })
@@ -1921,7 +1924,7 @@ async function getfollowuppaymentlist(req, res, next) {
 
     } catch (e) {
         console.error(e)
-        return res.status(400).send({
+        return res.status(200).send({
             status: 400,
             message: `ไม่สามารถหาประวัติการติดตามที่ผูกกับสัญญาได้ (Count not found) : ${e.message}`
         })
@@ -1958,8 +1961,11 @@ async function insertnegolist(req, res, next) {
 
         // ==== build fix param =====
         let appoint_date_dtype;
+        console.log(`appoint_date : ${appoint_date}`)
         if (appoint_date) {
-            appoint_date_dtype = moment(appoint_date, 'YYYY-MM-DD').format('LL')
+            // appoint_date_dtype = moment(appoint_date, 'YYYY-MM-DD').format('LL')
+            appoint_date_dtype = moment(appoint_date, 'DD/MM/YYYY').format('LL')
+            console.log(`apd type : ${appoint_date_dtype}`)
         }
         const currentDate = moment()
         const branch_code = '10'
@@ -2012,7 +2018,7 @@ async function insertnegolist(req, res, next) {
 
             if (appoint_date_dtype) {
                 appointmentquerynego1 = `, APPOINT_DATE `
-                appointmentquerynego2 = `, :appoint_date `
+                appointmentquerynego2 = `, BTW.BUDDHIST_TO_CHRIS_F(:appoint_date) `
                 bindparamnego.appoint_date = (new Date(appoint_date_dtype)) ?? null
             }
 
@@ -2232,7 +2238,7 @@ async function getaddressinfo(req, res, next) {
 
         if (resultAddressinfo.rows.length == 0) {
             return res.status(200).send({
-                status: 404,
+                status: 200,
                 message: `ไม่พบรายการ address info (not found record)`,
                 data: []
             })
@@ -2250,9 +2256,194 @@ async function getaddressinfo(req, res, next) {
     } catch (e) {
 
         console.error(e)
-        return res.status(400).send({
+        return res.status(200).send({
             status: 400,
             message: `เกิดข้อผิดพลาดในการหาค่า latitude, longtitude ในระบบ : ${e.message}`
+        })
+    } finally {
+
+        if (connection) {
+            try {
+                await connection.close()
+            } catch (e) {
+                console.error(e)
+                return next(e)
+            }
+        }
+    }
+}
+
+async function createaddressInfo(req, res, next) {
+    let connection;
+    try {
+
+        const reqData = req.body
+
+        // === check all query require ===
+        if (
+            !(reqData.applicationid &&
+            reqData.address &&
+            reqData.sub_district &&
+            reqData.district &&
+            reqData.province_name &&
+            reqData.province_code &&
+            reqData.postal_code &&
+            reqData.la &&
+            reqData.lon &&
+            reqData.lalon)
+        ) {
+            return res.status(200).send({
+                status: 500,
+                message: `mission parameter `,
+                data: []
+            })
+        }
+
+        // --- connect db ---
+        connection = await oracledb.getConnection(config.database)
+        // === check recent mpls_living_place key on mpls_quotation === 
+        const getkeyliving = await connection.execute(`
+            SELECT QUO_KEY_APP_ID, QUO_LIVING_PLACE_ID FROM MPLS_QUOTATION
+            WHERE CONTRACT_NO = :APPLICATIONID
+        `, {
+            APPLICATIONID: reqData.applicationid
+        }, { outFormat: oracledb.OBJECT})
+
+        console.log(`rows Data : ${JSON.stringify(getkeyliving.rows)}`)
+
+        if (getkeyliving.rows.length == 0) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่มีรายการในระบบ MOBILEMPLS`,
+                data: []
+            })
+        }
+
+        const recentlivingid = getkeyliving.rows[0].QUO_LIVING_PLACE_ID
+
+        if (recentlivingid) {
+            return res.status(200).send({
+                status: 500,
+                message: `มีรายการที่อยู่ปัจจุบันอยู่แล้ว (QUO_LIVING_PLACE_ID)`,
+                data: []
+            })
+        }
+
+        const quotationid = getkeyliving.rows[0].QUO_KEY_APP_ID
+
+        console.log(`this is quotationid : ${quotationid}`)
+        if (!quotationid) {
+            return res.status(200).send({
+                statsu: 500,
+                message: `ไม่พบ quotationid ของรายการ ไม่สามารถเพิ่มที่อยู่ได้`,
+                data: []
+            })
+        }
+
+        // === gen uuid for mpls_living_place ====
+        const livinguuid = uuidv4()
+
+        // === create mpls_living_place and update mpls_quotation ====
+        try {
+            // === create mpls_living_place ====
+            const createlivingplace = await connection.execute(`
+            INSERT INTO MPLS_LIVING_PLACE (
+                LIV_QUO_KEY_APP_ID, 
+                APP_KEY_ID, 
+                ADDRESS, 
+                SUB_DISTRICT, 
+                DISTRICT, 
+                PROVINCE_NAME, 
+                PROVINCE_CODE, 
+                POSTAL_CODE, 
+                LATITUDE, 
+                LONDTIUDE, 
+                LALON
+            )
+            VALUES (
+                :LIV_QUO_KEY_APP_ID, 
+                :APP_KEY_ID, 
+                :ADDRESS, 
+                :SUB_DISTRICT, 
+                :DISTRICT, 
+                :PROVINCE_NAME, 
+                :PROVINCE_CODE, 
+                :POSTAL_CODE, 
+                :LATITUDE, 
+                :LONDTIUDE, 
+                :LALON
+            )`, {
+                LIV_QUO_KEY_APP_ID: quotationid,
+                APP_KEY_ID: livinguuid,
+                ADDRESS: reqData.address,
+                SUB_DISTRICT: reqData.sub_district,
+                DISTRICT: reqData.district,
+                PROVINCE_NAME: reqData.province_name,
+                PROVINCE_CODE: reqData.province_code,
+                POSTAL_CODE: reqData.postal_code,
+                LATITUDE: reqData.la,
+                LONDTIUDE: reqData.lon,
+                LALON: reqData.lalon
+
+            },{ outFormat: oracledb.OBJECT})
+
+            const updatequotation = await connection.execute(`
+                UPDATE MPLS_QUOTATION 
+                SET
+                    QUO_LIVING_PLACE_ID = :QUO_LIVING_PLACE_ID
+                WHERE 
+                    QUO_KEY_APP_ID = :QUOTATIONID
+            `, {
+                QUO_LIVING_PLACE_ID: livinguuid,
+                QUOTATIONID: quotationid
+            },{ outFormat: oracledb.OBJECT})
+
+            if (createlivingplace.rowsAffected !== 1 && updatequotation.rowsAffected !== 1) {
+                return res.status(200).send({
+                    status: 500,
+                    message: `ไม่สามารถเพิ่มที่อยู่ปัจจุบันได้ (updatequotation: ${updatequotation.rowsAffected} , createlivingplace: ${createlivingplace.rowsAffected})`
+                })
+            }
+
+            // ==== success update and create ====
+            const commitall = await connection.commit();
+
+            try {
+                commitall
+            } catch (e) {
+                console.err(e.message)
+                return res.status(200).send({
+                    status: 500,
+                    message: `Eror : ${e.message}`,
+                    data: []
+                })
+            }
+
+            // === return success message ====
+
+            return res.status(200).send({
+                status: 200,
+                message: `success add living place`,
+                data: []
+            })
+
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 500,
+                message: `Error during create living place : ${e.message ? e.message : 'No return message'}`
+            })
+        }
+
+
+
+
+    } catch (e) {
+
+        console.error(e)
+        return res.status(200).send({
+            status: 500,
+            message: `Error Create addressinfo : ${e.message}`
         })
     } finally {
 
@@ -2281,7 +2472,7 @@ async function updatenegolalon(req, res, next) {
         const resultquotation = await connection.execute(`
         select mplsq.quo_key_app_id as quotationid
             from mpls_quotation mplsq
-            where mplsq.application_num = :applicationid
+            where mplsq.contract_no = :applicationid
         `, {
             applicationid: applicationid
         }, {
@@ -2399,7 +2590,7 @@ async function genqrcodenego(req, res, next) {
         // }
 
         if (!contract_no) {
-            return res.status(400).send({
+            return res.status(200).send({
                 status: 200,
                 message: `missing contract_no`,
                 data: []
@@ -2492,6 +2683,7 @@ module.exports.getphonenolist = getphonenolist
 module.exports.getphonenolistcust = getphonenolistcust
 module.exports.getlalon = getlalon
 module.exports.getaddressinfo = getaddressinfo
-module.exports.getmotocycle = getmotocycle
+module.exports.getmotocyclenego = getmotocyclenego
 module.exports.genqrcodenego = genqrcodenego
 module.exports.updatenegolalon = updatenegolalon
+module.exports.createaddressInfo = createaddressInfo

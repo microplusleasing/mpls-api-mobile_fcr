@@ -511,7 +511,7 @@ async function getDealer(req, res, next) {
     }
 }
 
-async function getProvince(req, res, next) {
+async function getMasterProvince(req, res, next) {
     let connection;
     oracledb.fetchAsString = []
 
@@ -529,9 +529,9 @@ async function getProvince(req, res, next) {
             })
 
         if (results.rows.length == 0) {
-            return res.status(201).send({
-                status: 201,
-                message: 'No TITLE Found',
+            return res.status(200).send({
+                status: 200,
+                message: 'No master province Found',
                 data: []
             })
         } else {
@@ -1502,7 +1502,7 @@ module.exports.getImageTypeAttach = getImageTypeAttach
 module.exports.getTitle = getTitle
 module.exports.getTitletimeout = getTitletimeout
 module.exports.getDealer = getDealer
-module.exports.getProvince = getProvince
+module.exports.getMasterProvince = getMasterProvince
 module.exports.getInsuranceold = getInsuranceold
 module.exports.getInsuranceold2 = getInsuranceold2
 module.exports.getInsurance = getInsurance

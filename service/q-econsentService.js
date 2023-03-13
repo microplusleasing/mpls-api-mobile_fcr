@@ -3467,7 +3467,9 @@ async function MPLS_create_or_update_careerandpurpose(req, res, next) {
                                 MAIN_SALARY_PER_MONTH = :MAIN_SALARY_PER_MONTH,
                                 MAIN_SALARY_PER_DAY = :MAIN_SALARY_PER_DAY,
                                 MAIN_LEADER_NAME = :MAIN_LEADER_NAME,
-                                MAIN_WORK_PER_WEEK = :MAIN_WORK_PER_WEEK,
+                                MAIN_WORK_PER_WEEK = :MAIN_WORK_PER_WEEK, 
+                                MAIN_WORKPLACE_PHONE_NO_1 = :MAIN_WORKPLACE_PHONE_NO_1, 
+                                MAIN_WORKPLACE_PHONE_NO_2 = :MAIN_WORKPLACE_PHONE_NO_2, 
                                 IS_SUB_CAREER = :IS_SUB_CAREER,
                                 SUB_CAREER_NAME = :SUB_CAREER_NAME,
                                 SUB_CAREER_CODE = :SUB_CAREER_CODE,
@@ -3495,6 +3497,8 @@ async function MPLS_create_or_update_careerandpurpose(req, res, next) {
                     MAIN_SALARY_PER_DAY: reqData.main_salary_per_day,
                     MAIN_LEADER_NAME: reqData.main_leader_name,
                     MAIN_WORK_PER_WEEK: reqData.main_work_per_week,
+                    MAIN_WORKPLACE_PHONE_NO_1: reqData.main_workplace_phone_no_1,
+                    MAIN_WORKPLACE_PHONE_NO_2: reqData.main_workplace_phone_no_2,
                     IS_SUB_CAREER: reqData.is_sub_career,
                     SUB_CAREER_NAME: reqData.sub_career_name,
                     SUB_CAREER_CODE: reqData.sub_career_code,
@@ -3621,12 +3625,12 @@ async function MPLS_create_or_update_careerandpurpose(req, res, next) {
                     CARE_QUO_APP_KEY_ID, APP_KEY_ID, MAIN_CAREER_NAME, MAIN_CAREER_CODE, MAIN_WORKPLACE_NAME, 
                     MAIN_POSITION, MAIN_DEPARTMENT,
                     MAIN_EXPERIENCE_YEAR, MAIN_EXPERIENCE_MONTH, MAIN_SALARY_PER_MONTH, MAIN_SALARY_PER_DAY,
-                    MAIN_LEADER_NAME, MAIN_WORK_PER_WEEK, IS_SUB_CAREER, SUB_CAREER_NAME, SUB_CAREER_CODE,
+                    MAIN_LEADER_NAME, MAIN_WORK_PER_WEEK, MAIN_WORKPLACE_PHONE_NO_1, MAIN_WORKPLACE_PHONE_NO_2, IS_SUB_CAREER, SUB_CAREER_NAME, SUB_CAREER_CODE,
                     SUB_WORKPLACE_NAME, SUB_POSITION, SUB_DEPARTMENT,SUB_EXPERIENCE_YEAR, SUB_EXPERIENCE_MONTH,
                     SUB_SALARY_PER_MONTH, SUB_SALARY_PER_DAY, SUB_LEADER_NAME, SUB_WORK_PER_WEEK)
                 VALUES (:CARE_QUO_APP_KEY_ID, :APP_KEY_ID, :MAIN_CAREER_NAME, :MAIN_CAREER_CODE, :MAIN_WORKPLACE_NAME, :MAIN_POSITION, :MAIN_DEPARTMENT,
-                    :MAIN_EXPERIENCE_YEAR, :MAIN_EXPERIENCE_MONTH, :MAIN_SALARY_PER_MONTH, :MAIN_SALARY_PER_DAY,
-                    :MAIN_LEADER_NAME, :MAIN_WORK_PER_WEEK, :IS_SUB_CAREER, :SUB_CAREER_NAME, :SUB_CAREER_CODE, 
+                    :MAIN_EXPERIENCE_YEAR, :MAIN_EXPERIENCE_MONTH,  :MAIN_SALARY_PER_MONTH, :MAIN_SALARY_PER_DAY,
+                    :MAIN_LEADER_NAME, :MAIN_WORK_PER_WEEK, MAIN_WORKPLACE_PHONE_NO_1, MAIN_WORKPLACE_PHONE_NO_2, :IS_SUB_CAREER, :SUB_CAREER_NAME, :SUB_CAREER_CODE, 
                     :SUB_WORKPLACE_NAME, :SUB_POSITION, :SUB_DEPARTMENT, :SUB_EXPERIENCE_YEAR, :SUB_EXPERIENCE_MONTH, 
                     :SUB_SALARY_PER_MONTH, :SUB_SALARY_PER_DAY, :SUB_LEADER_NAME, :SUB_WORK_PER_WEEK)
             `, {
@@ -3643,6 +3647,8 @@ async function MPLS_create_or_update_careerandpurpose(req, res, next) {
                     MAIN_SALARY_PER_DAY: reqData.main_salary_per_day,
                     MAIN_LEADER_NAME: reqData.main_leader_name,
                     MAIN_WORK_PER_WEEK: reqData.main_work_per_week,
+                    MAIN_WORKPLACE_PHONE_NO_1: reqData.main_workplace_phone_no_1,
+                    MAIN_WORKPLACE_PHONE_NO_2: reqData.main_workplace_phone_no_2,
                     IS_SUB_CAREER: reqData.is_sub_career,
                     SUB_CAREER_NAME: reqData.sub_career_name,
                     SUB_CAREER_CODE: reqData.sub_career_code,
@@ -5626,7 +5632,7 @@ async function MPLS_upload_customer_face(req, res, next) {
         console.error(e)
         return res.status(200).send({
             status: 500,
-            message: `Fail to upload customer face : ${e.message ? e.message : 'No message return'}`,
+            message: `Fail to create face verify log : ${e.message ? e.message : 'No message return'}`,
             data: []
         })
     } finally {
@@ -5910,6 +5916,135 @@ async function MPLS_stamp_check_face_valid(req, res, next) {
                 return res.status(200).send({
                     status: 500,
                     message: `Fail during close connection (oracledb) : ${e.message ? e.message : 'No return message'}`,
+                    data: []
+                })
+            }
+        }
+    }
+}
+
+async function MPLS_stamp_face_verification_log_iapp(req, res, next) {
+    let connection;
+    try {
+        let formData;
+
+        const form = new multiparty.Form()
+        await new Promise(function (resolve, reject) {
+            form.parse(req, (err, fields, files) => {
+                if (err) {
+                    reject(err)
+                    return
+                }
+                formData = fields
+                fileData = files
+                resolve()
+            })
+            return
+        })
+
+        const reqData = JSON.parse(formData.items)
+
+        // *** check require params ***
+        if (!(reqData.quotationid)) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing param quotationid`,
+                data: []
+            })
+        }
+
+        // *** connect database sql oracle ***
+        connection = await oracledb.getConnection(config.database)
+
+        // *** check quotaionid record is exits **** 
+        const checkquo = await connection.execute(`
+            SELECT QUO_KEY_APP_ID FROM MPLS_QUOTATION
+            WHERE QUO_KEY_APP_ID = :QUO_KEY_APP_ID
+        `, {
+            QUO_KEY_APP_ID: reqData.quotationid
+        }, { outFormat: oracledb.OBJECT })
+
+        if (checkquo.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: `ไม่สามารถระบุเลข quotationid ได้`,
+                data: []
+            })
+        }
+
+        // *** stamp log data into MPLS_IAPP_FACE_VERIFY_LOG ***
+        const createlog = await connection.execute(`
+            INSERT INTO MPLS_IAPP_FACE_VERIFY_LOG 
+                (
+                    QUOTATION_ID,
+                    DURATION,
+                    MATCHED,
+                    MESSAGE,
+                    SCORE,
+                    THRESHOLD
+                )
+                VALUES 
+                (
+                    :QUOTATION_ID,
+                    :DURATION,
+                    :MATCHED,
+                    :MESSAGE,
+                    :SCORE,
+                    :THRESHOLD
+                )
+        `, {
+            QUOTATION_ID: reqData.quotationid,
+            DURATION: reqData.duration,
+            MATCHED: reqData.matched ? 1 : 0,
+            MESSAGE: reqData.message,
+            SCORE: reqData.score,
+            THRESHOLD: reqData.threshold
+        }, { outFormat: oracledb.OBJECT })
+
+        // *** check create success *** 
+
+        if (createlog.rowsAffected == 1) {
+
+            // *** successs insert MPLS_IAPP_FACE_VERIFY_LOG ****
+
+            const commitall = await connection.commit();
+
+            try {
+                commitall
+            } catch (e) {
+                console.err(e.message)
+                res.send(500).send(e.message)
+            }
+
+            return res.status(200).send({
+                status: 200,
+                message: `บันทึกรายการ MPLS_IAPP_FACE_VERIFY_LOG สำเร็จ`,
+                data: []
+            })
+        } else {
+            return res.satus(200).send({
+                status: 400,
+                message: `ไม่สามารถบันทึก log ได้ (Insert into MPLS_IAPP_FACE_VERIFY_LOG fail)`,
+                data: []
+            })
+        }
+
+    } catch (e) {
+        console.error(e)
+        return res.status(200).send({
+            status: 500,
+            message: `Fail to upload customer face : ${e.message ? e.message : 'No message return'}`,
+            data: []
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 500,
+                    message: `Fail during close oracledb : ${e.message ? e.message : 'No message return'}`,
                     data: []
                 })
             }
@@ -6237,6 +6372,7 @@ module.exports.MPLS_upload_customer_face = MPLS_upload_customer_face
 module.exports.MPLS_is_check_face_valid = MPLS_is_check_face_valid
 module.exports.MPLS_is_check_face_valid_unlock = MPLS_is_check_face_valid_unlock
 module.exports.MPLS_stamp_check_face_valid = MPLS_stamp_check_face_valid
+module.exports.MPLS_stamp_face_verification_log_iapp = MPLS_stamp_face_verification_log_iapp
 module.exports.MPLS_get_dopa_valid_status = MPLS_get_dopa_valid_status
 module.exports.MPLS_get_dopa_valid_status_unlock = MPLS_get_dopa_valid_status_unlock
 

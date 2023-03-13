@@ -87,7 +87,7 @@ app.get('/MasterTitle', auth, masterService.getTitle)
 
 app.get('/MasterDealer', auth, masterService.getDealer)
 
-app.get('/MasterProvince', auth, masterService.getProvince)
+app.get('/getMasterProvince', auth, masterService.getMasterProvince)
 
 app.get('/testGetTime', testService.testTime)
 
@@ -141,7 +141,7 @@ app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth , negoService.getnegotiationbyid)
 
-app.get('/getmotocycle', auth , negoService.getmotocycle)
+app.get('/getmotocyclenego', auth , negoService.getmotocyclenego)
 
 app.get('/gethistorypaymentlist', auth , negoService.gethistorypaymentlist)
 

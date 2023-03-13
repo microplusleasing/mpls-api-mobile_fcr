@@ -137,6 +137,8 @@ app.get('/MPLS_is_check_face_valid_unlock', qeconsentService.MPLS_is_check_face_
 
 app.post('/MPLS_stamp_check_face_valid', auth, qeconsentService.MPLS_stamp_check_face_valid)
 
+app.post('/MPLS_stamp_face_verification_log_iapp', auth, qeconsentService.MPLS_stamp_face_verification_log_iapp)
+
 app.get('/MPLS_get_dopa_valid_status', auth, qeconsentService.MPLS_get_dopa_valid_status)
 
 app.get('/MPLS_get_dopa_valid_status_unlock', qeconsentService.MPLS_get_dopa_valid_status_unlock)
@@ -193,7 +195,7 @@ app.get('/getTitletimeout', auth, masterService.getTitletimeout)
 
 app.get('/MasterDealer', auth, masterService.getDealer)
 
-app.get('/MasterProvince', auth, masterService.getProvince)
+app.get('/getMasterProvince', auth, masterService.getMasterProvince)
 
 app.get('/testGetTime', testService.testTime)
 
@@ -273,7 +275,7 @@ app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
 
-app.get('/getmotocycle', auth, negoService.getmotocycle)
+app.get('/getmotocyclenego', auth, negoService.getmotocyclenego)
 
 app.get('/gethistorypaymentlist', auth, negoService.gethistorypaymentlist)
 
@@ -296,6 +298,8 @@ app.get('/getphonenolist', auth, negoService.getphonenolist)
 app.get('/getphonenolistcust', auth, negoService.getphonenolistcust)
 
 app.post('/insertnegolist', auth, negoService.insertnegolist)
+
+app.post('/createaddressInfo', auth, negoService.createaddressInfo)
 
 app.get('/getbranch', auth, masterService.getbranch)
 
@@ -368,17 +372,17 @@ app.post('/compressimage', imageUtilService.compressimage)
 // process.env.PORT
 // process.env.API_PORT
 
-app.listen(process.env.API_PORT, () => {
-  // console.log(ip.address());
-  console.log(`UP & running on port ${process.env.API_PORT}`)
-})
-
-
-// app.listen(process.env.PORT, () => {
+// app.listen(process.env.API_PORT, () => {
 //   // console.log(ip.address());
-//   console.log(`UP & running on port ${process.env.PORT}`)
+//   console.log(`UP & running on port ${process.env.API_PORT}`)
 // })
 
+
+app.listen(process.env.PORT, () => {
+  // console.log(ip.address());
+  console.log(`UP & running on port ${process.env.PORT}`)
+})
+ 
 
 
 
