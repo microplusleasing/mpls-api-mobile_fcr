@@ -56,13 +56,16 @@ async function loginUser(req, res, next) {
                 if (channal == 0) {
                     queryStr = `
                     SELECT A.USERID ,A.USERNAME, (B.DL_FNAME || ' ' || B.DL_NAME || ' ' || B.DL_LNAME) AS FULLNAME , (B.DL_FNAME || ' ' || B.DL_NAME) AS FNAME , (B.DL_LNAME) AS LNAME, 
-                    B.DL_EMAIL, A.RADMIN , A.STATUS, B.DL_CODE AS SELLER_ID, TO_CHAR(A.DATE_CHPWS, 'DD/MM/YYYY') AS EXPIRE_DATE
-                    FROM BTW.USERS A , BTW.X_DEALER_P B
-                    WHERE A.USERNAME = :username
-                    and a.password = :encryptpassword
-                    and A.USERNAME = B.DL_CODE
-                    and A.USER_TYPE = 'P'
-                    and A.ACTIVATE = 'T'
+                    B.DL_EMAIL, A.RADMIN , A.STATUS, B.DL_CODE AS SELLER_ID, TO_CHAR(A.DATE_CHPWS, 'DD/MM/YYYY') AS EXPIRE_DATE, 
+                    B.CHECKER_CODE , C.EMP_NAME AS WITNESS_NAME , C.EMP_LNAME AS WITNESS_LNAME , D.TITLE_NAME AS WITNESS_TITLE_NAME 
+                    FROM BTW.USERS A , BTW.X_DEALER_P B , BTW.EMP C, BTW.TITLE_P D 
+                    WHERE A.USERNAME = :username 
+                    and a.password = :encryptpassword 
+                    and B.CHECKER_CODE = C.EMP_ID 
+                    and C.TITLE_ID = D.TITLE_ID 
+                    and A.USERNAME = B.DL_CODE 
+                    and A.USER_TYPE = 'P' 
+                    and A.ACTIVATE = 'T' 
                     `
                 } else if (channal == 1 || channal == 2) {
                     queryStr = `
@@ -150,6 +153,8 @@ async function loginUser(req, res, next) {
                         resData.ID = resData.USERID
                         // === set username ==== 
                         resData.USERNAME = username
+                        resData.WITNESS_NAME = resData.FNAME
+                        resData.WITNESS_LNAME = resData.LNAME
                     } else if (channal == 0) {
                         // === set full name (checker) === 
                         resData.FULLNAME = `${resData.FNAME} ${resData.LNAME}`
@@ -157,6 +162,9 @@ async function loginUser(req, res, next) {
                         resData.ID = resData.USERID
                         // === set username ==== 
                         resData.USERNAME = username
+
+                        resData.WITNESS_NAME = resData.WITNESS_NAME
+                        resData.WITNESS_LNAME = resData.WITNESS_LNAME
                     } else if (channal == 2) {
                         // === set full name (checker) === 
                         resData.FULLNAME = `${resData.FNAME} ${resData.LNAME}`
@@ -164,6 +172,8 @@ async function loginUser(req, res, next) {
                         resData.ID = resData.USERID
                         // === set username ==== 
                         resData.USERNAME = username
+                        resData.WITNESS_NAME = resData.FNAME
+                        resData.WITNESS_LNAME = resData.LNAME
                     }
                     const token = jwt.sign(
                         {
@@ -176,7 +186,9 @@ async function loginUser(req, res, next) {
                             role: resData.ROLE,
                             channal: resData.channal,
                             seller_id: resData.SELLER_ID,
-                            username: resData.USERNAME
+                            username: resData.USERNAME,
+                            witness_name: resData.WITNESS_NAME,
+                            witness_lname: resData.WITNESS_LNAME
                         },
                         process.env.JWT_KEY, {
                         expiresIn: "24h",
