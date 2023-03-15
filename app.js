@@ -32,6 +32,7 @@ const mrtaService = require('./service/mrtaService')
 const dipchipService = require('./service/dipchipService')
 const btwService = require('./service/btwService')
 const imageUtilService = require('./service/_imageUtilService')
+const welcomeCallService = require('./service/welcomeCallService')
 const bodyParser = require("body-parser")
 const swaggerJSDoc = YAML.load("./api.yaml")
 const test2 = require('./service/test2')
@@ -62,11 +63,11 @@ app.get('/portallogin', portalService.portallogin) // === deprecate ===
 
 app.get('/viewportallogin', portalService.viewportallogin)
 
-app.get('/loginuser', loginUserservice.loginUserService) // === avalible === 
+app.get('/loginuser', loginUserservice.loginUser) // === avalible === 
 
-app.get('/quotation', auth, quotationservice.getquotation)
+app.get('/getquotationlist', auth, quotationservice.getquotationlist)
 
-app.post('/quotation', auth, quotationservice.createquotation)
+app.post('/createquotation', auth, quotationservice.createquotation)
 
 app.post('/MPLS_dipchip', auth, qeconsentService.MPLS_dipchip)
 
@@ -75,6 +76,8 @@ app.post('/MPLS_dipchipnoneconsent', auth, qeconsentService.MPLS_dipchipnonecons
 app.post('/MPLS_create_or_update_citizendata', auth, qeconsentService.MPLS_create_or_update_citizendata)
 
 app.get('/MPLS_getimagetocompareiapp', auth, qeconsentService.MPLS_getimagetocompareiapp)
+
+app.get('/MPLS_getimagetocompareiapp_unlock', qeconsentService.MPLS_getimagetocompareiapp_unlock)
 
 app.get('/MPLS_cancle_quotation', auth, qeconsentService.MPLS_cancle_quotation)
 
@@ -87,6 +90,8 @@ app.get('/MPLS_check_phonevalid', auth, qeconsentService.MPLS_check_phonevalid)
 app.get('/MPLS_validation_otp_phonenumber', auth, qeconsentService.MPLS_validation_otp_phonenumber)
 
 app.get('/MPLS_check_econsent', auth, qeconsentService.MPLS_check_econsent)
+
+app.get('/MPLS_get_witness_econsent', auth, qeconsentService.MPLS_get_witness_econsent)
 
 app.get('/MPLS_create_otp_econsent', auth, qeconsentService.MPLS_create_otp_econsent)
 
@@ -102,23 +107,23 @@ app.post('/MPLS_create_or_update_credit', auth, qeconsentService.MPLS_create_or_
 
 app.post('/MPLS_create_or_update_careerandpurpose', auth, qeconsentService.MPLS_create_or_update_careerandpurpose)
 
-app.get('/MPLS_getimagefilebyid', auth , qeconsentService.MPLS_getimagefilebyid)
+app.get('/MPLS_getimagefilebyid', auth, qeconsentService.MPLS_getimagefilebyid)
 
-app.post('/MPLS_create_image_attach_file', auth , qeconsentService.MPLS_create_image_attach_file)
+app.post('/MPLS_create_image_attach_file', auth, qeconsentService.MPLS_create_image_attach_file)
 
-app.post('/MPLS_update_image_attach_file', auth , qeconsentService.MPLS_update_image_attach_file)
+app.post('/MPLS_update_image_attach_file', auth, qeconsentService.MPLS_update_image_attach_file)
 
-app.post('/MPLS_delete_image_attach_file', auth , qeconsentService.MPLS_delete_image_attach_file)
+app.post('/MPLS_delete_image_attach_file', auth, qeconsentService.MPLS_delete_image_attach_file)
 
-app.get('/MPLS_update_flag_image_attach_file', auth , qeconsentService.MPLS_update_flag_image_attach_file)
+app.get('/MPLS_update_flag_image_attach_file', auth, qeconsentService.MPLS_update_flag_image_attach_file)
 
-app.post('/MPLS_create_consent', auth , qeconsentService.MPLS_create_consent)
+app.post('/MPLS_create_consent', auth, qeconsentService.MPLS_create_consent)
 
-app.post('/MPLS_create_send_car_deliver_and_loyalty_consent', auth , qeconsentService.MPLS_create_send_car_deliver_and_loyalty_consent)
+app.post('/MPLS_create_send_car_deliver_and_loyalty_consent', auth, qeconsentService.MPLS_create_send_car_deliver_and_loyalty_consent)
 
 app.get('/MPLS_gen_application_no', auth, qeconsentService.MPLS_gen_application_no)
 
-app.get('/MPLS_getservertime', auth , qeconsentService.MPLS_getservertime)
+app.get('/MPLS_getservertime', auth, qeconsentService.MPLS_getservertime)
 
 app.get('/MPLS_getbrand', auth, masterService.MPLS_getbrand)
 
@@ -126,11 +131,19 @@ app.get('/MPLS_getmodel', auth, masterService.MPLS_getmodel)
 
 app.post('/MPLS_upload_customer_face', auth, qeconsentService.MPLS_upload_customer_face)
 
-app.get('/MPLS_is_check_face_valid' , auth , qeconsentService.MPLS_is_check_face_valid)
+app.get('/MPLS_is_check_face_valid', auth, qeconsentService.MPLS_is_check_face_valid)
 
-app.post('/MPLS_stamp_check_face_valid' , auth , qeconsentService.MPLS_stamp_check_face_valid)
+app.get('/MPLS_is_check_face_valid_unlock', qeconsentService.MPLS_is_check_face_valid_unlock)
 
-app.get('/MPLS_get_dopa_valid_status' , auth , qeconsentService.MPLS_get_dopa_valid_status)
+app.post('/MPLS_stamp_check_face_valid', auth, qeconsentService.MPLS_stamp_check_face_valid)
+
+app.post('/MPLS_stamp_face_verification_log_iapp', auth, qeconsentService.MPLS_stamp_face_verification_log_iapp)
+
+app.get('/MPLS_get_dopa_valid_status', auth, qeconsentService.MPLS_get_dopa_valid_status)
+
+app.get('/MPLS_get_dopa_valid_status_unlock', qeconsentService.MPLS_get_dopa_valid_status_unlock)
+
+app.get('/MPLS_canclequotation/:quotationid', auth,  qeconsentService.MPLS_canclequotation)
 
 app.post('/updatequotationimage', auth, quotationservice.updateQuotationImage)
 
@@ -156,7 +169,7 @@ app.get('/getimagebyid/:id', auth, imageService.getimagebyid)
 
 app.get('/getimagelistbyid/:id', auth, imageService.getimagelistbyid)
 
-app.get('/quotationbyid/:id', auth, quotationservice.getquotationbyid)
+app.get('/getquotationbyid/:id', auth, quotationservice.getquotationbyid)
 
 app.get('/getbrand', auth, productService.getbrand)
 
@@ -168,7 +181,7 @@ app.get('/MasterTerm', auth, masterService.getTerm)
 
 app.get('/getTermNew', auth, masterService.getTermNew)
 
-app.get('/MPLS_master_term', auth,MPLS_masterService.MPLS_master_term )
+app.get('/MPLS_master_term', auth, MPLS_masterService.MPLS_master_term)
 
 app.get('/MasterPaymentCount', auth, masterService.getPaymentCount) // === not available (21/11/2022) === 
 
@@ -182,11 +195,13 @@ app.get('/getTitletimeout', auth, masterService.getTitletimeout)
 
 app.get('/MasterDealer', auth, masterService.getDealer)
 
-app.get('/MasterProvince', auth, masterService.getProvince)
+app.get('/getMasterProvince', auth, masterService.getMasterProvince)
 
 app.get('/testGetTime', testService.testTime)
 
 app.get('/getMaxLtv', auth, calculateService.getMaxLtv)
+
+app.get('/getcoverageTotallossold', auth, calculateService.getcoverageTotallossold)
 
 app.get('/getcoverageTotalloss', auth, calculateService.getcoverageTotalloss)
 
@@ -246,6 +261,8 @@ app.get(`/getipfromhttp`, testService.getipfromhttp)
 
 app.post(`/bypasssms`, smsService.bypasssms)
 
+app.post(`/testsmsenv`, smsService.testsmsenv)
+
 app.post(`/sendemailsmtp`, loginUserservice.sendemailsmtp)
 
 app.post(`/forgetpassword`, loginUserservice.forgetpassword)
@@ -260,7 +277,7 @@ app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
 
-app.get('/getmotocycle', auth, negoService.getmotocycle)
+app.get('/getmotocyclenego', auth, negoService.getmotocyclenego)
 
 app.get('/gethistorypaymentlist', auth, negoService.gethistorypaymentlist)
 
@@ -283,6 +300,8 @@ app.get('/getphonenolist', auth, negoService.getphonenolist)
 app.get('/getphonenolistcust', auth, negoService.getphonenolistcust)
 
 app.post('/insertnegolist', auth, negoService.insertnegolist)
+
+app.post('/createaddressInfo', auth, negoService.createaddressInfo)
 
 app.get('/getbranch', auth, masterService.getbranch)
 
@@ -342,6 +361,10 @@ app.get('/getHouseOwnerType', auth, masterService.getHouseOwnerType)
 
 // === util service ===
 
+// === welcome call service ===
+app.get('/generatetokenWelcomeCall', auth, welcomeCallService.generatetokenWelcomeCall)
+
+
 // *** image util ***
 
 app.post('/compressimage', imageUtilService.compressimage)
@@ -361,7 +384,7 @@ app.listen(process.env.API_PORT, () => {
 //   // console.log(ip.address());
 //   console.log(`UP & running on port ${process.env.PORT}`)
 // })
-
+ 
 
 
 

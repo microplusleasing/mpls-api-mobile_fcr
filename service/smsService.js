@@ -377,6 +377,148 @@ async function bypasssms(req, res, next) {
     }
 }
 
+async function testsmsenv(req, res, next) {
+    let connection;
+    try {
+
+        let responseSendsms;
+        let mapvaluesms;
+
+
+        const {message, phoneno} = req.body
+
+
+        try {
+            if(phoneno == '' && message == '') {
+                    return res.status(400).send({
+                        status: 400,
+                        message: `missing arguement value`,
+                        data: []
+                    })
+                }
+                sdk.auth(process.env.SMS_API_KEY, process.env.SMS_API_SECRET)
+
+            responseSendsms =  await sdk.post('/sms', {
+              msisdn: phoneno,
+            //   message: message,
+              message: `message from env : ${process.env.WEB_PORTAL_URL}`,
+              sender: 'MICROPLUS',
+              force: `Corporate`
+            }, {Accept: 'application/json'})
+
+
+            console.log(`response : ${responseSendsms}`)
+
+            if(responseSendsms) {
+                console.log(responseSendsms)
+                mapvaluesms = mapnewresponsearray(responseSendsms)
+                console.log(`this is mep new value : ${JSON.stringify(mapvaluesms)}`)
+            }
+
+        } catch (e) {
+            return res.status(400).send({
+                status: 400,
+                message: `Fail to send sms service 1 : ${e}`,
+                data: []
+            })
+        }
+
+        try {
+
+            // === check type data format === 
+            if(!mapvaluesms) {
+                return res.status(400).send({
+                    status: 400,
+                    message: `Wrong format data to create log`,
+                    data: []
+                })
+            }
+
+            connection = await oracledb.getConnection(
+                config.database
+            )
+            const resultLogsmsApi = await connection.execute(`
+                INSERT INTO MPLS_SMS_RESPONSE_BYPASS (
+                    REMAINING_CREDIT,
+                    TOTAL_USE_CREDIT,
+                    CREDIT_TYPE,
+                    PHONENUMBER,
+                    MESSAGE_ID,
+                    USED_CREDIT,
+                    ERROR_CODE,
+                    ERROR_NAME,
+                    ERROR_DESCRIPTION
+                ) VALUES (
+                    :REMAINING_CREDIT,
+                    :TOTAL_USE_CREDIT,
+                    :CREDIT_TYPE,
+                    :PHONENUMBER,
+                    :MESSAGE_ID,
+                    :USED_CREDIT,
+                    :ERROR_CODE,
+                    :ERROR_NAME,
+                    :ERROR_DESCRIPTION
+                )
+            `, {
+                REMAINING_CREDIT: mapvaluesms.remaining_credit,
+                TOTAL_USE_CREDIT: mapvaluesms.total_use_credit,
+                CREDIT_TYPE: mapvaluesms.credit_type,
+                PHONENUMBER: mapvaluesms.phonenumber,
+                MESSAGE_ID: mapvaluesms.message_id,
+                USED_CREDIT: mapvaluesms.used_credit,
+                ERROR_CODE: mapvaluesms.error_code,
+                ERROR_NAME: mapvaluesms.error_name,
+                ERROR_DESCRIPTION: mapvaluesms.error_description
+            }, {
+                autoCommit: true
+            })
+
+            console.log(`stamp log success : ${JSON.stringify(resultLogsmsApi)}`)
+
+            if (!resultLogsmsApi) {
+                return res.status(400).send({
+                    status: 400,
+                    message: `Log Stamp error`,
+                    data: []
+                })
+            } else {
+                return res.status(200).send({
+                    status: 200,
+                    message: `success send sms`,
+                    data: mapvaluesms
+                })
+            }
+
+
+        } catch (e) {
+            console.error(e);
+            return res.status(400).send({
+                status: 400,
+                message: `Fail to send sms service 2`,
+                data: []
+            })
+        }
+
+
+    } catch (e) {
+        console.error(e);
+        return res.status(400).send({
+            status: 400,
+            message: `Fail to send sms service 3 : ${e.message}`,
+            data: []
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close()
+            } catch (e) {
+                console.error(e)
+                return next(e)
+            }
+        }
+    }
+}
+
 function mapnewresponsearray(resArray) {
 
     if (!resArray.error) {
@@ -571,4 +713,5 @@ async function sendsmsconfirmpayment(req, res, next) {
 
 module.exports.sendsmscheck = sendsmscheck
 module.exports.bypasssms = bypasssms
+module.exports.testsmsenv = testsmsenv
 module.exports.sendsmsconfirmpayment = sendsmsconfirmpayment

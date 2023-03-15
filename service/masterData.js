@@ -511,7 +511,7 @@ async function getDealer(req, res, next) {
     }
 }
 
-async function getProvince(req, res, next) {
+async function getMasterProvince(req, res, next) {
     let connection;
     oracledb.fetchAsString = []
 
@@ -529,9 +529,9 @@ async function getProvince(req, res, next) {
             })
 
         if (results.rows.length == 0) {
-            return res.status(201).send({
-                status: 201,
-                message: 'No TITLE Found',
+            return res.status(200).send({
+                status: 200,
+                message: 'No master province Found',
                 data: []
             })
         } else {
@@ -662,7 +662,7 @@ async function getInsuranceold(req, res, next) {
     }
 }
 
-async function getInsurance(req, res, next) {
+async function getInsuranceold2(req, res, next) {
     let connection;
     let { max_ltv } = req.query
     const max_ltv_n = parseInt(max_ltv)
@@ -685,6 +685,72 @@ async function getInsurance(req, res, next) {
         ORDER BY B.YEARS_INSUR,B.PREMIUM_INSUR,A.INSURER_CODE,B.INSURANCE_CODE
         `, {
             p_max_ltv: max_ltv_n,
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+        if (results.rows.length == 0) {
+            return res.status(201).send({
+                status: 201,
+                message: 'No Insurance list',
+                data: []
+            })
+        } else {
+            const resData = results.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return next(e)
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return next(e);
+            }
+        }
+    }
+}
+
+async function getInsurance(req, res, next) {
+    let connection;
+    // let { max_ltv } = req.query
+    // const max_ltv_n = parseInt(max_ltv)
+
+    const reqData = req.query
+
+    try {
+        oracledb.fetchAsString = []
+        connection = await oracledb.getConnection(
+            config.database
+        )
+        const results = await connection.execute(`
+        SELECT A.INSURER_CODE, C.INSURER_NAME, B.YEARS_INSUR, B.PREMIUM_INSUR, A.INSURANCE_CODE
+        FROM X_INSURANCE A
+        JOIN X_INSURANCE_DETAIL B ON A.INSURANCE_CODE = B.INSURANCE_CODE
+        JOIN X_INSURER_INFO C ON A.INSURER_CODE = C.INSURER_CODE
+        WHERE C.CANCEL_STATUS = 'N'
+        AND A.STATUS = 'Y'
+        AND A.BUSINESS_CODE = '001'
+        AND (BTW.GET_COVERAGE_COMPARE_MAX_LTV(
+                B.INSURANCE_CODE, 
+                TRUNC((:FACTORY_PRICE * BTW.GET_VALUE_NUM_MARKET_SETTING('004', :BUSSI_CODE, '01', :BRAND_CODE, :MODEL_CODE, :DL_CODE, SYSDATE)) / 100)
+            ) BETWEEN B.COVERAGE_INSUR_MIN AND B.COVERAGE_INSUR_MAX)
+        ORDER BY B.YEARS_INSUR, B.PREMIUM_INSUR, A.INSURER_CODE, B.INSURANCE_CODE 
+        `, {
+            // p_max_ltv: max_ltv_n,
+            FACTORY_PRICE: reqData.factory_price,
+            BUSSI_CODE: reqData.bussi_code,
+            BRAND_CODE: reqData.brand_code,
+            MODEL_CODE: reqData.model_code,
+            DL_CODE: reqData.dl_code
         }, {
             outFormat: oracledb.OBJECT
         })
@@ -1436,8 +1502,9 @@ module.exports.getImageTypeAttach = getImageTypeAttach
 module.exports.getTitle = getTitle
 module.exports.getTitletimeout = getTitletimeout
 module.exports.getDealer = getDealer
-module.exports.getProvince = getProvince
+module.exports.getMasterProvince = getMasterProvince
 module.exports.getInsuranceold = getInsuranceold
+module.exports.getInsuranceold2 = getInsuranceold2
 module.exports.getInsurance = getInsurance
 module.exports.getInsurer = getInsurer
 module.exports.getInsuranceYear = getInsuranceYear

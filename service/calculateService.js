@@ -53,7 +53,7 @@ async function getMaxLtv(req, res, next) {
     }
 }
 
-async function getcoverageTotalloss(req, res, next) {
+async function getcoverageTotallossold(req, res, next) {
     let connection;
     const { p_insurance_code, p_max_ltv } = req.query
     try {
@@ -65,6 +65,56 @@ async function getcoverageTotalloss(req, res, next) {
         `, {
             P_INSURANCE_CODE: p_insurance_code,
             P_MAX_LTV: p_max_ltv
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+        if (results.rows.length == 0) {
+            return res.status(201).send({
+                status: 201,
+                message: `can't get coverage total loss value`,
+                data: []
+            })
+        } else {
+            const resData = results.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return next(e)
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return next(e);
+            }
+        }
+    }
+}
+
+async function getcoverageTotalloss(req, res, next) {
+    let connection;
+    const reqData = req.query
+    try {
+        connection = await oracledb.getConnection(
+            config.database
+        )
+        const results = await connection.execute(`
+        SELECT BTW.GET_COVERAGE_COMPARE_MAX_LTV(:INSURANCE_CODE,TRUNC((:FACTORY_PRICE*BTW.GET_VALUE_NUM_MARKET_SETTING('004',:BUSSI_CODE,'01',:BRAND_CODE,:MODEL_CODE,:DL_CODE,SYSDATE))/100)) AS COVERAGE_TOTAL_LOSS FROM DUAL
+        `, {
+            INSURANCE_CODE: reqData.insurance_code,
+            FACTORY_PRICE: reqData.factory_price,
+            BUSSI_CODE: reqData.bussi_code,
+            BRAND_CODE: reqData.brand_code,
+            MODEL_CODE: reqData.model_code,
+            DL_CODE: reqData.dl_code
         }, {
             outFormat: oracledb.OBJECT
         })
@@ -242,6 +292,7 @@ async function getoracleoutstand(req, res, next) {
 
 module.exports.getMaxLtv = getMaxLtv
 module.exports.getcoverageTotalloss = getcoverageTotalloss
+module.exports.getcoverageTotallossold = getcoverageTotallossold
 module.exports.getpaymentValue = getpaymentValue
 module.exports.getagefrombirthdate = getagefrombirthdate
 module.exports.getoracleoutstand = getoracleoutstand
