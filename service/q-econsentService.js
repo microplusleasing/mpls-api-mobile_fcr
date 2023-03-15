@@ -2576,7 +2576,7 @@ async function MPLS_validation_otp_econsent(req, res, next) {
                                 // *** send sms for verify success ***
                                 sdk.auth(process.env.SMS_API_KEY, process.env.SMS_API_SECRET)
 
-                                const urlimage = `https://web-portal-uat.microplusleasing.com/e-consent?application_num=${application_no}`
+                                const urlimage = `${process.env.WEB_PORTAL_URL}?application_num=${application_no}`
                                 const message = `ดูหลักฐานเอกสารการให้ความยินยอม คลิก ${urlimage}`
 
                                 responseSendsms = await sdk.post('/sms', {

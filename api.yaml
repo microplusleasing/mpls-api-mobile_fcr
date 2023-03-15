@@ -1403,27 +1403,26 @@ paths:
           name: bussi_code
           schema:
             type: string
-            example: '001'
+            example: "001"
           description: Bussiness code
         - in: query
           name: brand_code
           schema:
             type: string
-            example: '01'
+            example: "01"
           description: brand code of Product
         - in: query
           name: model_code
           schema:
             type: string
-            example: '01'
-          description: model code of product    
+            example: "01"
+          description: model code of product
         - in: query
           name: dl_code
           schema:
             type: string
-            example: '20220002'
+            example: "20220002"
           description: dealer code
-
 
       responses:
         "200":
@@ -2237,6 +2236,26 @@ paths:
                   type: string
                 message:
                   type: string
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
+
+  /testsmsenv:
+    post:
+      tags:
+        - "PROVIDER"
+      summary: ""
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                phoneno:
+                  type: string
+                  example: '0952483338'
       responses:
         "200":
           description: "success send sms"
