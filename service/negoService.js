@@ -2035,7 +2035,9 @@ async function insertnegolist(req, res, next) {
         } catch (e) {
             console.log(`error create nego record : ${e}`)
             try {
+                console.log(`trigger rollback (create nego_info)`)
                 await connection.rollback()
+                console.log(`rollback success (create nego_info)`)
                 return res.status(200).send({
                     status: 400,
                     message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
@@ -2095,7 +2097,9 @@ async function insertnegolist(req, res, next) {
 
         } catch (e) {
             try {
+                console.log(`trigger rollback (create call track)`)
                 await connection.rollback()
+                console.log(`rollback success (create call track)`)
                 return res.status(200).send({
                     status: 400,
                     message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
@@ -2114,7 +2118,7 @@ async function insertnegolist(req, res, next) {
         try {
             commitall
         } catch {
-            console.err(err.message)
+            // console.err(err.message)
             res.send(400).send({
                 status: 400,
                 message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail)`,
@@ -2130,22 +2134,37 @@ async function insertnegolist(req, res, next) {
         })
 
     } catch (e) {
-        console.error(e)
-        return res.status(400).send({
-            status: 400,
-            message: `ผิดพลาดไม่สามารถบันทึกรายการได้ : ${e.message}`
-        })
+        // console.error(e)
+        try {
+            await connection.rollback()
+            console.log(`insertnegolist Error: ${e.message ? e.message : `No err msg`}`)
+            return res.status(400).send({
+                status: 400,
+                message: `ผิดพลาดไม่สามารถบันทึกรายการได้ : ${e.message}`
+            })
+
+        } catch (e) {
+            console.log(`insertnegolist Error rollback: ${e.message ? e.message : `No err msg`}`)
+            return res.status(400).send({
+                status: 400,
+                message: `ผิดพลาดไม่สามารถบันทึกรายการได้ (fail rollback): ${e.message}`
+            })
+        }
     } finally {
         if (connection) {
             try {
-                await connection.close()
+                await connection.close();
+                console.log(`connection close success`)
             } catch (e) {
-                console.error(e)
-                return next(e)
+                console.error(e);
+                // return next(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Error when close connection : ${e.message ? e.message : 'No return message'}`
+                })
             }
         }
     }
-
 }
 
 async function getlalon(req, res, next) {
