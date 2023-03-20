@@ -145,6 +145,10 @@ app.get('/MPLS_get_dopa_valid_status_unlock', qeconsentService.MPLS_get_dopa_val
 
 app.get('/MPLS_canclequotation/:quotationid', auth,  qeconsentService.MPLS_canclequotation)
 
+app.post('/MPLS_gen_econsent_image',  auth,  qeconsentService.MPLS_gen_econsent_image)
+
+app.get('/MPLS_test_gen_econsent_image',  qeconsentService.MPLS_test_gen_econsent_image)
+
 app.post('/updatequotationimage', auth, quotationservice.updateQuotationImage)
 
 app.post('/updatedraft', auth, quotationservice.updatedraft)
@@ -220,6 +224,10 @@ app.get('/getPaymentValue', auth, calculateService.getpaymentValue)
 app.get('/getagefrombirthdate', auth, calculateService.getagefrombirthdate)
 
 app.get('/getoracleoutstand', auth, calculateService.getoracleoutstand)
+
+app.post('/calculateage', auth, calculateService.calculateage)
+
+app.post('/calculateage_db', auth, calculateService.calculateage_db)
 
 app.get('/getSizeModel', auth, masterService.getSizeModel)
 

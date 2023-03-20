@@ -6,11 +6,17 @@ const moment = require('moment');
 const { v4: uuidv4 } = require('uuid');
 var multiparty = require('multiparty');
 const fs = require('fs');
+const handlebars = require('handlebars');
 const _util = require('./_selfutil');
 const log4js = require("log4js");
 const sdk = require('api')('@thaibulksms/v1.0#dfe7qml3crqtee');
 const e = require('express');
 const _mplsUtil = require('./_MPLSutil');
+const htmlToImage = require('html-to-image');
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
+const puppeteer = require('puppeteer');
+const path = require('path');
 
 log4js.configure({
     appenders: {
@@ -1838,7 +1844,7 @@ async function MPLS_validation_otp_phonenumber(req, res, next) {
         })
 
         if (result.rows.length == 0) {
-            return res.ststus(200).send({
+            return res.status(200).send({
                 status: false,
                 message: `ไม่พบรายการ OTP log ของ quotationid นี้`
             })
@@ -2372,6 +2378,7 @@ async function MPLS_create_otp_econsent(req, res, next) {
     }
 }
 
+// === deprecate ====
 async function MPLS_validation_otp_econsent(req, res, next) {
 
     let connection;
@@ -2439,7 +2446,7 @@ async function MPLS_validation_otp_econsent(req, res, next) {
         })
 
         if (result.rows.length == 0) {
-            return res.ststus(200).send({
+            return res.status(200).send({
                 status: false,
                 message: `ไม่พบรายการ OTP log ของ quotationid นี้`
             })
@@ -6329,6 +6336,709 @@ async function MPLS_canclequotation(req, res, next) {
 
 }
 
+async function MPLS_test_gen_econsent_image(req, res, next) {
+    let connection;
+    try {
+        connection = await oracledb.getConnection(config.database)
+
+
+
+        // Get the directory name of the current file
+        const currentDir = path.dirname(__filename);
+
+        // Get the absolute path of the parent directory
+        const parentDir = path.resolve(currentDir, '..');
+
+        const fontPath = (`${parentDir}/assets/fonts/THSarabunNew.ttf`)
+        const imagePath = (`${parentDir}/assets/image/Logo1.png`)
+
+        const ori_html = `<!DOCTYPE html>
+        <html style="
+        background-color: rgb(255, 255, 255); 
+        font-size: 23px; 
+        color: black;">
+        <!-- <html id="econsentelement2" style="background-color: rgb(255, 255, 255); font-size: 24px; 
+        font-family: THSarabunNew; color: black;" > -->
+        
+        <head>
+            <meta charset="UTF-8">
+            <title>My HTML Document</title>
+            <style>
+                @font-face {
+                    font-family: THSarabunNew;
+                    src: url("data:font/ttf;base64,${fs.readFileSync(fontPath).toString('base64')}") format('truetype');
+                    font-weight: 500;
+                    font-style: normal;
+                }
+        
+                body,
+                p,
+                h1,                                 
+                h2,
+                h3 {
+                    font-family: THSarabunNew, sans-serif;
+                }
+            </style>
+        </head>
+        
+        <body style="margin-left: 1.5em;">
+            <div style="
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            font-family: THSarabunNew;
+            ">
+                <img style="max-width: 100px; margin-top: 0.5em;"
+                src="data:image/jpeg;base64,${fs.readFileSync(imagePath).toString('base64')
+            }" />
+            </div>
+            <p style="line-height: 0.5em; text-align: center; font-size: 24px; ">
+                ความยินยอมในการเปิดเผยข้อมูลโดยวิธีการผ่านระบบอินเทอร์เน็ต</p>
+            <p style="text-align: left;">
+                เงื่อนไขในการให้ความยินยอมเปิดเผยข้อมูลผ่านระบบอินเทอร์เน็ต</p>
+            <p style="line-height: 1em;">ข้าพเจ้าทราบดีว่า การให้ความยินยอมผ่านระบบอินเทอร์เน็ต
+                จะมีลักษณะเป็น
+                “ข้อมูลอิเล็กทรอนิกส์”
+                และเป็นข้อความที่ได้สร้าง ส่ง รับ เก็บรักษา
+                หรือประมวลผลด้วยวิธีทางอิเล็กทรอนิกส์
+                ซึ่งจะมีผลเป็นการให้ความยินยอมในการเปิดเผยหรือใช้ข้อมูลของข้าพเจ้า
+                ตามกฏหมายว่าด้วยการประกอบธุรกิจข้อมูลเครดิตและข้าพเจ้าจะไม่ยกเลิกเพิกถอนหรือปฏิเสธความยินยอมนี้
+                เพราะเหตุที่เป็นข้อมูลอิเล็กทรอนิกส์ <br><br>
+                วิธีการให้ความยินยอมเปิดเผยข้อมูลผ่านระบบอินเทอร์เน็ต <br><br>
+                1. ผู้ให้ความยินยอมจะต้องกรอกข้อมูลที่ถูกต้อง <br>
+                2. ผู้ให้ความยินยอมอาจส่งผ่านความยินยอมด้วยตนเอง
+                หรือมอบหมายให้บุคคลใดส่งผ่านก็ได้ <br>
+                3. การให้ความยินยอมโดยวิธีการผ่านระบบอินเทอร์เน็ต
+                ให้ถือว่ามีการลงลายมือชื่อแล้วเมื่อได้ดำเนินการตามขั้นตอนการยืนยันตัวตนและการใช้รหัสอ้างอิง
+                <br><br>
+                <span style="color: #4472C4">
+                    ข้าพเจ้า ชื่อ {{firstname}} นามสกุล {{lastname}} <br><br>
+                    วัน/เดือน/ปี พ.ศ. {{birthdate}} <br><br>
+                    บัตรประจำตัวประชาชน หรือหนังสือเดินทาง เลขที่ {{citizenid}}
+                    หมายเลขโทรศัพท์เคลื่อนที่
+                    {{phone_number}} <br><br>
+                    ประเภทสินเชื่อ เช่าซื้อ รถจักรยานยนต์ (21)<br><br>
+                    หมายเลขอ้างอิง {{application_no}} <br><br>
+                    วันเวลาที่ทำรายการความยินยอมในการเปิดเผยข้อมูล {{currentDate}} {{currentDateTime}} ช่องทางที่ทำรายการ
+                    MPLUS <br>
+                    <!-- วันเวลาที่ทำรายการความยินยอมในการเปิดเผยข้อมูล 07/02/2566 13:51:17 ช่องทางที่ทำรายการ
+                MPLUS <br> -->
+                    พยานผู้ตรวจสอบและยืนยันตัวลูกค้า : {{witness_name}} {{witness_lname}}
+                    <!-- พยานผู้ตรวจสอบและยืนยันตัวลูกค้า : {{this.userSession.FNAME}} {{this.userSession.LNAME}} -->
+                </span>
+                <br><br>
+                ความยินยอมนี้จัดทำขึ้นด้วยความสมัครใจของข้าพเจ้าและส่งผ่านระบบอินเทอร์เน็ตให้แก่
+                บริษัท
+                ข้อมูลเครดิตแห่งชาติ จำกัด
+                (บริษัท) เพื่อเป็นหลักฐานว่า ข้าพเจ้าตกลงยินยอมให้บริษัท ข้อมูลเครดิตแห่งชาติ
+                จำกัด
+                (บริษัท)
+                เปิดเผยหรือให้ข้อมูลของข้าพเจ้าแก่ บริษัท ไมโครพลัสลิสซิ่ง จำกัด
+                ซึ่งเป็นสมาชิกหรือผู้ให้บริการของบริษัท
+                เพื่อประโยชน์ในการวิเคราะห์สินเชื่อ การออกบัตรเครดิต ตามคำขอสินเชื่อ
+                /ขอออกบัตรเครดิตของข้าพเจ้าที่ให้ไว้กับธนาคาร
+                /บริษัทดังกล่าวข้างต้น รวมทั้งเพื่อประโยชน์ในการทบทวนสินเชื่อ
+                ต่ออายุสัญญาสินเชื่อ
+                /บัตรเครดิต
+                การบริหารและป้องกันความเสี่ยงตามข้อกำหนดของธนาคารแห่งประเทศไทย
+                และให้ถือว่าความยินยอมเปิดเผยข้อมูลที่ทำขึ้นผ่านระบบอินเทอร์เน็ตนี้
+                เมื่อประมวลผลและจัดพิมพ์ขึ้นจากอิเล็กทรอนิกส์แล้ว
+                ไม่ว่าในรูปแบบใดๆ เป็นหลักฐานในการให้ความยินยอมด้วยตนเองข้าพเจ้าเช่นเดียวกัน
+                อนึ่ง
+                ก่อนให้ความยินยอมข้าพเจ้าได้ทราบถึงวิธีการและเงื่อนไขของวิธีการให้ความยินยอมในการเปิดเผยข้อมูลหรือให้ข้อมูลผ่านระบบอินเทอร์เน็ต
+                ซึ่งระบุไว้ด้านบนของความยินยอมนี้อย่างชัดเจนแล้ว <br><br>
+                หมายเหตุ : ข้อมูลที่บริษัท ข้อมูลเครดิตแห่งชาติ จำกัด
+                เปิดเผยให้แก่สถาบันการเงินที่เป็นสมาชิกหรือผู้ใช้บริการ
+                เป็นเพียงองค์ประกอบหนึ่งในการพิจารณาสินเชื่อของสถานบันการเงิน
+                แต่การเปิดเผยข้อมูลดังกล่าวเป็นสิทธิของเจ้าของข้อมูลที่จะให้ความยินยอมหรือไม่ก็ได้
+            </p>
+        </body><br>
+        
+        </html>`
+
+        const template = handlebars.compile(ori_html)
+
+        const data = {
+            firstname: 'ณภัทร',
+            lastname: 'รอดเนียม',
+            birthdate: '18/04/2537',
+            citizenid: '1229900584011',
+            phone_number: '0952483338',
+            application_no: '0110202303160001',
+            currentDate: '16/03/2566',
+            currentDateTime: '15:47:52',
+            witness_name: 'ประเทศ',
+            witness_lname: 'ตู้สำราญ'
+
+        };
+
+        // Read the HTML file from disk (read form handlebars return)
+        const html = template(data);
+
+        try {
+            // Launch a headless browser instance using Puppeteer
+            const browser = await puppeteer.launch();
+            // const browser = await puppeteer.launch({
+            //     executablePath: `C:/Program Files/Google/Chrome/Application/chrome.exe`,
+            //   });
+            // const browser = await puppeteer.launch({ args: ['--allow-file-access-from-files', '--enable-local-file-accesses'] });
+
+            // Create a new page in the browser
+            const page = await browser.newPage();
+
+            // console.log(`htm: : ${html}`)
+
+            // Set the page content to the HTML
+            await page.setContent(html);
+
+            // Get the dimensions of the page content
+            const dimensions = await page.evaluate(() => {
+                const body = document.querySelector('body');
+                return {
+                    width: body.offsetWidth,
+                    height: body.offsetHeight
+                };
+            });
+
+            // Set the page viewport size to match the content dimensions
+            await page.setViewport(dimensions);
+
+            // Generate a PNG image from the page content
+            const screenshot = await page.screenshot({ type: 'jpeg' });
+
+            // Close the browser instance
+            await browser.close();
+
+            // Set the response headers
+            res.setHeader('Content-Type', 'image/jpg');
+
+
+            res.setHeader('Content-Disposition', 'attachment; filename="image.jpg"');
+
+            // Send the image data to the client for download
+            return res.send(screenshot);
+        } catch (error) {
+            console.error(error);
+            return res.status(200).send({
+                status: 500,
+                message: `An error occurred, Code: ${error.message ? err.message : 'NO return msg'} `,
+                data: []
+            });
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No message'}`,
+            data: []
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 500,
+                    message: `Fail during close connection (oracledb) : ${e.message ? e.message : 'No return message'}`,
+                    data: []
+                })
+            }
+        }
+    }
+}
+
+async function MPLS_gen_econsent_image(req, res, next) {
+
+    let connection;
+    try {
+
+        const token = req.user
+        const userid = token.ID
+        const username = token.user_id
+
+        const {
+            quotationid,
+            transaction_no,
+            consent_datetime,
+            firstname,
+            lastname,
+            birthdate,
+            citizenid,
+            phone_number,
+            application_no,
+            currentDate,
+            currentDateTime,
+            witness_name,
+            witness_lname,
+            otp_value
+        } = req.body
+
+        console.log(`quoid : ${JSON.stringify(req.body.item)}`)
+
+        if (!(
+            quotationid &&
+            transaction_no &&
+            consent_datetime &&
+            firstname &&
+            lastname &&
+            birthdate &&
+            citizenid &&
+            phone_number &&
+            application_no &&
+            currentDate &&
+            currentDateTime &&
+            witness_name &&
+            witness_lname &&
+            otp_value)
+        ) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters argument`,
+                data: []
+            })
+        }
+
+        // *** gen image buffer ****
+        let econsentimage_buffer;
+        try {
+            // Get the directory name of the current file
+            const currentDir = path.dirname(__filename);
+
+            // Get the absolute path of the parent directory
+            const parentDir = path.resolve(currentDir, '..');
+
+            const fontPath = (`${parentDir}/assets/fonts/THSarabunNew.ttf`)
+            const imagePath = (`${parentDir}/assets/image/Logo1.png`)
+
+            const ori_html = `
+            <!DOCTYPE html>
+                <html style="
+                background-color: rgb(255, 255, 255); 
+                font-size: 23px; 
+                color: black;">
+                <!-- <html id="econsentelement2" style="background-color: rgb(255, 255, 255); font-size: 24px; 
+                font-family: THSarabunNew; color: black;" > -->
+                
+                <head>
+                    <meta charset="UTF-8">
+                    <title>My HTML Document</title>
+                    <style>
+                        @font-face {
+                            font-family: THSarabunNew;
+                            src: url("data:font/ttf;base64,${fs.readFileSync(fontPath).toString('base64')}") format('truetype');
+                            font-weight: 500;
+                            font-style: normal;
+                        }
+                
+                        body,
+                        p,
+                        h1,                                 
+                        h2,
+                        h3 {
+                            font-family: THSarabunNew, sans-serif;
+                        }
+                    </style>
+                </head>
+                
+                <body style="margin-left: 1.5em;">
+                    <div style="
+                    display: flex;
+                    justify-content: center;
+                    flex-direction: column;
+                    align-items: center;
+                    font-family: THSarabunNew;
+                    ">
+                        <img style="max-width: 100px; margin-top: 0.5em;"
+                        src="data:image/jpeg;base64,${fs.readFileSync(imagePath).toString('base64')
+                }" />
+                    </div>
+                    <p style="line-height: 0.5em; text-align: center; font-size: 24px; ">
+                        ความยินยอมในการเปิดเผยข้อมูลโดยวิธีการผ่านระบบอินเทอร์เน็ต</p>
+                    <p style="text-align: left;">
+                        เงื่อนไขในการให้ความยินยอมเปิดเผยข้อมูลผ่านระบบอินเทอร์เน็ต</p>
+                    <p style="line-height: 1em;">ข้าพเจ้าทราบดีว่า การให้ความยินยอมผ่านระบบอินเทอร์เน็ต
+                        จะมีลักษณะเป็น
+                        “ข้อมูลอิเล็กทรอนิกส์”
+                        และเป็นข้อความที่ได้สร้าง ส่ง รับ เก็บรักษา
+                        หรือประมวลผลด้วยวิธีทางอิเล็กทรอนิกส์
+                        ซึ่งจะมีผลเป็นการให้ความยินยอมในการเปิดเผยหรือใช้ข้อมูลของข้าพเจ้า
+                        ตามกฏหมายว่าด้วยการประกอบธุรกิจข้อมูลเครดิตและข้าพเจ้าจะไม่ยกเลิกเพิกถอนหรือปฏิเสธความยินยอมนี้
+                        เพราะเหตุที่เป็นข้อมูลอิเล็กทรอนิกส์ <br><br>
+                        วิธีการให้ความยินยอมเปิดเผยข้อมูลผ่านระบบอินเทอร์เน็ต <br><br>
+                        1. ผู้ให้ความยินยอมจะต้องกรอกข้อมูลที่ถูกต้อง <br>
+                        2. ผู้ให้ความยินยอมอาจส่งผ่านความยินยอมด้วยตนเอง
+                        หรือมอบหมายให้บุคคลใดส่งผ่านก็ได้ <br>
+                        3. การให้ความยินยอมโดยวิธีการผ่านระบบอินเทอร์เน็ต
+                        ให้ถือว่ามีการลงลายมือชื่อแล้วเมื่อได้ดำเนินการตามขั้นตอนการยืนยันตัวตนและการใช้รหัสอ้างอิง
+                        <br><br>
+                        <span style="color: #4472C4">
+                            ข้าพเจ้า ชื่อ {{firstname}} นามสกุล {{lastname}} <br><br>
+                            วัน/เดือน/ปี พ.ศ. {{birthdate}} <br><br>
+                            บัตรประจำตัวประชาชน หรือหนังสือเดินทาง เลขที่ {{citizenid}}
+                            หมายเลขโทรศัพท์เคลื่อนที่
+                            {{phone_number}} <br><br>
+                            ประเภทสินเชื่อ เช่าซื้อ รถจักรยานยนต์ (21)<br><br>
+                            หมายเลขอ้างอิง {{application_no}} <br><br>
+                            วันเวลาที่ทำรายการความยินยอมในการเปิดเผยข้อมูล {{currentDate}} {{currentDateTime}} ช่องทางที่ทำรายการ
+                            MPLUS <br>
+                            <!-- วันเวลาที่ทำรายการความยินยอมในการเปิดเผยข้อมูล 07/02/2566 13:51:17 ช่องทางที่ทำรายการ
+                        MPLUS <br> -->
+                            พยานผู้ตรวจสอบและยืนยันตัวลูกค้า : {{witness_name}} {{witness_lname}}
+                            <!-- พยานผู้ตรวจสอบและยืนยันตัวลูกค้า : {{this.userSession.FNAME}} {{this.userSession.LNAME}} -->
+                        </span>
+                        <br><br>
+                        ความยินยอมนี้จัดทำขึ้นด้วยความสมัครใจของข้าพเจ้าและส่งผ่านระบบอินเทอร์เน็ตให้แก่
+                        บริษัท
+                        ข้อมูลเครดิตแห่งชาติ จำกัด
+                        (บริษัท) เพื่อเป็นหลักฐานว่า ข้าพเจ้าตกลงยินยอมให้บริษัท ข้อมูลเครดิตแห่งชาติ
+                        จำกัด
+                        (บริษัท)
+                        เปิดเผยหรือให้ข้อมูลของข้าพเจ้าแก่ บริษัท ไมโครพลัสลิสซิ่ง จำกัด
+                        ซึ่งเป็นสมาชิกหรือผู้ให้บริการของบริษัท
+                        เพื่อประโยชน์ในการวิเคราะห์สินเชื่อ การออกบัตรเครดิต ตามคำขอสินเชื่อ
+                        /ขอออกบัตรเครดิตของข้าพเจ้าที่ให้ไว้กับธนาคาร
+                        /บริษัทดังกล่าวข้างต้น รวมทั้งเพื่อประโยชน์ในการทบทวนสินเชื่อ
+                        ต่ออายุสัญญาสินเชื่อ
+                        /บัตรเครดิต
+                        การบริหารและป้องกันความเสี่ยงตามข้อกำหนดของธนาคารแห่งประเทศไทย
+                        และให้ถือว่าความยินยอมเปิดเผยข้อมูลที่ทำขึ้นผ่านระบบอินเทอร์เน็ตนี้
+                        เมื่อประมวลผลและจัดพิมพ์ขึ้นจากอิเล็กทรอนิกส์แล้ว
+                        ไม่ว่าในรูปแบบใดๆ เป็นหลักฐานในการให้ความยินยอมด้วยตนเองข้าพเจ้าเช่นเดียวกัน
+                        อนึ่ง
+                        ก่อนให้ความยินยอมข้าพเจ้าได้ทราบถึงวิธีการและเงื่อนไขของวิธีการให้ความยินยอมในการเปิดเผยข้อมูลหรือให้ข้อมูลผ่านระบบอินเทอร์เน็ต
+                        ซึ่งระบุไว้ด้านบนของความยินยอมนี้อย่างชัดเจนแล้ว <br><br>
+                        หมายเหตุ : ข้อมูลที่บริษัท ข้อมูลเครดิตแห่งชาติ จำกัด
+                        เปิดเผยให้แก่สถาบันการเงินที่เป็นสมาชิกหรือผู้ใช้บริการ
+                        เป็นเพียงองค์ประกอบหนึ่งในการพิจารณาสินเชื่อของสถานบันการเงิน
+                        แต่การเปิดเผยข้อมูลดังกล่าวเป็นสิทธิของเจ้าของข้อมูลที่จะให้ความยินยอมหรือไม่ก็ได้
+                    </p>
+                </body><br>
+                
+                </html>
+                `
+            const template = handlebars.compile(ori_html)
+
+            const data = {
+                firstname: firstname,
+                lastname: lastname,
+                birthdate: birthdate,
+                citizenid: citizenid,
+                phone_number: phone_number,
+                application_no: application_no,
+                currentDate: currentDate,
+                currentDateTime: currentDateTime,
+                witness_name: witness_name,
+                witness_lname: witness_lname
+
+            };
+
+            // Read the HTML file from disk (read form handlebars return)
+            const html = template(data);
+
+            try {
+                // Launch a headless browser instance using Puppeteer
+                // const browser = await puppeteer.launch({
+                //     headless: true,
+                //     args: ['--disable-cache']
+                //   });
+
+                // const browser = await puppeteer.launch({
+                // executablePath: `C:/Program Files/Google/Chrome/Application/chrome.exe`,
+                // executablePath: `C:/Users/Node.js/.cache/puppeteer/chrome/win64-1095492/chrome-win/chrome.exe`,
+                //     ignoreDefaultArgs: ['--disable-extensions'],
+                //     headless: true,
+                //     args: ['--no-sandbox', "--disabled-setupid-sandbox"]
+                // });
+
+                const browserFetcher = puppeteer.createBrowserFetcher();
+                let revisionInfo = await browserFetcher.download('1095492');
+
+                const browser = await puppeteer.launch({
+                    executablePath: revisionInfo.executablePath,
+                    setCacheEnabled: false,
+                    ignoreDefaultArgs: ['--disable-extensions'],
+                    headless: true,
+                    args: ['--no-sandbox', "--disabled-setupid-sandbox"]
+                });
+
+                // Create a new page in the browser
+                const page = await browser.newPage();
+
+                // Set the page content to the HTML
+                await page.setContent(html);
+
+                // Get the dimensions of the page content
+                const dimensions = await page.evaluate(() => {
+                    const body = document.querySelector('body');
+                    return {
+                        width: body.offsetWidth,
+                        height: body.offsetHeight
+                    };
+                });
+
+                // Set the page viewport size to match the content dimensions
+                await page.setViewport(dimensions);
+
+                // Generate a PNG image from the page content
+                const screenshot = await page.screenshot({ type: 'jpeg' });
+
+                // Close the browser instance
+                await browser.close();
+
+                // Set the response headers (option for send via api)
+                // res.setHeader('Content-Type', 'image/jpg');
+                // res.setHeader('Content-Disposition', 'attachment; filename="image.jpg"');
+
+
+                // === success generate e-consent image and set buffer ===
+                econsentimage_buffer = screenshot
+
+                // === next step ===
+                connection = await oracledb.getConnection(config.database)
+
+                const result = await connection.execute(`
+                        SELECT * FROM           
+                        (
+                            SELECT * 
+                            FROM MPLS_OTP_LOG 
+                            WHERE OTP_QUO_KEY_APP_ID = :quotationid
+                            AND TYPE = '2'
+                            ORDER BY CREATED_DATE DESC
+                        )
+                        WHERE ROWNUM = 1`
+                    , {
+                        quotationid: quotationid
+                    }, {
+                    outFormat: oracledb.OBJECT
+                })
+
+                if (result.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 400,
+                        message: `ไม่พบรายการ OTP log ของ quotationid นี้`,
+                        data: []
+                    })
+                } else {
+
+                    // === check already valid ===
+
+                    const isValid = result.rows[0].STATUS
+                    if (isValid == '1') {
+                        return res.status(200).send({
+                            status: false,
+                            message: `รายการนี้ได้รับการ verify แล้ว`
+                        })
+                    }
+
+
+                    // === check OTP match === 
+                    const otplogvalue = result.rows[0].OTP_VALUE
+                    if (otp_value !== otplogvalue) {
+                        return res.status(200).send({
+                            status: false,
+                            message: `รหัส OTP ไม่ตรงกันกับข้อมูลในระบบ`
+                        })
+                    } else {
+                        // === check expire ===
+                        const expiredate = moment(result.rows[0].EXPIRE_DATE).format()
+                        // const currentdate = moment.now() 
+                        const currentdate = moment().format();
+
+                        console.log(`expire Date : ${expiredate}`)
+                        console.log(`current Date : ${currentdate}`)
+
+                        const expire = (expiredate < currentdate)
+
+                        if (expire) {
+                            return res.status(200).send({
+                                status: false,
+                                message: `ไม่สามารถยืนยันเลข OTP ได้เนื่องจากเลยเวลาที่กำหนด`
+                            })
+                        } else {
+                            // === flag OTP log and update quotation status 
+                            const otpid = result.rows[0].OTP_APP_ID
+                            console.log(`otpid : ${otpid}`)
+                            console.log(`quotatioid : ${quotationid}`)
+                            if (otpid == '' && quotationid == '') {
+                                return res.status(200).send({
+                                    status: false,
+                                    message: `ข้อมูลไม่เพียงพอในกาอัพเดทสถานะ (otpid, quotationid)`
+                                })
+                            } else {
+                                // MPLS_OTP_LOG
+                                console.log(`log_otP_cretae`)
+
+                                let updateotplog;
+                                let updatequotation;
+                                let createlogeconsent;
+                                try {
+                                    updateotplog = await connection.execute(`
+                                    UPDATE MPLS_OTP_LOG 
+                                    SET STATUS = '2', 
+                                        VERIFIED_SUCCESS_DATE = SYSDATE 
+                                    WHERE OTP_APP_ID = :OTP_APP_ID
+                                `, {
+                                        OTP_APP_ID: otpid
+                                    }, {
+                                        outFormat: oracledb.OBJECT
+                                    })
+
+                                    console.log(`update MPLS_OTP_LOG Success : ${updateotplog.rowsAffected}`)
+
+                                    // MPLS_QUOTATION
+                                    updatequotation = await connection.execute(`
+                                    UPDATE MPLS_QUOTATION
+                                    SET OTP_CONSENT_VERIFY = 'Y', 
+                                        ECONSENT_IMAGE = :ECONSENT_IMAGE
+                                    WHERE QUO_KEY_APP_ID = :QUO_KEY_APP_ID
+                                `, {
+                                        ECONSENT_IMAGE: econsentimage_buffer,
+                                        QUO_KEY_APP_ID: quotationid
+                                    })
+
+                                    console.log(`update quotaiton success : ${updatequotation.rowsAffected}`)
+
+                                    // === create  econsent log ====
+
+                                    createlogeconsent = await connection.execute(`
+                                INSERT INTO MPLS_ECONSENT_LOG (
+                                    TRANSACTION_NO,
+                                    CONSENT_DATETIME,
+                                    CITIZEN_ID,
+                                    QUOTATION_ID,
+                                    APPLICATION_NUM 
+                                ) 
+                                VALUES 
+                                ( 
+                                    :TRANSACTION_NO,
+                                    :CONSENT_DATETIME,
+                                    :CITIZEN_ID,
+                                    :QUOTATION_ID,
+                                    :APPLICATION_NUM 
+                                 )
+                            `, {
+                                        TRANSACTION_NO: transaction_no,
+                                        CONSENT_DATETIME: (new Date(consent_datetime)) ?? null,
+                                        CITIZEN_ID: citizenid,
+                                        QUOTATION_ID: quotationid,
+                                        APPLICATION_NUM: application_no
+                                    })
+
+                                    console.log(`create econsent log success : ${createlogeconsent.rowsAffected}`)
+
+                                } catch (e) {
+                                    console.error(e)
+                                    return res.status(200).send({
+                                        status: 400,
+                                        message: `error trigger : ${JSON.stringify(e)}`,
+                                        data: []
+                                    })
+                                }
+
+                                console.log(`updateotplog.rowsAffected : ${updateotplog.rowsAffected}`)
+                                console.log(`updatequotation.rowsAffected : ${updatequotation.rowsAffected}`)
+
+
+                                if (!(updateotplog.rowsAffected == 1 && updatequotation.rowsAffected == 1 && createlogeconsent.rowsAffected == 1)) {
+                                    return res.status(200).send({
+                                        status: 400,
+                                        message: `ไม่สามารถบันทึกค่าสถานะได้ (update status fail)`,
+                                        data: []
+                                    })
+                                } else {
+
+                                    try {
+
+                                        // *** send sms for verify success ***
+                                        sdk.auth(process.env.SMS_API_KEY, process.env.SMS_API_SECRET)
+
+                                        const urlimage = `${process.env.WEB_PORTAL_URL}?application_num=${application_no}`
+                                        const message = `ดูหลักฐานเอกสารการให้ความยินยอม คลิก ${urlimage}`
+
+                                        responseSendsms = await sdk.post('/sms', {
+                                            msisdn: phone_number,
+                                            message: message,
+                                            sender: 'MICROPLUS',
+                                            force: `Corporate`
+                                        }, { Accept: 'application/json' })
+
+
+                                        console.log(`response : ${responseSendsms}`)
+                                    } catch (e) {
+                                        return res.status(200).send({
+                                            status: 400,
+                                            message: `Error during send sms : ${e.message ? e.message : 'No message'}`,
+                                            data: []
+                                        })
+                                    }
+
+                                    // === commit and return ====
+
+
+                                    console.log(`all valid`)
+                                    const commitall = await connection.commit();
+
+                                    try {
+                                        commitall
+                                    } catch (e) {
+                                        console.err(e.message)
+                                        return res.send(200).send({
+                                            status: 400,
+                                            message: `Error : ${e.message ? e.message : 'No message'}`,
+                                            data: []
+                                        })
+                                    }
+
+                                    // === finish ===
+                                    console.log(`return true`)
+                                    return res.status(200).send({
+                                        status: 200,
+                                        message: `success`
+                                    })
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                res.status(200).send({
+                    status: 400,
+                    message: `An error occurred (puppeteer lib) , Err msg : ${error.message ? error.message : 'No error msg'}`
+                });
+            }
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Fail to cretae e-consent image : ${e.message ? e.message : 'No Error msg'}`
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: false,
+            message: `Fail : ${e.message ? e.message : 'No message'}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Error : ${e.message ? e.message : 'No message'}`
+                })
+            }
+        }
+    }
+}
+
 module.exports.MPLS_dipchip = MPLS_dipchip
 module.exports.MPLS_dipchipnoneconsent = MPLS_dipchipnoneconsent
 module.exports.MPLS_create_or_update_citizendata = MPLS_create_or_update_citizendata
@@ -6377,3 +7087,8 @@ module.exports.MPLS_get_dopa_valid_status = MPLS_get_dopa_valid_status
 module.exports.MPLS_get_dopa_valid_status_unlock = MPLS_get_dopa_valid_status_unlock
 
 module.exports.MPLS_canclequotation = MPLS_canclequotation
+
+
+// **** fix ****
+module.exports.MPLS_gen_econsent_image = MPLS_gen_econsent_image
+module.exports.MPLS_test_gen_econsent_image = MPLS_test_gen_econsent_image
