@@ -287,6 +287,8 @@ app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
 
 app.get('/getmotocyclenego', auth, negoService.getmotocyclenego)
 
+app.get('/getholdermaster', auth, negoService.getholdermaster)
+
 app.get('/gethistorypaymentlist', auth, negoService.gethistorypaymentlist)
 
 app.get('/getaddresscustlist', auth, negoService.getaddresscustlist)

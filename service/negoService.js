@@ -1945,7 +1945,6 @@ async function insertnegolist(req, res, next) {
     let connection;
     try {
 
-
         //=== get parameter ====
         console.log(`trigger`)
         const objectjson = req.body
@@ -2035,10 +2034,18 @@ async function insertnegolist(req, res, next) {
 
         } catch (e) {
             console.log(`error create nego record : ${e}`)
-            return res.status(200).send({
-                status: 400,
-                message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
-            })
+            try {
+                await connection.rollback()
+                return res.status(200).send({
+                    status: 400,
+                    message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
+                })
+            } catch (e) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record) , (rollback fail): ${e.message ? e.message : `No message`}`
+                })
+            }
         }
 
         // ==== insert call track info record ====
@@ -2087,11 +2094,18 @@ async function insertnegolist(req, res, next) {
             console.log(`create call_track_info success : ${JSON.stringify(insertCallTrackinfo)}`)
 
         } catch (e) {
-            console.log(`error call_track_info record : ${e}`)
-            return res.status(400).send({
-                status: 400,
-                message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
-            })
+            try {
+                await connection.rollback()
+                return res.status(200).send({
+                    status: 400,
+                    message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
+                })
+            } catch (e) {
+                return res.status(400).send({
+                    status: 400,
+                    message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record), (rollback fail): ${e.message ? e.message : `No message`}`
+                })
+            }
         }
 
         // === commit all record if all created record success ===
@@ -2282,15 +2296,15 @@ async function createaddressInfo(req, res, next) {
         // === check all query require ===
         if (
             !(reqData.applicationid &&
-            reqData.address &&
-            reqData.sub_district &&
-            reqData.district &&
-            reqData.province_name &&
-            reqData.province_code &&
-            reqData.postal_code &&
-            reqData.la &&
-            reqData.lon &&
-            reqData.lalon)
+                reqData.address &&
+                reqData.sub_district &&
+                reqData.district &&
+                reqData.province_name &&
+                reqData.province_code &&
+                reqData.postal_code &&
+                reqData.la &&
+                reqData.lon &&
+                reqData.lalon)
         ) {
             return res.status(200).send({
                 status: 500,
@@ -2307,7 +2321,7 @@ async function createaddressInfo(req, res, next) {
             WHERE CONTRACT_NO = :APPLICATIONID
         `, {
             APPLICATIONID: reqData.applicationid
-        }, { outFormat: oracledb.OBJECT})
+        }, { outFormat: oracledb.OBJECT })
 
         console.log(`rows Data : ${JSON.stringify(getkeyliving.rows)}`)
 
@@ -2385,7 +2399,7 @@ async function createaddressInfo(req, res, next) {
                 LONDTIUDE: reqData.lon,
                 LALON: reqData.lalon
 
-            },{ outFormat: oracledb.OBJECT})
+            }, { outFormat: oracledb.OBJECT })
 
             const updatequotation = await connection.execute(`
                 UPDATE MPLS_QUOTATION 
@@ -2396,7 +2410,7 @@ async function createaddressInfo(req, res, next) {
             `, {
                 QUO_LIVING_PLACE_ID: livinguuid,
                 QUOTATIONID: quotationid
-            },{ outFormat: oracledb.OBJECT})
+            }, { outFormat: oracledb.OBJECT })
 
             if (createlivingplace.rowsAffected !== 1 && updatequotation.rowsAffected !== 1) {
                 return res.status(200).send({
@@ -2670,6 +2684,121 @@ async function genqrcodenego(req, res, next) {
 
 }
 
+async function getholdermaster(req, res, next) {
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const holder_list = await connection.execute(`
+                                SELECT hp_hold
+                                FROM
+                                (SELECT T.*,
+                                        ep.DETAILS
+                                FROM
+                                    (SELECT A.*
+                                    FROM
+                                        (SELECT coll_info_monthly_view.hp_hold,
+                                                coll_info_monthly_view.HP_NO
+                                        FROM coll_info_monthly_view,
+                                            black1,
+                                            title_p,
+                                            type_p,
+                                            branch_p,
+                                            status_call,
+                                            x_cust_mapping_ext,
+                                            X_DEALER_P,
+
+                                        (SELECT DISTINCT hp_no
+                                            FROM btw.CALL_TRACK_INFO
+                                            WHERE trunc(rec_day) = trunc(sysdate)
+                                            AND phone_no=0) cti
+                                        WHERE ((coll_info_monthly_view.hp_no = black1.hp(+))
+                                                AND (title_p.title_id(+) = black1.fname_code)
+                                                AND (black1.TYPE = type_p.type_code(+))--AND (coll_info_monthly_view.branch_code = branch_p.branch_code)
+
+                                                AND (coll_info_monthly_view.flag = status_call.flag)
+                                                AND coll_info_monthly_view.hp_no = x_cust_mapping_ext.contract_no)
+                                        AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
+                                        AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
+                                        AND coll_info_monthly_view.hp_no = cti.hp_no(+)
+                                        AND COLL_INFO_MONTHLY_VIEW.STAPAY1 IS NULL ) A
+                                    WHERE HP_NO IS NOT NULL
+                                        AND HP_HOLD IS NOT NULL ) T,
+                                        ESTIMATE_REPO_CHECK_MASTER em,
+                                        ESTIMATE_REPO_CHECK_MASTER_P ep
+                                WHERE T.HP_NO = em.CONTACT_NO(+)
+                                    AND em.STATUS = ep.STATUS(+))
+                                GROUP BY hp_hold`
+            , {
+
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        // check length 
+
+        if (holder_list.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No holder data',
+                data: []
+            })
+        } else {
+
+            const filter_holder = holder_list.rows.map(obj => `'${obj.HP_HOLD}'`);
+
+            // console.log(`filter holder : ${filter_holder}`)
+
+            // maping emp id with name from EMP db
+
+            const mappingHolder = await connection.execute(`
+            SELECT  
+                EMP_ID, EMP_NAME, EMP_NAME ||' '|| EMP_LNAME AS EMP_FULLNAME, EMP_LNAME 
+            FROM EMP
+            WHERE EMP_ID IN (${filter_holder})
+            `, {}, { outFormat: oracledb.OBJECT })
+
+            if (mappingHolder.rows.length == 0) {
+                return res.status(200).send({
+                    status: 400,
+                    message: 'No holder data',
+                    data: []
+                })
+            } else {
+                const resData = mappingHolder.rows
+                const lowerResData = tolowerService.arrayobjtolower(resData)
+                return res.status(200).send({
+                    status: 200,
+                    message: 'success',
+                    data: lowerResData
+                })
+            }
+
+        }
+
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 // module.exports.getcontractlist = getcontractlist
 module.exports.getnegotiationlist = getnegotiationlist
 module.exports.getnegotiationbyid = getnegotiationbyid
@@ -2687,3 +2816,5 @@ module.exports.getmotocyclenego = getmotocyclenego
 module.exports.genqrcodenego = genqrcodenego
 module.exports.updatenegolalon = updatenegolalon
 module.exports.createaddressInfo = createaddressInfo
+
+module.exports.getholdermaster = getholdermaster
