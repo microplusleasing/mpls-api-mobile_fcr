@@ -197,7 +197,7 @@ async function getviewcontractlist(req, res, next) {
     let connection;
     try {
         // let cust_id = [];
-        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus } = req.query
+        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus, holder } = req.query
 
         const indexstart = (pageno - 1) * 5 + 1
         const indexend = (pageno * 5)
@@ -222,6 +222,7 @@ async function getviewcontractlist(req, res, next) {
         let querybill = ''
         let querytrack = ''
         let querycarcheck = ''
+        let queryholder = ''
         // ==== build query string form execute ====
 
         if (name) {
@@ -278,6 +279,11 @@ async function getviewcontractlist(req, res, next) {
         if (carcheckstatus) {
             querycarcheck = ` and em.STATUS = :status_em `
             bindparams.status_em = carcheckstatus
+        }
+
+        if (holder) {
+            queryholder = ` and COLL_INFO_MONTHLY_VIEW.HP_HOLD = :holder `
+            bindparams.holder = holder
         }
 
         const sqlbase = `
@@ -360,7 +366,7 @@ async function getviewcontractlist(req, res, next) {
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null
-                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}
+                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) a
                         `
@@ -489,7 +495,7 @@ async function getviewcontractlist(req, res, next) {
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null
-                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}
+                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) A
                 `
