@@ -129,6 +129,8 @@ app.get('/MPLS_getbrand', auth, masterService.MPLS_getbrand)
 
 app.get('/MPLS_getmodel', auth, masterService.MPLS_getmodel)
 
+app.post('/MPLS_getsecondhandcarbyreg', auth, masterService.MPLS_getsecondhandcarbyreg)
+
 app.post('/MPLS_upload_customer_face', auth, qeconsentService.MPLS_upload_customer_face)
 
 app.get('/MPLS_is_check_face_valid', auth, qeconsentService.MPLS_is_check_face_valid)
@@ -146,6 +148,8 @@ app.get('/MPLS_get_dopa_valid_status_unlock', qeconsentService.MPLS_get_dopa_val
 app.get('/MPLS_canclequotation/:quotationid', auth,  qeconsentService.MPLS_canclequotation)
 
 app.post('/MPLS_gen_econsent_image',  auth,  qeconsentService.MPLS_gen_econsent_image)
+
+app.post('/MPLS_fix_gen_econsent_image',  auth,  qeconsentService.MPLS_fix_gen_econsent_image)
 
 app.get('/MPLS_test_gen_econsent_image',  qeconsentService.MPLS_test_gen_econsent_image)
 
@@ -287,6 +291,8 @@ app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
 
 app.get('/getmotocyclenego', auth, negoService.getmotocyclenego)
 
+app.get('/getholdermaster', auth, negoService.getholdermaster)
+
 app.get('/gethistorypaymentlist', auth, negoService.gethistorypaymentlist)
 
 app.get('/getaddresscustlist', auth, negoService.getaddresscustlist)
@@ -382,16 +388,16 @@ app.post('/compressimage', imageUtilService.compressimage)
 // process.env.PORT
 // process.env.API_PORT
 
-app.listen(process.env.API_PORT, () => {
-  // console.log(ip.address());
-  console.log(`UP & running on port ${process.env.API_PORT}`)
-})
-
-
-// app.listen(process.env.PORT, () => {
+// app.listen(process.env.API_PORT, () => {
 //   // console.log(ip.address());
-//   console.log(`UP & running on port ${process.env.PORT}`)
+//   console.log(`UP & running on port ${process.env.API_PORT}`)
 // })
+
+
+app.listen(process.env.PORT, () => {
+  // console.log(ip.address());
+  console.log(`UP & running on port ${process.env.PORT}`)
+})
  
 
 
