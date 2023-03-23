@@ -197,7 +197,7 @@ async function getviewcontractlist(req, res, next) {
     let connection;
     try {
         // let cust_id = [];
-        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus, holder } = req.query
+        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus, holder, apd } = req.query
 
         const indexstart = (pageno - 1) * 5 + 1
         const indexend = (pageno * 5)
@@ -223,6 +223,8 @@ async function getviewcontractlist(req, res, next) {
         let querytrack = ''
         let querycarcheck = ''
         let queryholder = ''
+        let queryapd1 = ''
+        let queryapd2 = ''
         // ==== build query string form execute ====
 
         if (name) {
@@ -284,6 +286,22 @@ async function getviewcontractlist(req, res, next) {
         if (holder) {
             queryholder = ` and COLL_INFO_MONTHLY_VIEW.HP_HOLD = :holder `
             bindparams.holder = holder
+        }
+
+        if (apd && apd !== '') {
+            const  apd_date_formate =  moment(new Date(apd)).format("DD/MM/YYYY")
+            // queryapd1 = ` NEGO_INFO, `
+            queryapd1 = ` (SELECT *
+                FROM (
+                  SELECT hp_no, appoint_date, REC_DATE, staff_id, neg_r_code,
+                         ROW_NUMBER() OVER (PARTITION BY HP_NO ORDER BY REC_DATE DESC) AS apd_index
+                  FROM BTW.NEGO_INFO
+                  WHERE TRUNC(APPOINT_DATE) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(TO_DATE('25/06/2018', 'DD/MM/YYYY')))
+                  ORDER BY REC_DATE DESC
+                )
+                WHERE apd_index = 1) APD , `
+            queryapd2 = ` AND COLL_INFO_MONTHLY_VIEW.HP_NO = APD.HP_NO (+) AND TRUNC(APD.APPOINT_DATE) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(to_date(:apd_date_formate, 'dd/mm/yyyy'))) `
+            bindparams.apd_date_formate = apd_date_formate
         }
 
         const sqlbase = `
@@ -352,6 +370,7 @@ async function getviewcontractlist(req, res, next) {
                                     status_call,
                                     x_cust_mapping_ext,
                                     X_DEALER_P,
+                                    ${queryapd1}
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
                                         where trunc(rec_day) = trunc(sysdate)
@@ -366,7 +385,7 @@ async function getviewcontractlist(req, res, next) {
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null
-                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}
+                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) a
                         `
@@ -388,6 +407,7 @@ async function getviewcontractlist(req, res, next) {
                 ${sqlbase}${wherecondition})
                 `
 
+                console.log(`fin sql = : ${finishsql}`)
         const resultcontractcount = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
 
         if (resultcontractcount.rows[0].count == 0) {
@@ -480,7 +500,8 @@ async function getviewcontractlist(req, res, next) {
                                     branch_p,
                                     status_call,
                                     x_cust_mapping_ext,
-                                    X_DEALER_P,
+                                    X_DEALER_P, 
+                                    ${queryapd1}
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
                                         where trunc(rec_day) = trunc(sysdate)
@@ -495,7 +516,7 @@ async function getviewcontractlist(req, res, next) {
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null
-                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}
+                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) A
                 `
@@ -1952,21 +1973,25 @@ async function insertnegolist(req, res, next) {
     try {
 
         //=== get parameter ====
-        console.log(`trigger`)
-        const objectjson = req.body
+        const token = req.user
+        const userid = token.ID
 
+        console.log(`trigger API insertnegolist From ${userid}, when ${moment().format('MMMM Do YYYY, h:mm:ss a')}`)
+
+        const objectjson = req.body
         let { hp_no, cust_id, phone_no, staff_id, user_name, neg_r_code,
             appoint_date, message1, message2, con_r_code,
         } = objectjson
 
-        // console.log(`this is all value form clietn : ${JSON.stringify(objectjson)}`)
+        console.log(`params that send : hp_no : ${hp_no ? hp_no : '-'},  cust_id : ${cust_id ? cust_id : '-'},  phone_no : ${phone_no ? phone_no : '-'}, staff_id : ${staff_id ? staff_id : '-'},` +
+            `user_name : ${user_name ? user_name : '-'}, neg_r_code : ${neg_r_code ? neg_r_code : '-'}, appoint_date : ${appoint_date ? appoint_date : '-'}, message1 : ${message1 ? message1 : '-'},` +
+            `message2 : ${message2 ? message2 : '-'}, con_r_code : ${con_r_code ? con_r_code : '-'},`)
 
-        const token = req.user
-        const userid = token.ID
+        // console.log(`this is all value form clietn : ${JSON.stringify(objectjson)}`)
 
         // ==== build fix param =====
         let appoint_date_dtype;
-        console.log(`appoint_date : ${appoint_date}`)
+        // console.log(`appoint_date : ${appoint_date}`)
         if (appoint_date) {
             // appoint_date_dtype = moment(appoint_date, 'YYYY-MM-DD').format('LL')
             appoint_date_dtype = moment(appoint_date, 'DD/MM/YYYY').format('LL')
@@ -2041,13 +2066,22 @@ async function insertnegolist(req, res, next) {
         } catch (e) {
             console.log(`error create nego record : ${e}`)
             try {
-                console.log(`trigger rollback (create nego_info)`)
-                await connection.rollback()
-                console.log(`rollback success (create nego_info)`)
-                return res.status(200).send({
-                    status: 400,
-                    message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
-                })
+                if (connection) {
+                    console.log(`trigger rollback (create nego_info)`)
+                    await connection.rollback()
+                    console.log(`rollback success (create nego_info)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
+                    })
+                } else {
+                    console.log(`error create nego record (no - connection) (create nego_info)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
+                    })
+                }
+
             } catch (e) {
                 return res.status(200).send({
                     status: 400,
@@ -2103,13 +2137,21 @@ async function insertnegolist(req, res, next) {
 
         } catch (e) {
             try {
-                console.log(`trigger rollback (create call track)`)
-                await connection.rollback()
-                console.log(`rollback success (create call track)`)
-                return res.status(200).send({
-                    status: 400,
-                    message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
-                })
+                if (connection) {
+                    console.log(`trigger rollback (create call track)`)
+                    await connection.rollback()
+                    console.log(`rollback success (create call track)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
+                    })
+                } else {
+                    console.log(`create call_track_info success (no-connection) (create call track)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
+                    })
+                }
             } catch (e) {
                 return res.status(400).send({
                     status: 400,
@@ -2123,13 +2165,24 @@ async function insertnegolist(req, res, next) {
 
         try {
             commitall
-        } catch {
-            // console.err(err.message)
-            res.send(400).send({
-                status: 400,
-                message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail)`,
-                data: []
-            })
+        } catch (e) {
+
+            if (connection) {
+                console.log(`trigger rollback (commit fail)`)
+                await connection.rollback();
+                console.log(`rollback success (commit fail)`)
+                res.send(200).send({
+                    status: 400,
+                    message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail)`,
+                    data: []
+                })
+            } else {
+                res.send(200).send({
+                    status: 400,
+                    message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail)`,
+                    data: []
+                })
+            }
         }
 
         // ==== success create nego and call track record then commit complete ==== 
@@ -2138,16 +2191,26 @@ async function insertnegolist(req, res, next) {
             message: `success`,
             data: []
         })
+        
 
     } catch (e) {
         // console.error(e)
         try {
-            await connection.rollback()
-            console.log(`insertnegolist Error: ${e.message ? e.message : `No err msg`}`)
-            return res.status(400).send({
-                status: 400,
-                message: `ผิดพลาดไม่สามารถบันทึกรายการได้ : ${e.message}`
-            })
+            if (connection) {
+                await connection.rollback()
+                console.log(`insertnegolist Error: ${e.message ? e.message : `No err msg`}`)
+                return res.status(400).send({
+                    status: 400,
+                    message: `ผิดพลาดไม่สามารถบันทึกรายการได้ : ${e.message}`
+                })
+            } else {
+                console.log(`insertnegolist Error (no connection): ${e.message ? e.message : `No err msg`}`)
+                return res.status(400).send({
+                    status: 400,
+                    message: `ผิดพลาดไม่สามารถบันทึกรายการได้ : ${e.message}`
+                })
+            }
+
 
         } catch (e) {
             console.log(`insertnegolist Error rollback: ${e.message ? e.message : `No err msg`}`)
@@ -2169,6 +2232,12 @@ async function insertnegolist(req, res, next) {
                     message: `Error when close connection : ${e.message ? e.message : 'No return message'}`
                 })
             }
+        } else {
+            console.log(`can't create instanct of connection oracledb !`)
+            return res.status(200).send({
+                status: false,
+                message: `Error (can't connect oracledb , try againt later)`
+            })
         }
     }
 }

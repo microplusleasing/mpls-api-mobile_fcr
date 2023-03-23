@@ -874,6 +874,33 @@ paths:
         "500":
           description: "internal server Error"
 
+  /MPLS_getsecondhandcarbyreg :
+    post:
+      tags:
+        - "product"
+      security:
+        - bearerAuth: []
+      summary: This return a second hand car  in list object by filter
+      description: Returning a Object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                p_reg_no:
+                  type: string
+                  example: "กพ"
+                p_sl_code:
+                  type: string
+                  example: "20220059"
+      responses:
+        "200":
+          description: "success"
+        "404":
+          description: "error not found"
+        "500":
+          description: "internal server Error"
+
   /getimagebyid/{id}:
     get:
       tags:
@@ -2881,6 +2908,67 @@ paths:
       deprecated: true
 
   /MPLS_gen_econsent_image:
+    post:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Check verify Phone number of quotation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                quotationid:
+                  type: string
+                  example: "25c45e1e-41b6-40b6-ae95-a70eb8239d38"
+                transaction_no:
+                  type: string
+                  example: "20230302417"
+                firstname:
+                  type: string
+                  example: "ณภัทร"
+                lastname:
+                  type: string
+                  example: "รอดเนียม"
+                birthdate:
+                  type: string
+                  example: "18/04/2539"
+                citizenid:
+                  type: string
+                  example: "1229900584011"
+                phone_number:
+                  type: string
+                  example: "0952483338"
+                application_no:
+                  type: string
+                  example: "0A0000000000000"
+                consent_datetime:
+                  type: string
+                  example: "2023-03-18T06:50:45.117Z"
+                currentDate:
+                  type: string
+                  example: "16/03/2566"
+                currentDateTime:
+                  type: string
+                  example: "15:47:52"
+                witness_name:
+                  type: string
+                  example: "ทดสอบ"
+                witness_lname:
+                  type: string
+                  example: "เจนรูปอีคอนเซนต์"
+                otp_value:
+                  type: string
+                  example: "99999"
+      # requestBody:
+      #   $ref: "#/components/requestBodies/MPLS_gen_econsent_image"
+      responses:
+        "200":
+          description: "success"
+
+  /MPLS_fix_gen_econsent_image:
     post:
       tags:
         - "E-CONSENT"
