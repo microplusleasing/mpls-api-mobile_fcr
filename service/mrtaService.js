@@ -492,7 +492,7 @@ async function saveqrpayment(req, res, next) {
                             // === insert ===
                             try {
                                 const insertmrtaselect = await connection.execute(`
-                                Insert into MOBILEMPLS.CONTRACT_INSURANCE
+                                INSERT INTO MOBILEMPLS.CONTRACT_INSURANCE
                                 (APPLICATION_NUM,
                                  QUOTATION_ID,
                                  INSURANCE_T_CASH,

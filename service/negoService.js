@@ -197,7 +197,7 @@ async function getviewcontractlist(req, res, next) {
     let connection;
     try {
         // let cust_id = [];
-        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus } = req.query
+        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus, holder, apd } = req.query
 
         const indexstart = (pageno - 1) * 5 + 1
         const indexend = (pageno * 5)
@@ -222,6 +222,9 @@ async function getviewcontractlist(req, res, next) {
         let querybill = ''
         let querytrack = ''
         let querycarcheck = ''
+        let queryholder = ''
+        let queryapd1 = ''
+        let queryapd2 = ''
         // ==== build query string form execute ====
 
         if (name) {
@@ -278,6 +281,27 @@ async function getviewcontractlist(req, res, next) {
         if (carcheckstatus) {
             querycarcheck = ` and em.STATUS = :status_em `
             bindparams.status_em = carcheckstatus
+        }
+
+        if (holder) {
+            queryholder = ` and COLL_INFO_MONTHLY_VIEW.HP_HOLD = :holder `
+            bindparams.holder = holder
+        }
+
+        if (apd && apd !== '') {
+            const  apd_date_formate =  moment(new Date(apd)).format("DD/MM/YYYY")
+            // queryapd1 = ` NEGO_INFO, `
+            queryapd1 = ` (SELECT *
+                FROM (
+                  SELECT hp_no, appoint_date, REC_DATE, staff_id, neg_r_code,
+                         ROW_NUMBER() OVER (PARTITION BY HP_NO ORDER BY REC_DATE DESC) AS apd_index
+                  FROM BTW.NEGO_INFO
+                  WHERE TRUNC(APPOINT_DATE) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(TO_DATE('25/06/2018', 'DD/MM/YYYY')))
+                  ORDER BY REC_DATE DESC
+                )
+                WHERE apd_index = 1) APD , `
+            queryapd2 = ` AND COLL_INFO_MONTHLY_VIEW.HP_NO = APD.HP_NO (+) AND TRUNC(APD.APPOINT_DATE) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(to_date(:apd_date_formate, 'dd/mm/yyyy'))) `
+            bindparams.apd_date_formate = apd_date_formate
         }
 
         const sqlbase = `
@@ -346,6 +370,7 @@ async function getviewcontractlist(req, res, next) {
                                     status_call,
                                     x_cust_mapping_ext,
                                     X_DEALER_P,
+                                    ${queryapd1}
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
                                         where trunc(rec_day) = trunc(sysdate)
@@ -360,7 +385,7 @@ async function getviewcontractlist(req, res, next) {
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null
-                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}
+                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) a
                         `
@@ -382,6 +407,7 @@ async function getviewcontractlist(req, res, next) {
                 ${sqlbase}${wherecondition})
                 `
 
+                console.log(`fin sql = : ${finishsql}`)
         const resultcontractcount = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
 
         if (resultcontractcount.rows[0].count == 0) {
@@ -474,7 +500,8 @@ async function getviewcontractlist(req, res, next) {
                                     branch_p,
                                     status_call,
                                     x_cust_mapping_ext,
-                                    X_DEALER_P,
+                                    X_DEALER_P, 
+                                    ${queryapd1}
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
                                         where trunc(rec_day) = trunc(sysdate)
@@ -489,7 +516,7 @@ async function getviewcontractlist(req, res, next) {
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null
-                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}
+                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) A
                 `
@@ -1945,23 +1972,26 @@ async function insertnegolist(req, res, next) {
     let connection;
     try {
 
-
         //=== get parameter ====
-        console.log(`trigger`)
-        const objectjson = req.body
+        const token = req.user
+        const userid = token.ID
 
+        console.log(`trigger API insertnegolist From ${userid}, when ${moment().format('MMMM Do YYYY, h:mm:ss a')}`)
+
+        const objectjson = req.body
         let { hp_no, cust_id, phone_no, staff_id, user_name, neg_r_code,
             appoint_date, message1, message2, con_r_code,
         } = objectjson
 
-        // console.log(`this is all value form clietn : ${JSON.stringify(objectjson)}`)
+        console.log(`params that send : hp_no : ${hp_no ? hp_no : '-'},  cust_id : ${cust_id ? cust_id : '-'},  phone_no : ${phone_no ? phone_no : '-'}, staff_id : ${staff_id ? staff_id : '-'},` +
+            `user_name : ${user_name ? user_name : '-'}, neg_r_code : ${neg_r_code ? neg_r_code : '-'}, appoint_date : ${appoint_date ? appoint_date : '-'}, message1 : ${message1 ? message1 : '-'},` +
+            `message2 : ${message2 ? message2 : '-'}, con_r_code : ${con_r_code ? con_r_code : '-'},`)
 
-        const token = req.user
-        const userid = token.ID
+        // console.log(`this is all value form clietn : ${JSON.stringify(objectjson)}`)
 
         // ==== build fix param =====
         let appoint_date_dtype;
-        console.log(`appoint_date : ${appoint_date}`)
+        // console.log(`appoint_date : ${appoint_date}`)
         if (appoint_date) {
             // appoint_date_dtype = moment(appoint_date, 'YYYY-MM-DD').format('LL')
             appoint_date_dtype = moment(appoint_date, 'DD/MM/YYYY').format('LL')
@@ -2035,10 +2065,29 @@ async function insertnegolist(req, res, next) {
 
         } catch (e) {
             console.log(`error create nego record : ${e}`)
-            return res.status(200).send({
-                status: 400,
-                message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
-            })
+            try {
+                if (connection) {
+                    console.log(`trigger rollback (create nego_info)`)
+                    await connection.rollback()
+                    console.log(`rollback success (create nego_info)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
+                    })
+                } else {
+                    console.log(`error create nego record (no - connection) (create nego_info)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
+                    })
+                }
+
+            } catch (e) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record) , (rollback fail): ${e.message ? e.message : `No message`}`
+                })
+            }
         }
 
         // ==== insert call track info record ====
@@ -2087,11 +2136,28 @@ async function insertnegolist(req, res, next) {
             console.log(`create call_track_info success : ${JSON.stringify(insertCallTrackinfo)}`)
 
         } catch (e) {
-            console.log(`error call_track_info record : ${e}`)
-            return res.status(400).send({
-                status: 400,
-                message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
-            })
+            try {
+                if (connection) {
+                    console.log(`trigger rollback (create call track)`)
+                    await connection.rollback()
+                    console.log(`rollback success (create call track)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
+                    })
+                } else {
+                    console.log(`create call_track_info success (no-connection) (create call track)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
+                    })
+                }
+            } catch (e) {
+                return res.status(400).send({
+                    status: 400,
+                    message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record), (rollback fail): ${e.message ? e.message : `No message`}`
+                })
+            }
         }
 
         // === commit all record if all created record success ===
@@ -2099,13 +2165,24 @@ async function insertnegolist(req, res, next) {
 
         try {
             commitall
-        } catch {
-            console.err(err.message)
-            res.send(400).send({
-                status: 400,
-                message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail)`,
-                data: []
-            })
+        } catch (e) {
+
+            if (connection) {
+                console.log(`trigger rollback (commit fail)`)
+                await connection.rollback();
+                console.log(`rollback success (commit fail)`)
+                res.send(200).send({
+                    status: 400,
+                    message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail)`,
+                    data: []
+                })
+            } else {
+                res.send(200).send({
+                    status: 400,
+                    message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail)`,
+                    data: []
+                })
+            }
         }
 
         // ==== success create nego and call track record then commit complete ==== 
@@ -2114,24 +2191,55 @@ async function insertnegolist(req, res, next) {
             message: `success`,
             data: []
         })
+        
 
     } catch (e) {
-        console.error(e)
-        return res.status(400).send({
-            status: 400,
-            message: `ผิดพลาดไม่สามารถบันทึกรายการได้ : ${e.message}`
-        })
+        // console.error(e)
+        try {
+            if (connection) {
+                await connection.rollback()
+                console.log(`insertnegolist Error: ${e.message ? e.message : `No err msg`}`)
+                return res.status(400).send({
+                    status: 400,
+                    message: `ผิดพลาดไม่สามารถบันทึกรายการได้ : ${e.message}`
+                })
+            } else {
+                console.log(`insertnegolist Error (no connection): ${e.message ? e.message : `No err msg`}`)
+                return res.status(400).send({
+                    status: 400,
+                    message: `ผิดพลาดไม่สามารถบันทึกรายการได้ : ${e.message}`
+                })
+            }
+
+
+        } catch (e) {
+            console.log(`insertnegolist Error rollback: ${e.message ? e.message : `No err msg`}`)
+            return res.status(400).send({
+                status: 400,
+                message: `ผิดพลาดไม่สามารถบันทึกรายการได้ (fail rollback): ${e.message}`
+            })
+        }
     } finally {
         if (connection) {
             try {
-                await connection.close()
+                await connection.close();
+                console.log(`connection close success`)
             } catch (e) {
-                console.error(e)
-                return next(e)
+                console.error(e);
+                // return next(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Error when close connection : ${e.message ? e.message : 'No return message'}`
+                })
             }
+        } else {
+            console.log(`can't create instanct of connection oracledb !`)
+            return res.status(200).send({
+                status: false,
+                message: `Error (can't connect oracledb , try againt later)`
+            })
         }
     }
-
 }
 
 async function getlalon(req, res, next) {
@@ -2282,15 +2390,15 @@ async function createaddressInfo(req, res, next) {
         // === check all query require ===
         if (
             !(reqData.applicationid &&
-            reqData.address &&
-            reqData.sub_district &&
-            reqData.district &&
-            reqData.province_name &&
-            reqData.province_code &&
-            reqData.postal_code &&
-            reqData.la &&
-            reqData.lon &&
-            reqData.lalon)
+                reqData.address &&
+                reqData.sub_district &&
+                reqData.district &&
+                reqData.province_name &&
+                reqData.province_code &&
+                reqData.postal_code &&
+                reqData.la &&
+                reqData.lon &&
+                reqData.lalon)
         ) {
             return res.status(200).send({
                 status: 500,
@@ -2307,7 +2415,7 @@ async function createaddressInfo(req, res, next) {
             WHERE CONTRACT_NO = :APPLICATIONID
         `, {
             APPLICATIONID: reqData.applicationid
-        }, { outFormat: oracledb.OBJECT})
+        }, { outFormat: oracledb.OBJECT })
 
         console.log(`rows Data : ${JSON.stringify(getkeyliving.rows)}`)
 
@@ -2385,7 +2493,7 @@ async function createaddressInfo(req, res, next) {
                 LONDTIUDE: reqData.lon,
                 LALON: reqData.lalon
 
-            },{ outFormat: oracledb.OBJECT})
+            }, { outFormat: oracledb.OBJECT })
 
             const updatequotation = await connection.execute(`
                 UPDATE MPLS_QUOTATION 
@@ -2396,7 +2504,7 @@ async function createaddressInfo(req, res, next) {
             `, {
                 QUO_LIVING_PLACE_ID: livinguuid,
                 QUOTATIONID: quotationid
-            },{ outFormat: oracledb.OBJECT})
+            }, { outFormat: oracledb.OBJECT })
 
             if (createlivingplace.rowsAffected !== 1 && updatequotation.rowsAffected !== 1) {
                 return res.status(200).send({
@@ -2670,6 +2778,121 @@ async function genqrcodenego(req, res, next) {
 
 }
 
+async function getholdermaster(req, res, next) {
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const holder_list = await connection.execute(`
+                                SELECT hp_hold
+                                FROM
+                                (SELECT T.*,
+                                        ep.DETAILS
+                                FROM
+                                    (SELECT A.*
+                                    FROM
+                                        (SELECT coll_info_monthly_view.hp_hold,
+                                                coll_info_monthly_view.HP_NO
+                                        FROM coll_info_monthly_view,
+                                            black1,
+                                            title_p,
+                                            type_p,
+                                            branch_p,
+                                            status_call,
+                                            x_cust_mapping_ext,
+                                            X_DEALER_P,
+
+                                        (SELECT DISTINCT hp_no
+                                            FROM btw.CALL_TRACK_INFO
+                                            WHERE trunc(rec_day) = trunc(sysdate)
+                                            AND phone_no=0) cti
+                                        WHERE ((coll_info_monthly_view.hp_no = black1.hp(+))
+                                                AND (title_p.title_id(+) = black1.fname_code)
+                                                AND (black1.TYPE = type_p.type_code(+))--AND (coll_info_monthly_view.branch_code = branch_p.branch_code)
+
+                                                AND (coll_info_monthly_view.flag = status_call.flag)
+                                                AND coll_info_monthly_view.hp_no = x_cust_mapping_ext.contract_no)
+                                        AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
+                                        AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
+                                        AND coll_info_monthly_view.hp_no = cti.hp_no(+)
+                                        AND COLL_INFO_MONTHLY_VIEW.STAPAY1 IS NULL ) A
+                                    WHERE HP_NO IS NOT NULL
+                                        AND HP_HOLD IS NOT NULL ) T,
+                                        ESTIMATE_REPO_CHECK_MASTER em,
+                                        ESTIMATE_REPO_CHECK_MASTER_P ep
+                                WHERE T.HP_NO = em.CONTACT_NO(+)
+                                    AND em.STATUS = ep.STATUS(+))
+                                GROUP BY hp_hold`
+            , {
+
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        // check length 
+
+        if (holder_list.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No holder data',
+                data: []
+            })
+        } else {
+
+            const filter_holder = holder_list.rows.map(obj => `'${obj.HP_HOLD}'`);
+
+            // console.log(`filter holder : ${filter_holder}`)
+
+            // maping emp id with name from EMP db
+
+            const mappingHolder = await connection.execute(`
+            SELECT  
+                EMP_ID, EMP_NAME, EMP_NAME ||' '|| EMP_LNAME AS EMP_FULLNAME, EMP_LNAME 
+            FROM EMP
+            WHERE EMP_ID IN (${filter_holder})
+            `, {}, { outFormat: oracledb.OBJECT })
+
+            if (mappingHolder.rows.length == 0) {
+                return res.status(200).send({
+                    status: 400,
+                    message: 'No holder data',
+                    data: []
+                })
+            } else {
+                const resData = mappingHolder.rows
+                const lowerResData = tolowerService.arrayobjtolower(resData)
+                return res.status(200).send({
+                    status: 200,
+                    message: 'success',
+                    data: lowerResData
+                })
+            }
+
+        }
+
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 // module.exports.getcontractlist = getcontractlist
 module.exports.getnegotiationlist = getnegotiationlist
 module.exports.getnegotiationbyid = getnegotiationbyid
@@ -2687,3 +2910,5 @@ module.exports.getmotocyclenego = getmotocyclenego
 module.exports.genqrcodenego = genqrcodenego
 module.exports.updatenegolalon = updatenegolalon
 module.exports.createaddressInfo = createaddressInfo
+
+module.exports.getholdermaster = getholdermaster
