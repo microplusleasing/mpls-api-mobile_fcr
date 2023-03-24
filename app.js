@@ -183,6 +183,8 @@ app.get('/getbrand', auth, productService.getbrand)
 
 app.get('/getmodel', auth, productService.getmodel)
 
+app.get('/getMasterBussiness', auth, masterService.getMasterBussiness)
+
 app.get('/MasterRate', auth, masterService.getRate)
 
 app.get('/MasterTerm', auth, masterService.getTerm)
@@ -388,16 +390,16 @@ app.post('/compressimage', imageUtilService.compressimage)
 // process.env.PORT
 // process.env.API_PORT
 
-// app.listen(process.env.API_PORT, () => {
-//   // console.log(ip.address());
-//   console.log(`UP & running on port ${process.env.API_PORT}`)
-// })
-
-
-app.listen(process.env.PORT, () => {
+app.listen(process.env.API_PORT, () => {
   // console.log(ip.address());
-  console.log(`UP & running on port ${process.env.PORT}`)
+  console.log(`UP & running on port ${process.env.API_PORT}`)
 })
+
+
+// app.listen(process.env.PORT, () => {
+//   // console.log(ip.address());
+//   console.log(`UP & running on port ${process.env.PORT}`)
+// })
  
 
 

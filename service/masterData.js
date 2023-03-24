@@ -7,6 +7,55 @@ const path = require('path');
 const { result } = require('lodash');
 
 
+async function getMasterBussiness(req, res, next) {
+
+    let connection;
+    oracledb.fetchAsString = []
+
+    try {
+
+        connection = await oracledb.getConnection(
+            config.database
+        )
+
+        const results = await connection.execute(`
+                 SELECT * FROM BTW.X_BUSSINESS_P
+        `, [] // NO BINDING DATA PARAM
+            , {
+                outFormat: oracledb.OBJECT
+            })
+
+        if (results.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No Bussiness Code Found',
+                data: []
+            })
+        } else {
+            const resData = results.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return next(e)
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return next(e);
+            }
+        }
+    }
+}
+
 async function getRate(req, res, next) {
     let connection;
     const { pro_code, size_model } = req.query
@@ -1611,6 +1660,7 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
     }
 }
 
+module.exports.getMasterBussiness = getMasterBussiness
 module.exports.getRate = getRate
 module.exports.getPaymentCount = getPaymentCount
 module.exports.getImageType = getImageType
