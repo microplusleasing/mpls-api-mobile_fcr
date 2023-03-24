@@ -2306,6 +2306,8 @@ paths:
     post:
       tags:
         - "PROVIDER"
+      security:
+        - bearerAuth: []
       summary: ""
       description: ""
       requestBody:
@@ -2327,6 +2329,8 @@ paths:
     post:
       tags:
         - "PROVIDER"
+      security:
+        - bearerAuth: []
       summary: ""
       description: ""
       requestBody:
@@ -2370,6 +2374,8 @@ paths:
     post:
       tags:
         - "EMAIL"
+      security:
+        - bearerAuth: []
       summary: ""
       description: ""
       requestBody:
