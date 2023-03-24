@@ -7267,6 +7267,28 @@ async function MPLS_gen_econsent_image(req, res, next) {
     }
 }
 
+async function genuuid(req, res, next) {
+
+
+    try {
+
+       const uuid = uuidv4()
+
+       return res.status(200).send({
+        uuid: uuid
+       })
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+            // handle error
+    }
+}
+
 module.exports.MPLS_dipchip = MPLS_dipchip
 module.exports.MPLS_dipchipnoneconsent = MPLS_dipchipnoneconsent
 module.exports.MPLS_create_or_update_citizendata = MPLS_create_or_update_citizendata
@@ -7321,3 +7343,4 @@ module.exports.MPLS_canclequotation = MPLS_canclequotation
 module.exports.MPLS_gen_econsent_image = MPLS_gen_econsent_image
 module.exports.MPLS_fix_gen_econsent_image = MPLS_fix_gen_econsent_image
 module.exports.MPLS_test_gen_econsent_image = MPLS_test_gen_econsent_image
+module.exports.genuuid = genuuid
