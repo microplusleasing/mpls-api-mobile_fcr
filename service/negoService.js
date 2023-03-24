@@ -197,7 +197,7 @@ async function getviewcontractlist(req, res, next) {
     let connection;
     try {
         // let cust_id = [];
-        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus, holder, apd } = req.query
+        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus } = req.query
 
         const indexstart = (pageno - 1) * 5 + 1
         const indexend = (pageno * 5)
@@ -222,9 +222,6 @@ async function getviewcontractlist(req, res, next) {
         let querybill = ''
         let querytrack = ''
         let querycarcheck = ''
-        let queryholder = ''
-        let queryapd1 = ''
-        let queryapd2 = ''
         // ==== build query string form execute ====
 
         if (name) {
@@ -281,27 +278,6 @@ async function getviewcontractlist(req, res, next) {
         if (carcheckstatus) {
             querycarcheck = ` and em.STATUS = :status_em `
             bindparams.status_em = carcheckstatus
-        }
-
-        if (holder) {
-            queryholder = ` and COLL_INFO_MONTHLY_VIEW.HP_HOLD = :holder `
-            bindparams.holder = holder
-        }
-
-        if (apd && apd !== '') {
-            const  apd_date_formate =  moment(new Date(apd)).format("DD/MM/YYYY")
-            // queryapd1 = ` NEGO_INFO, `
-            queryapd1 = ` (SELECT *
-                FROM (
-                  SELECT hp_no, appoint_date, REC_DATE, staff_id, neg_r_code,
-                         ROW_NUMBER() OVER (PARTITION BY HP_NO ORDER BY REC_DATE DESC) AS apd_index
-                  FROM BTW.NEGO_INFO
-                  WHERE TRUNC(APPOINT_DATE) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(TO_DATE('25/06/2018', 'DD/MM/YYYY')))
-                  ORDER BY REC_DATE DESC
-                )
-                WHERE apd_index = 1) APD , `
-            queryapd2 = ` AND COLL_INFO_MONTHLY_VIEW.HP_NO = APD.HP_NO (+) AND TRUNC(APD.APPOINT_DATE) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(to_date(:apd_date_formate, 'dd/mm/yyyy'))) `
-            bindparams.apd_date_formate = apd_date_formate
         }
 
         const sqlbase = `
@@ -370,7 +346,6 @@ async function getviewcontractlist(req, res, next) {
                                     status_call,
                                     x_cust_mapping_ext,
                                     X_DEALER_P,
-                                    ${queryapd1}
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
                                         where trunc(rec_day) = trunc(sysdate)
@@ -385,7 +360,7 @@ async function getviewcontractlist(req, res, next) {
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null
-                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
+                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) a
                         `
@@ -407,7 +382,6 @@ async function getviewcontractlist(req, res, next) {
                 ${sqlbase}${wherecondition})
                 `
 
-                console.log(`fin sql = : ${finishsql}`)
         const resultcontractcount = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
 
         if (resultcontractcount.rows[0].count == 0) {
@@ -500,8 +474,7 @@ async function getviewcontractlist(req, res, next) {
                                     branch_p,
                                     status_call,
                                     x_cust_mapping_ext,
-                                    X_DEALER_P, 
-                                    ${queryapd1}
+                                    X_DEALER_P,
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
                                         where trunc(rec_day) = trunc(sysdate)
@@ -516,7 +489,7 @@ async function getviewcontractlist(req, res, next) {
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null
-                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
+                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) A
                 `
@@ -2778,120 +2751,120 @@ async function genqrcodenego(req, res, next) {
 
 }
 
-async function getholdermaster(req, res, next) {
+// async function getholdermaster(req, res, next) {
 
-    let connection;
-    try {
+//     let connection;
+//     try {
 
-        connection = await oracledb.getConnection(config.database)
-        const holder_list = await connection.execute(`
-                                SELECT hp_hold
-                                FROM
-                                (SELECT T.*,
-                                        ep.DETAILS
-                                FROM
-                                    (SELECT A.*
-                                    FROM
-                                        (SELECT coll_info_monthly_view.hp_hold,
-                                                coll_info_monthly_view.HP_NO
-                                        FROM coll_info_monthly_view,
-                                            black1,
-                                            title_p,
-                                            type_p,
-                                            branch_p,
-                                            status_call,
-                                            x_cust_mapping_ext,
-                                            X_DEALER_P,
+//         connection = await oracledb.getConnection(config.database)
+//         const holder_list = await connection.execute(`
+//                                 SELECT hp_hold
+//                                 FROM
+//                                 (SELECT T.*,
+//                                         ep.DETAILS
+//                                 FROM
+//                                     (SELECT A.*
+//                                     FROM
+//                                         (SELECT coll_info_monthly_view.hp_hold,
+//                                                 coll_info_monthly_view.HP_NO
+//                                         FROM coll_info_monthly_view,
+//                                             black1,
+//                                             title_p,
+//                                             type_p,
+//                                             branch_p,
+//                                             status_call,
+//                                             x_cust_mapping_ext,
+//                                             X_DEALER_P,
 
-                                        (SELECT DISTINCT hp_no
-                                            FROM btw.CALL_TRACK_INFO
-                                            WHERE trunc(rec_day) = trunc(sysdate)
-                                            AND phone_no=0) cti
-                                        WHERE ((coll_info_monthly_view.hp_no = black1.hp(+))
-                                                AND (title_p.title_id(+) = black1.fname_code)
-                                                AND (black1.TYPE = type_p.type_code(+))--AND (coll_info_monthly_view.branch_code = branch_p.branch_code)
+//                                         (SELECT DISTINCT hp_no
+//                                             FROM btw.CALL_TRACK_INFO
+//                                             WHERE trunc(rec_day) = trunc(sysdate)
+//                                             AND phone_no=0) cti
+//                                         WHERE ((coll_info_monthly_view.hp_no = black1.hp(+))
+//                                                 AND (title_p.title_id(+) = black1.fname_code)
+//                                                 AND (black1.TYPE = type_p.type_code(+))--AND (coll_info_monthly_view.branch_code = branch_p.branch_code)
 
-                                                AND (coll_info_monthly_view.flag = status_call.flag)
-                                                AND coll_info_monthly_view.hp_no = x_cust_mapping_ext.contract_no)
-                                        AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
-                                        AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
-                                        AND coll_info_monthly_view.hp_no = cti.hp_no(+)
-                                        AND COLL_INFO_MONTHLY_VIEW.STAPAY1 IS NULL ) A
-                                    WHERE HP_NO IS NOT NULL
-                                        AND HP_HOLD IS NOT NULL ) T,
-                                        ESTIMATE_REPO_CHECK_MASTER em,
-                                        ESTIMATE_REPO_CHECK_MASTER_P ep
-                                WHERE T.HP_NO = em.CONTACT_NO(+)
-                                    AND em.STATUS = ep.STATUS(+))
-                                GROUP BY hp_hold`
-            , {
+//                                                 AND (coll_info_monthly_view.flag = status_call.flag)
+//                                                 AND coll_info_monthly_view.hp_no = x_cust_mapping_ext.contract_no)
+//                                         AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
+//                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
+//                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
+//                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 IS NULL ) A
+//                                     WHERE HP_NO IS NOT NULL
+//                                         AND HP_HOLD IS NOT NULL ) T,
+//                                         ESTIMATE_REPO_CHECK_MASTER em,
+//                                         ESTIMATE_REPO_CHECK_MASTER_P ep
+//                                 WHERE T.HP_NO = em.CONTACT_NO(+)
+//                                     AND em.STATUS = ep.STATUS(+))
+//                                 GROUP BY hp_hold`
+//             , {
 
-            }, {
-            outFormat: oracledb.OBJECT
-        })
+//             }, {
+//             outFormat: oracledb.OBJECT
+//         })
 
-        // check length 
+//         // check length 
 
-        if (holder_list.rows.length == 0) {
-            return res.status(200).send({
-                status: 400,
-                message: 'No holder data',
-                data: []
-            })
-        } else {
+//         if (holder_list.rows.length == 0) {
+//             return res.status(200).send({
+//                 status: 400,
+//                 message: 'No holder data',
+//                 data: []
+//             })
+//         } else {
 
-            const filter_holder = holder_list.rows.map(obj => `'${obj.HP_HOLD}'`);
+//             const filter_holder = holder_list.rows.map(obj => `'${obj.HP_HOLD}'`);
 
-            // console.log(`filter holder : ${filter_holder}`)
+//             // console.log(`filter holder : ${filter_holder}`)
 
-            // maping emp id with name from EMP db
+//             // maping emp id with name from EMP db
 
-            const mappingHolder = await connection.execute(`
-            SELECT  
-                EMP_ID, EMP_NAME, EMP_NAME ||' '|| EMP_LNAME AS EMP_FULLNAME, EMP_LNAME 
-            FROM EMP
-            WHERE EMP_ID IN (${filter_holder})
-            `, {}, { outFormat: oracledb.OBJECT })
+//             const mappingHolder = await connection.execute(`
+//             SELECT  
+//                 EMP_ID, EMP_NAME, EMP_NAME ||' '|| EMP_LNAME AS EMP_FULLNAME, EMP_LNAME 
+//             FROM EMP
+//             WHERE EMP_ID IN (${filter_holder})
+//             `, {}, { outFormat: oracledb.OBJECT })
 
-            if (mappingHolder.rows.length == 0) {
-                return res.status(200).send({
-                    status: 400,
-                    message: 'No holder data',
-                    data: []
-                })
-            } else {
-                const resData = mappingHolder.rows
-                const lowerResData = tolowerService.arrayobjtolower(resData)
-                return res.status(200).send({
-                    status: 200,
-                    message: 'success',
-                    data: lowerResData
-                })
-            }
+//             if (mappingHolder.rows.length == 0) {
+//                 return res.status(200).send({
+//                     status: 400,
+//                     message: 'No holder data',
+//                     data: []
+//                 })
+//             } else {
+//                 const resData = mappingHolder.rows
+//                 const lowerResData = tolowerService.arrayobjtolower(resData)
+//                 return res.status(200).send({
+//                     status: 200,
+//                     message: 'success',
+//                     data: lowerResData
+//                 })
+//             }
 
-        }
+//         }
 
 
-    } catch (e) {
-        console.error(e);
-        return res.status(200).send({
-            status: 500,
-            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
-        })
-    } finally {
-        if (connection) {
-            try {
-                await connection.close();
-            } catch (e) {
-                console.error(e);
-                return res.status(200).send({
-                    status: 200,
-                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
-                })
-            }
-        }
-    }
-}
+//     } catch (e) {
+//         console.error(e);
+//         return res.status(200).send({
+//             status: 500,
+//             message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+//         })
+//     } finally {
+//         if (connection) {
+//             try {
+//                 await connection.close();
+//             } catch (e) {
+//                 console.error(e);
+//                 return res.status(200).send({
+//                     status: 200,
+//                     message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+//                 })
+//             }
+//         }
+//     }
+// }
 
 // module.exports.getcontractlist = getcontractlist
 module.exports.getnegotiationlist = getnegotiationlist
@@ -2911,4 +2884,4 @@ module.exports.genqrcodenego = genqrcodenego
 module.exports.updatenegolalon = updatenegolalon
 module.exports.createaddressInfo = createaddressInfo
 
-module.exports.getholdermaster = getholdermaster
+// module.exports.getholdermaster = getholdermaster
