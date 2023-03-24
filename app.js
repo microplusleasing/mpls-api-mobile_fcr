@@ -153,6 +153,8 @@ app.post('/MPLS_fix_gen_econsent_image',  auth,  qeconsentService.MPLS_fix_gen_e
 
 app.get('/MPLS_test_gen_econsent_image',  qeconsentService.MPLS_test_gen_econsent_image)
 
+app.get('/genuuid',  qeconsentService.genuuid)
+
 app.post('/updatequotationimage', auth, quotationservice.updateQuotationImage)
 
 app.post('/updatedraft', auth, quotationservice.updatedraft)
@@ -273,11 +275,11 @@ app.get(`/getipserver`, testService.getipserver)
 
 app.get(`/getipfromhttp`, testService.getipfromhttp)
 
-app.post(`/bypasssms`, smsService.bypasssms)
+app.post(`/bypasssms`, auth, smsService.bypasssms)
 
-app.post(`/testsmsenv`, smsService.testsmsenv)
+app.post(`/testsmsenv`, auth, smsService.testsmsenv)
 
-app.post(`/sendemailsmtp`, loginUserservice.sendemailsmtp)
+app.post(`/sendemailsmtp`, auth, loginUserservice.sendemailsmtp)
 
 app.post(`/forgetpassword`, loginUserservice.forgetpassword)
 

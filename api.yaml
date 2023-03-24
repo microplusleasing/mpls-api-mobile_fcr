@@ -2320,6 +2320,8 @@ paths:
     post:
       tags:
         - "PROVIDER"
+      security:
+        - bearerAuth: []
       summary: ""
       description: ""
       requestBody:
@@ -2337,10 +2339,26 @@ paths:
         "400":
           description: "Invalid input"
 
+  /genuuid:
+    get:
+      tags:
+        - "PROVIDER"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "gen uuidv4"
+      responses:
+        "200":
+          description: "success gen uuid"
+        "400":
+          description: "Error"
+
   /testsmsenv:
     post:
       tags:
         - "PROVIDER"
+      security:
+        - bearerAuth: []
       summary: ""
       description: ""
       requestBody:
@@ -2384,6 +2402,8 @@ paths:
     post:
       tags:
         - "EMAIL"
+      security:
+        - bearerAuth: []
       summary: ""
       description: ""
       requestBody:
