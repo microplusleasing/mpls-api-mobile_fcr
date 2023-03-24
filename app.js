@@ -271,11 +271,11 @@ app.get(`/getipserver`, testService.getipserver)
 
 app.get(`/getipfromhttp`, testService.getipfromhttp)
 
-app.post(`/bypasssms`, smsService.bypasssms)
+app.post(`/bypasssms`, auth, smsService.bypasssms)
 
-app.post(`/testsmsenv`, smsService.testsmsenv)
+app.post(`/testsmsenv`, auth, smsService.testsmsenv)
 
-app.post(`/sendemailsmtp`, loginUserservice.sendemailsmtp)
+app.post(`/sendemailsmtp`, auth, loginUserservice.sendemailsmtp)
 
 app.post(`/forgetpassword`, loginUserservice.forgetpassword)
 
@@ -388,16 +388,16 @@ app.post('/compressimage', imageUtilService.compressimage)
 // process.env.PORT
 // process.env.API_PORT
 
-// app.listen(process.env.API_PORT, () => {
-//   // console.log(ip.address());
-//   console.log(`UP & running on port ${process.env.API_PORT}`)
-// })
-
-
-app.listen(process.env.PORT, () => {
+app.listen(process.env.API_PORT, () => {
   // console.log(ip.address());
-  console.log(`UP & running on port ${process.env.PORT}`)
+  console.log(`UP & running on port ${process.env.API_PORT}`)
 })
+
+
+// app.listen(process.env.PORT, () => {
+//   // console.log(ip.address());
+//   console.log(`UP & running on port ${process.env.PORT}`)
+// })
  
 
 
