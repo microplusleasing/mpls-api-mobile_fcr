@@ -1995,7 +1995,7 @@ async function insertnegolist(req, res, next) {
         if (appoint_date) {
             // appoint_date_dtype = moment(appoint_date, 'YYYY-MM-DD').format('LL')
             appoint_date_dtype = moment(appoint_date, 'DD/MM/YYYY').format('LL')
-            console.log(`apd type : ${appoint_date_dtype}`)
+            // console.log(`apd type : ${appoint_date_dtype}`)
         }
         const currentDate = moment()
         const branch_code = '10'
@@ -2061,31 +2061,31 @@ async function insertnegolist(req, res, next) {
                 // autoCommit: true
             })
 
-            console.log(`create nego_info success : ${JSON.stringify(insertnegorecord)}`)
+            console.log(`create nego_info success, (user : ${userid}, hp_no: ${hp_no}), Return : ${JSON.stringify(insertnegorecord)}`)
 
         } catch (e) {
-            console.log(`error create nego record : ${e}`)
+            console.log(`error create nego record, (user : ${userid}, hp_no: ${hp_no}), ErrMsg : ${e}`)
             try {
                 if (connection) {
-                    console.log(`trigger rollback (create nego_info)`)
+                    console.log(`trigger rollback (create nego_info), (user : ${userid}, hp_no: ${hp_no})`)
                     await connection.rollback()
-                    console.log(`rollback success (create nego_info)`)
+                    console.log(`rollback success (create nego_info), (user : ${userid}, hp_no: ${hp_no})`)
                     return res.status(200).send({
                         status: 400,
-                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record), (user : ${userid}, hp_no: ${hp_no}), ErrMsg : ${e.message ? e.message : `No message`}`
                     })
                 } else {
-                    console.log(`error create nego record (no - connection) (create nego_info)`)
+                    console.log(`error create nego record (no - connection) (create nego_info), (user : ${userid}, hp_no: ${hp_no})`)
                     return res.status(200).send({
                         status: 400,
-                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record), (user : ${userid}, hp_no: ${hp_no}), ErrMsg : ${e.message ? e.message : `No message`}`
                     })
                 }
 
             } catch (e) {
                 return res.status(200).send({
                     status: 400,
-                    message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record) , (rollback fail): ${e.message ? e.message : `No message`}`
+                    message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record) , (rollback fail), (user : ${userid}, hp_no: ${hp_no}), ErrMsg : ${e.message ? e.message : `No message`}`
                 })
             }
         }
@@ -2133,29 +2133,29 @@ async function insertnegolist(req, res, next) {
             })
 
 
-            console.log(`create call_track_info success : ${JSON.stringify(insertCallTrackinfo)}`)
+            console.log(`create call_track_info success,  (user : ${userid}, hp_no: ${hp_no}), Return : ${JSON.stringify(insertCallTrackinfo)}`)
 
         } catch (e) {
             try {
                 if (connection) {
-                    console.log(`trigger rollback (create call track)`)
+                    console.log(`trigger rollback (create call track), (user : ${userid}, hp_no: ${hp_no})`)
                     await connection.rollback()
-                    console.log(`rollback success (create call track)`)
+                    console.log(`rollback success (create call track), (user : ${userid}, hp_no: ${hp_no})`)
                     return res.status(200).send({
                         status: 400,
-                        message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record), (user : ${userid}, hp_no: ${hp_no}), ErrMsg: ${e.message ? e.message : `No message`}`
                     })
                 } else {
-                    console.log(`create call_track_info success (no-connection) (create call track)`)
+                    console.log(`create call_track_info success (no-connection) (create call track), (user : ${userid}, hp_no: ${hp_no})`)
                     return res.status(200).send({
                         status: 400,
-                        message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record), (user : ${userid}, hp_no: ${hp_no}) , ErrMsg: ${e.message ? e.message : `No message`}`
                     })
                 }
             } catch (e) {
                 return res.status(400).send({
                     status: 400,
-                    message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record), (rollback fail): ${e.message ? e.message : `No message`}`
+                    message: `สร้างประวัติการติดตามไม่สำเร็จ (call track info record) , (user : ${userid}, hp_no: ${hp_no}), (rollback fail): ${e.message ? e.message : `No message`}`
                 })
             }
         }
@@ -2168,18 +2168,18 @@ async function insertnegolist(req, res, next) {
         } catch (e) {
 
             if (connection) {
-                console.log(`trigger rollback (commit fail)`)
+                console.log(`trigger rollback (commit fail) , (user : ${userid}, hp_no: ${hp_no})`)
                 await connection.rollback();
-                console.log(`rollback success (commit fail)`)
+                console.log(`rollback success (commit fail), (user : ${userid}, hp_no: ${hp_no})`)
                 res.send(200).send({
                     status: 400,
-                    message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail)`,
+                    message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail), (user : ${userid}, hp_no: ${hp_no})`,
                     data: []
                 })
             } else {
                 res.send(200).send({
                     status: 400,
-                    message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail)`,
+                    message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail), (user : ${userid}, hp_no: ${hp_no})`,
                     data: []
                 })
             }
