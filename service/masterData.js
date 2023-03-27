@@ -58,7 +58,7 @@ async function getMasterBussiness(req, res, next) {
 
 async function getRate(req, res, next) {
     let connection;
-    const { pro_code, size_model } = req.query
+    const { pro_code, size_model, bussiness_code } = req.query
     try {
         oracledb.fetchAsString = [oracledb.NUMBER];
         connection = await oracledb.getConnection(
@@ -69,11 +69,13 @@ async function getRate(req, res, next) {
                 FROM BTW.RATE_P 
                 WHERE SIZE_CODE = :size_model 
                 AND PRO_CODE = :pro_code 
+                AND BUSI_CODE = :bussiness_code
                 AND TRUNC(SYSDATE) BETWEEN TRUNC(ST_DATE) AND TRUNC(NVL(EN_DATE,SYSDATE))
                 ORDER BY RATE
         `, {
             pro_code: '01', // fix code
-            size_model: size_model
+            size_model: size_model,
+            bussiness_code: bussiness_code
         }, {
             outFormat: oracledb.OBJECT
         })
@@ -168,7 +170,7 @@ async function getTerm(req, res, next) {
 
 async function getTermNew(req, res, next) {
     let connection;
-    const { pro_code, size_model, rate, net_finance } = req.query
+    const { pro_code, size_model, rate, net_finance, bussiness_code } = req.query
 
     if(!(size_model && rate && net_finance)) {
         return res.satus(400).send({
@@ -183,19 +185,21 @@ async function getTermNew(req, res, next) {
             config.database
         )
         const results = await connection.execute(`
-                SELECT TERM
-                FROM BTW.TENOR_P
-                WHERE SIZE_CODE = :size_model
-                AND PRO_CODE = :pro_code
-                AND TRUNC(SYSDATE) BETWEEN TRUNC(ST_DATE) AND NVL(TRUNC(EN_DATE),TRUNC(SYSDATE))
-                AND BTW.PKG_CALCULATE.RATE_EFFECTIVE(ROUND(TRUNC(BTW.PKG_CAL_VAT.F_GET_AMOUNT_NO_VAT( :net_finance, BTW.GET_VAT (SYSDATE)),3),2),TERM,ROUND(TRUNC(BTW.PKG_CAL_VAT.F_GET_AMOUNT_NO_VAT(CEIL(round(BTW.pkg_installment.CAL_MONTHLY(:net_finance, TERM , :rate ),2)), BTW.GET_VAT (SYSDATE)),3),2))*12 <= (SELECT RATE FROM BTW.EFF_RATE_P WHERE TYPE_CODE = '1')
-                AND TERM >= BTW.GET_MIN_TERM_RATE_P(PRO_CODE,SIZE_CODE,SYSDATE, :rate)
-                ORDER BY TERM
+                        SELECT TERM
+                                FROM BTW.TENOR_P
+                                WHERE SIZE_CODE = :size_model
+                                AND PRO_CODE = :pro_code
+                                AND BUSI_CODE = :bussiness_code
+                                AND TRUNC(SYSDATE) BETWEEN TRUNC(ST_DATE) AND NVL(TRUNC(EN_DATE),TRUNC(SYSDATE))
+                                AND BTW.PKG_CALCULATE.RATE_EFFECTIVE(ROUND(TRUNC(BTW.PKG_CAL_VAT.F_GET_AMOUNT_NO_VAT( :net_finance, BTW.GET_VAT (SYSDATE)),3),2),TERM,ROUND(TRUNC(BTW.PKG_CAL_VAT.F_GET_AMOUNT_NO_VAT(CEIL(round(BTW.pkg_installment.CAL_MONTHLY(:net_finance, TERM , :rate ),2)), BTW.GET_VAT (SYSDATE)),3),2))*12 <= (SELECT RATE FROM BTW.EFF_RATE_P WHERE TYPE_CODE = '1')
+                                AND TERM >= BTW.GET_MIN_TERM_RATE_P(PRO_CODE,SIZE_CODE,SYSDATE, :rate, :bussiness_code)
+                                ORDER BY TERM
         `, {
             size_model: size_model,
             pro_code: '01', // fix code
             rate: rate,
-            net_finance: net_finance
+            net_finance: net_finance,
+            bussiness_code: bussiness_code
 
         }, {
             outFormat: oracledb.OBJECT
