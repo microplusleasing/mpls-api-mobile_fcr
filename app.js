@@ -95,7 +95,7 @@ app.get('/MPLS_get_witness_econsent', auth, qeconsentService.MPLS_get_witness_ec
 
 app.get('/MPLS_create_otp_econsent', auth, qeconsentService.MPLS_create_otp_econsent)
 
-app.post('/MPLS_validation_otp_econsent', auth, qeconsentService.MPLS_validation_otp_econsent)
+// app.post('/MPLS_validation_otp_econsent', auth, qeconsentService.MPLS_validation_otp_econsent)
 
 app.get('/MPLS_validation_otp_econsent_non', auth, qeconsentService.MPLS_validation_otp_econsent_non)
 

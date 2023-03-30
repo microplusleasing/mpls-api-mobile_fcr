@@ -1596,11 +1596,11 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
                 (
                     SELECT  REG_NO,prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
                             CHASSIS_NUMBER, CHASSIS_NO_RUNNING, REG_DATE,
-                            PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE,APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE
+                            PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE, MODEL_YEAR, APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE
                             FROM(
                             SELECT  D.APPLICATION_NUM , D.CONTRACT_NO , D.SL_CODE ,C.AUCTION_CODE , G.REG_NO REG_NO,
                             BTW.F_GET_PROVINCE_NAME(E.REG_CITY) AS PROV_NAME, BTW.GET_BRAND_NAME(E.PRODUC ,E.BRAND_CODE) AS BRAND_NAME,
-                            F.MODEL AS MODEL_NAME,E.COLOR ,F.CC ,G.ENGINE_NUMBER,G.ENGINE_NO_RUNNING,
+                            F.MODEL AS MODEL_NAME,E.COLOR ,F.CC, F.MODEL_YEAR ,G.ENGINE_NUMBER,G.ENGINE_NO_RUNNING,
                             G.CHASSIS_NUMBER, G.CHASSIS_NO_RUNNING,
                             E.REG_CITY prov_code,E.PRODUC,E.BRAND_CODE,E.MODEL_CODE,TRUNC(G.REG_DATE) AS REG_DATE
                             FROM BTW.COLL_RECIEPT A, BTW.X_RECEIVE B, BTW.X_REPOSSESS_AUCTION_P C , BTW.X_CUST_MAPPING_EXT D, BTW.AC_PROVE E, BTW.X_MODEL_P F,
@@ -1633,7 +1633,7 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
                             GROUP BY APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE ,  REG_NO,
                             prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
                             CHASSIS_NUMBER, CHASSIS_NO_RUNNING,
-                            prov_code,PRODUC,BRAND_CODE,MODEL_CODE, REG_DATE
+                            prov_code,PRODUC,BRAND_CODE,MODEL_CODE, REG_DATE, MODEL_YEAR
                 ) CARSEC
             )`
 
@@ -1653,11 +1653,11 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
                 (
                     SELECT  REG_NO,prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
                             CHASSIS_NUMBER, CHASSIS_NO_RUNNING, REG_DATE,
-                            PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE,APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE
+                            PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE, MODEL_YEAR, APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE
                             FROM(
                             SELECT  D.APPLICATION_NUM , D.CONTRACT_NO , D.SL_CODE ,C.AUCTION_CODE , G.REG_NO REG_NO,
                             BTW.F_GET_PROVINCE_NAME(E.REG_CITY) AS PROV_NAME, BTW.GET_BRAND_NAME(E.PRODUC ,E.BRAND_CODE) AS BRAND_NAME,
-                            F.MODEL AS MODEL_NAME,E.COLOR ,F.CC ,G.ENGINE_NUMBER,G.ENGINE_NO_RUNNING,
+                            F.MODEL AS MODEL_NAME,E.COLOR ,F.CC, F.MODEL_YEAR ,G.ENGINE_NUMBER,G.ENGINE_NO_RUNNING,
                             G.CHASSIS_NUMBER, G.CHASSIS_NO_RUNNING,
                             E.REG_CITY prov_code,E.PRODUC,E.BRAND_CODE,E.MODEL_CODE,TRUNC(G.REG_DATE) AS REG_DATE
                             FROM BTW.COLL_RECIEPT A, BTW.X_RECEIVE B, BTW.X_REPOSSESS_AUCTION_P C , BTW.X_CUST_MAPPING_EXT D, BTW.AC_PROVE E, BTW.X_MODEL_P F,
@@ -1690,7 +1690,7 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
                             GROUP BY APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE ,  REG_NO,
                             prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
                             CHASSIS_NUMBER, CHASSIS_NO_RUNNING,
-                            prov_code,PRODUC,BRAND_CODE,MODEL_CODE, REG_DATE
+                            prov_code,PRODUC,BRAND_CODE,MODEL_CODE, REG_DATE, MODEL_YEAR
                 ) CARSEC
                         `
                 let finalsqlconditionlist = `
