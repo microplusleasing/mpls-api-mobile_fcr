@@ -889,10 +889,13 @@ paths:
               properties:
                 p_reg_no:
                   type: string
-                  example: "กพ"
+                  example: "1"
                 p_sl_code:
                   type: string
-                  example: "20220059"
+                  example: "20220004"
+                page_no:
+                  type: number
+                  example: 1
       responses:
         "200":
           description: "success"

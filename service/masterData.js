@@ -172,7 +172,7 @@ async function getTermNew(req, res, next) {
     let connection;
     const { pro_code, size_model, rate, net_finance, bussiness_code } = req.query
 
-    if(!(size_model && rate && net_finance)) {
+    if (!(size_model && rate && net_finance)) {
         return res.satus(400).send({
             status: 5000,
             message: `mission parameter (size_model : ${size_model ? size_model : '-'}, rate : ${rate ? rate : '-'}, net_finance : ${net_finance ? net_finance : '-'})`,
@@ -1553,7 +1553,7 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
     let connection;
     try {
 
-        const { p_reg_no , p_sl_code } = req.body
+        const { p_reg_no, p_sl_code, page_no } = req.body
 
         if (!p_reg_no || !p_sl_code || p_reg_no.trim() === '' || p_sl_code.trim() === '') {
             return res.status(200).send({
@@ -1561,86 +1561,183 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
                 message: 'Bad Request: Invalid parameters',
                 data: []
             });
-          }
+        }
 
-          // === add parameter variable ===
-          let bindParams = {}
-          let query_p_reg = ''
-          let query_p_sl_code = ''
+        let _pageno;
+        _pageno = page_no ? page_no : 1
+        const indexstart = (_pageno - 1) * 5 + 1
+        const indexend = (_pageno * 5)
+        let rowCount;
+
+        // === add parameter variable ===
+        let queryCondition;
+        let bindParams = {}
+        let query_p_reg = ''
+        let query_p_sl_code = ''
 
 
-          // === check p_reg_no is not null and not empty string ===
-          if (typeof p_reg_no === 'string' && p_reg_no.trim() !== '') {
+        // === check p_reg_no is not null and not empty string ===
+        if (typeof p_reg_no === 'string' && p_reg_no.trim() !== '') {
             query_p_reg = ` AND REG_NO LIKE '%'||:P_REG_NO||'%' `
             bindParams.P_REG_NO = p_reg_no
-          }
-
-          // === check p_sl_code is not null and not empty string ===
-          if (typeof p_sl_code === 'string' && p_sl_code.trim() !== '') {
+        }
+        
+        // === check p_sl_code is not null and not empty string ===
+        if (typeof p_sl_code === 'string' && p_sl_code.trim() !== '') {
             query_p_sl_code = ` AND SL_CODE = :P_SL_CODE `
             bindParams.P_SL_CODE = p_sl_code
-          }
+        }
 
         connection = await oracledb.getConnection(config.database)
-        const result = await connection.execute(`
-        SELECT  REG_NO,prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
-                CHASSIS_NUMBER, CHASSIS_NO_RUNNING, REG_DATE,
-                PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE,APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE
-                FROM(
-                SELECT  D.APPLICATION_NUM , D.CONTRACT_NO , D.SL_CODE ,C.AUCTION_CODE , G.REG_NO REG_NO,
-                BTW.F_GET_PROVINCE_NAME(E.REG_CITY) AS PROV_NAME, BTW.GET_BRAND_NAME(E.PRODUC ,E.BRAND_CODE) AS BRAND_NAME,
-                F.MODEL AS MODEL_NAME,E.COLOR ,F.CC ,G.ENGINE_NUMBER,G.ENGINE_NO_RUNNING,
-                G.CHASSIS_NUMBER, G.CHASSIS_NO_RUNNING,
-                E.REG_CITY prov_code,E.PRODUC,E.BRAND_CODE,E.MODEL_CODE,TRUNC(G.REG_DATE) AS REG_DATE
-                FROM BTW.COLL_RECIEPT A, BTW.X_RECEIVE B, BTW.X_REPOSSESS_AUCTION_P C , BTW.X_CUST_MAPPING_EXT D, BTW.AC_PROVE E, BTW.X_MODEL_P F,
-                BTW.X_PRODUCT_DETAIL G
-                WHERE A.RECEIPT_NUMBER_PREFIX = B.RECEIPT_NUMBER_PREFIX
-                AND A.RECEIPT_NUMBER_POSTFIX = B.RECEIPT_NUMBER_POSTFIX
-                AND A.HP_NO = B.CONTRACT_NO
-                AND B.AUCTION_CODE = C.AUCTION_CODE
-                AND A.HP_NO = D.CONTRACT_NO
-                AND E.HP_NO = D.CONTRACT_NO
-                AND E.PRODUC = F.PRO_CODE
-                AND C.SL_CODE = (SELECT DL_CODE FROM X_DEALER_P WHERE DL_CODE = C.SL_CODE AND ACTIVE_STATUS = 'Y')
-                AND E.BRAND_CODE = F.BRAND_CODE
-                AND E.MODEL_CODE = F.MODEL_CODE
-                AND G.APPLICATION_NUM =D.APPLICATION_NUM
-                AND D.BUSSINESS_CODE IN ('001','002')
-                AND A.PAY_CODE IN ('80','81')
-                AND NVL(A.CANCELL,'F') = 'F'
-                AND F_CALCULATE_AGE (TRUNC(G.REG_DATE),TRUNC(SYSDATE)) <= BTW.GET_VALUE_NUM_MARKET_SETTING ('005','002',E.PRODUC ,E.BRAND_CODE ,E.MODEL_CODE ,C.SL_CODE ,TRUNC(SYSDATE))
-                AND D.CONTRACT_NO NOT IN (select DISTINCT CONTRACT_REF
-                                        from x_product_detail a,x_cust_mapping_ext b
-                                        where A.APPLICATION_NUM = B.APPLICATION_NUM
-                                        AND  B.BUSSINESS_CODE = '002'
-                                        and (B.LOAN_RESULT in ('Y','Z','W') OR B.LOAN_RESULT IS NULL)
-                                        and a.REG_NO = G.REG_NO )
-                )
-                WHERE APPLICATION_NUM IS NOT NULL
-                ${query_p_reg} 
-                ${query_p_sl_code} 
-                GROUP BY APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE ,  REG_NO,
-                prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
-                CHASSIS_NUMBER, CHASSIS_NO_RUNNING,
-                prov_code,PRODUC,BRAND_CODE,MODEL_CODE, REG_DATE`
-            , bindParams, {
-            outFormat: oracledb.OBJECT
-        })
 
-        if (result.rows.length == 0) {
+        queryCondition = `
+        SELECT COUNT(APPLICATION_NUM) AS COUNT FROM(
+            SELECT ROWNUM AS LINE_NUMBER, CARSEC.* FROM 
+                (
+                    SELECT  REG_NO,prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
+                            CHASSIS_NUMBER, CHASSIS_NO_RUNNING, REG_DATE,
+                            PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE,APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE
+                            FROM(
+                            SELECT  D.APPLICATION_NUM , D.CONTRACT_NO , D.SL_CODE ,C.AUCTION_CODE , G.REG_NO REG_NO,
+                            BTW.F_GET_PROVINCE_NAME(E.REG_CITY) AS PROV_NAME, BTW.GET_BRAND_NAME(E.PRODUC ,E.BRAND_CODE) AS BRAND_NAME,
+                            F.MODEL AS MODEL_NAME,E.COLOR ,F.CC ,G.ENGINE_NUMBER,G.ENGINE_NO_RUNNING,
+                            G.CHASSIS_NUMBER, G.CHASSIS_NO_RUNNING,
+                            E.REG_CITY prov_code,E.PRODUC,E.BRAND_CODE,E.MODEL_CODE,TRUNC(G.REG_DATE) AS REG_DATE
+                            FROM BTW.COLL_RECIEPT A, BTW.X_RECEIVE B, BTW.X_REPOSSESS_AUCTION_P C , BTW.X_CUST_MAPPING_EXT D, BTW.AC_PROVE E, BTW.X_MODEL_P F,
+                            BTW.X_PRODUCT_DETAIL G
+                            WHERE A.RECEIPT_NUMBER_PREFIX = B.RECEIPT_NUMBER_PREFIX
+                            AND A.RECEIPT_NUMBER_POSTFIX = B.RECEIPT_NUMBER_POSTFIX
+                            AND A.HP_NO = B.CONTRACT_NO
+                            AND B.AUCTION_CODE = C.AUCTION_CODE
+                            AND A.HP_NO = D.CONTRACT_NO
+                            AND E.HP_NO = D.CONTRACT_NO
+                            AND E.PRODUC = F.PRO_CODE
+                            AND C.SL_CODE = (SELECT DL_CODE FROM X_DEALER_P WHERE DL_CODE = C.SL_CODE AND ACTIVE_STATUS = 'Y')
+                            AND E.BRAND_CODE = F.BRAND_CODE
+                            AND E.MODEL_CODE = F.MODEL_CODE
+                            AND G.APPLICATION_NUM =D.APPLICATION_NUM
+                            AND D.BUSSINESS_CODE IN ('001','002')
+                            AND A.PAY_CODE IN ('80','81')
+                            AND NVL(A.CANCELL,'F') = 'F'
+                            AND F_CALCULATE_AGE (TRUNC(G.REG_DATE),TRUNC(SYSDATE)) <= BTW.GET_VALUE_NUM_MARKET_SETTING ('005','002',E.PRODUC ,E.BRAND_CODE ,E.MODEL_CODE ,C.SL_CODE ,TRUNC(SYSDATE))
+                            AND D.CONTRACT_NO NOT IN (select DISTINCT CONTRACT_REF
+                                                    from x_product_detail a,x_cust_mapping_ext b
+                                                    where A.APPLICATION_NUM = B.APPLICATION_NUM
+                                                    AND  B.BUSSINESS_CODE = '002'
+                                                    and (B.LOAN_RESULT in ('Y','Z','W') OR B.LOAN_RESULT IS NULL)
+                                                    and a.REG_NO = G.REG_NO )
+                            )
+                            WHERE APPLICATION_NUM IS NOT NULL
+                            ${query_p_reg} 
+                            ${query_p_sl_code} 
+                            GROUP BY APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE ,  REG_NO,
+                            prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
+                            CHASSIS_NUMBER, CHASSIS_NO_RUNNING,
+                            prov_code,PRODUC,BRAND_CODE,MODEL_CODE, REG_DATE
+                ) CARSEC
+            )`
+
+        const resultdata = await connection.execute(queryCondition, bindParams, { outFormat: oracledb.OBJECT })
+
+        if (resultdata.rows == 0) {
             return res.status(200).send({
-                status: 400,
-                message: 'No data',
+                status: 200,
+                message: `ไม่พบรายการรถ`,
                 data: []
             })
         } else {
-            const resData = result.rows
-            const lowerResData = tolowerService.arrayobjtolower(resData)
-            return res.status(200).send({
-                status: 200,
-                message: 'success',
-                data: lowerResData
-            })
+            rowCount = resultdata.rows[0].COUNT
+            try {
+                let sqlconditionlist = `
+                SELECT ROWNUM AS LINE_NUMBER, CARSEC.* FROM 
+                (
+                    SELECT  REG_NO,prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
+                            CHASSIS_NUMBER, CHASSIS_NO_RUNNING, REG_DATE,
+                            PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE,APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE
+                            FROM(
+                            SELECT  D.APPLICATION_NUM , D.CONTRACT_NO , D.SL_CODE ,C.AUCTION_CODE , G.REG_NO REG_NO,
+                            BTW.F_GET_PROVINCE_NAME(E.REG_CITY) AS PROV_NAME, BTW.GET_BRAND_NAME(E.PRODUC ,E.BRAND_CODE) AS BRAND_NAME,
+                            F.MODEL AS MODEL_NAME,E.COLOR ,F.CC ,G.ENGINE_NUMBER,G.ENGINE_NO_RUNNING,
+                            G.CHASSIS_NUMBER, G.CHASSIS_NO_RUNNING,
+                            E.REG_CITY prov_code,E.PRODUC,E.BRAND_CODE,E.MODEL_CODE,TRUNC(G.REG_DATE) AS REG_DATE
+                            FROM BTW.COLL_RECIEPT A, BTW.X_RECEIVE B, BTW.X_REPOSSESS_AUCTION_P C , BTW.X_CUST_MAPPING_EXT D, BTW.AC_PROVE E, BTW.X_MODEL_P F,
+                            BTW.X_PRODUCT_DETAIL G
+                            WHERE A.RECEIPT_NUMBER_PREFIX = B.RECEIPT_NUMBER_PREFIX
+                            AND A.RECEIPT_NUMBER_POSTFIX = B.RECEIPT_NUMBER_POSTFIX
+                            AND A.HP_NO = B.CONTRACT_NO
+                            AND B.AUCTION_CODE = C.AUCTION_CODE
+                            AND A.HP_NO = D.CONTRACT_NO
+                            AND E.HP_NO = D.CONTRACT_NO
+                            AND E.PRODUC = F.PRO_CODE
+                            AND C.SL_CODE = (SELECT DL_CODE FROM X_DEALER_P WHERE DL_CODE = C.SL_CODE AND ACTIVE_STATUS = 'Y')
+                            AND E.BRAND_CODE = F.BRAND_CODE
+                            AND E.MODEL_CODE = F.MODEL_CODE
+                            AND G.APPLICATION_NUM =D.APPLICATION_NUM
+                            AND D.BUSSINESS_CODE IN ('001','002')
+                            AND A.PAY_CODE IN ('80','81')
+                            AND NVL(A.CANCELL,'F') = 'F'
+                            AND F_CALCULATE_AGE (TRUNC(G.REG_DATE),TRUNC(SYSDATE)) <= BTW.GET_VALUE_NUM_MARKET_SETTING ('005','002',E.PRODUC ,E.BRAND_CODE ,E.MODEL_CODE ,C.SL_CODE ,TRUNC(SYSDATE))
+                            AND D.CONTRACT_NO NOT IN (select DISTINCT CONTRACT_REF
+                                                    from x_product_detail a,x_cust_mapping_ext b
+                                                    where A.APPLICATION_NUM = B.APPLICATION_NUM
+                                                    AND  B.BUSSINESS_CODE = '002'
+                                                    and (B.LOAN_RESULT in ('Y','Z','W') OR B.LOAN_RESULT IS NULL)
+                                                    and a.REG_NO = G.REG_NO )
+                            )
+                            WHERE APPLICATION_NUM IS NOT NULL
+                            ${query_p_reg} 
+                            ${query_p_sl_code} 
+                            GROUP BY APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE ,  REG_NO,
+                            prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
+                            CHASSIS_NUMBER, CHASSIS_NO_RUNNING,
+                            prov_code,PRODUC,BRAND_CODE,MODEL_CODE, REG_DATE
+                ) CARSEC
+                        `
+                let finalsqlconditionlist = `
+                            SELECT * FROM (
+                                ${sqlconditionlist}
+                            ) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend`
+
+                // === add bind index to bindData ===
+                bindParams.indexstart = indexstart
+                bindParams.indexend = indexend
+
+                const resultdatalist = await connection.execute(finalsqlconditionlist, bindParams, { outFormat: oracledb.OBJECT })
+
+                if (resultdatalist.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 200,
+                        message: `ไม่มีรายการรถมือสอง`,
+                        data: []
+                    })
+                } else {
+                    const resData = resultdatalist.rows
+                    const lowerResData = tolowerService.arrayobjtolower(resData)
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    returnData.status = 200
+                    returnData.message = 'success'
+                    returnData.CurrentPage = Number(_pageno)
+                    returnData.pageSize = 5
+                    returnData.rowCount = rowCount
+                    returnData.pageCount = Math.ceil(rowCount / 5);
+
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+
+                    // res.status(200).json(results.rows[0]);
+                    res.status(200).json(returnDatalowerCase);
+                }
+
+            } catch (e) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `เกิดข้อผิดพลาด : ${e.message ? e.message : 'No err msg'}`,
+                    data: []
+                })
+            }
         }
 
     } catch (e) {
