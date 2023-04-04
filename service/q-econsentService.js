@@ -3059,6 +3059,15 @@ async function MPLS_create_or_update_credit(req, res, next) {
                 outFormat: oracledb.OBJECT
             })
 
+            // === set format date of reg_date ===
+            let reg_date_dtype;
+            if (reqData.reg_date) {
+                const reg_date_current = moment(reqData.reg_date)
+                reg_date_dtype = moment(reg_date_current, 'DD/MM/YYYY').format('LL')
+            } else {
+                reg_date_dtype = null
+            }
+
             if (chkdup.rows.length !== 0) {
 
                 // === check quo_status === (if MPLS_QUOTATION.QUO_STATUS = 1 : can't update record)
@@ -3071,7 +3080,9 @@ async function MPLS_create_or_update_credit(req, res, next) {
                 }
 
                 // *** update record MPLS_CREDIT with SQL *** 
-                console.log(`reqData : ${JSON.stringify(reqData)}`)
+
+                // console.log(`reqData : ${JSON.stringify(reqData)}`)
+
                 const creid = chkdup.rows[0].APP_KEY_ID
                 const quoid = chkdup.rows[0].CRE_QUO_KEY_APP_ID
 
@@ -3104,7 +3115,17 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     ENGINE_NO_RUNNING = :ENGINE_NO_RUNNING,
                     CHASSIS_NO_RUNNING = :CHASSIS_NO_RUNNING,
                     PRICE_INCLUDE_VAT = :PRICE_INCLUDE_VAT,
-                    SL_CODE = :SL_CODE
+                    SL_CODE = :SL_CODE,
+                    BUSSINESS_CODE = :BUSSINESS_CODE,
+                    BUSSINESS_NAME = :BUSSINESS_NAME,
+                    MODEL_YEAR = :MODEL_YEAR,
+                    CC = :CC, 
+                    REG_NO = :REG_NO,
+                    REG_DATE = TRUNC(:REG_DATE),
+                    CONTRACT_REF = :CONTRACT_REF,
+                    REG_MILE = :REG_MILE,
+                    PROV_CODE = :PROV_CODE,
+                    PROV_NAME = :PROV_NAME
                 WHERE
                     CRE_QUO_KEY_APP_ID = :CRE_QUO_KEY_APP_ID
                     AND APP_KEY_ID = :APP_KEY_ID
@@ -3137,6 +3158,16 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     CHASSIS_NO_RUNNING: reqData.chassis_no_running,
                     PRICE_INCLUDE_VAT: reqData.price_include_vat,
                     SL_CODE: reqData.dealer_code,
+                    BUSSINESS_CODE: reqData.bussiness_code,
+                    BUSSINESS_NAME: reqData.bussiness_name,
+                    MODEL_YEAR: reqData.model_year,
+                    CC: reqData.cc, 
+                    REG_NO: reqData.reg_no,
+                    REG_DATE: (new Date(reg_date_dtype)) ?? null,
+                    CONTRACT_REF: reqData.contract_ref,
+                    REG_MILE: reqData.reg_mile,
+                    PROV_CODE: reqData.prov_code,
+                    PROV_NAME: reqData.prov_name,
                     CRE_QUO_KEY_APP_ID: quoid,
                     APP_KEY_ID: creid,
                 })
@@ -3184,6 +3215,8 @@ async function MPLS_create_or_update_credit(req, res, next) {
 
             } else {
 
+                console.log(`this is reg_date : ${reqData.reg_date}`)
+                console.log(`this is reg_date_dtype : ${reg_date_dtype}`)
                 // *** create record MPLS_CREDIT with SQL ***
                 const creditid = uuidv4()
 
@@ -3217,6 +3250,16 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     CHASSIS_NO_RUNNING,
                     PRICE_INCLUDE_VAT,
                     SL_CODE,
+                    BUSSINESS_CODE,
+                    BUSSINESS_NAME,
+                    MODEL_YEAR,
+                    CC,
+                    REG_NO,
+                    REG_DATE,
+                    CONTRACT_REF,
+                    REG_MILE,
+                    PROV_CODE,
+                    PROV_NAME,
                     CRE_QUO_KEY_APP_ID,
                     APP_KEY_ID
                 )
@@ -3249,6 +3292,16 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     :CHASSIS_NO_RUNNING,
                     :PRICE_INCLUDE_VAT,
                     :SL_CODE,
+                    :BUSSINESS_CODE,
+                    :BUSSINESS_NAME,
+                    :MODEL_YEAR, 
+                    :CC, 
+                    :REG_NO, 
+                    TRUNC(:REG_DATE), 
+                    :CONTRACT_REF,
+                    :REG_MILE,
+                    :PROV_CODE,
+                    :PROV_NAME,
                     :CRE_QUO_KEY_APP_ID,
                     :APP_KEY_ID
                 )
@@ -3280,6 +3333,16 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     CHASSIS_NO_RUNNING: reqData.chassis_no_running,
                     PRICE_INCLUDE_VAT: reqData.price_include_vat,
                     SL_CODE: reqData.dealer_code,
+                    BUSSINESS_CODE: reqData.bussiness_code,
+                    BUSSINESS_NAME: reqData.bussiness_name,
+                    MODEL_YEAR: reqData.model_year,
+                    CC: reqData.cc,
+                    REG_NO: reqData.reg_no,
+                    REG_DATE: (new Date(reg_date_dtype)) ?? null,
+                    CONTRACT_REF: reqData.contract_ref,
+                    REG_MILE: reqData.reg_mile,
+                    PROV_CODE: reqData.prov_code,
+                    PROV_NAME: reqData.prov_name,
                     CRE_QUO_KEY_APP_ID: reqData.quotationid,
                     APP_KEY_ID: creditid
                 })
@@ -6340,7 +6403,7 @@ async function MPLS_fix_gen_econsent_image(req, res, next) {
     let connection;
     try {
 
-        const { firstname, lastname, birthdate, citizenid, phone_number, application_no, currentDate, currentDateTime, witness_name, witness_lname} = req.body
+        const { firstname, lastname, birthdate, citizenid, phone_number, application_no, currentDate, currentDateTime, witness_name, witness_lname } = req.body
 
         connection = await oracledb.getConnection(config.database)
 
@@ -7272,11 +7335,11 @@ async function genuuid(req, res, next) {
 
     try {
 
-       const uuid = uuidv4()
+        const uuid = uuidv4()
 
-       return res.status(200).send({
-        uuid: uuid
-       })
+        return res.status(200).send({
+            uuid: uuid
+        })
 
     } catch (e) {
         console.error(e);
@@ -7285,7 +7348,7 @@ async function genuuid(req, res, next) {
             message: `Fail : ${e.message ? e.message : 'No err msg'}`,
         })
     } finally {
-            // handle error
+        // handle error
     }
 }
 
