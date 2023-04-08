@@ -3062,8 +3062,9 @@ async function MPLS_create_or_update_credit(req, res, next) {
             // === set format date of reg_date ===
             let reg_date_dtype;
             if (reqData.reg_date) {
-                const reg_date_current = moment(reqData.reg_date)
-                reg_date_dtype = moment(reg_date_current, 'DD/MM/YYYY').format('LL')
+                const reg_date_current = moment(new Date(reqData.reg_date)).format("DD/MM/YYYY")
+                // reg_date_dtype = moment(reg_date_current, 'DD/MM/YYYY').format('LL')
+                reg_date_dtype = reg_date_current
             } else {
                 reg_date_dtype = null
             }
@@ -3121,7 +3122,7 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     MODEL_YEAR = :MODEL_YEAR,
                     CC = :CC, 
                     REG_NO = :REG_NO,
-                    REG_DATE = TRUNC(:REG_DATE),
+                    REG_DATE = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(TO_DATE(:REG_DATE, 'DD/MM/YYYY'))),
                     CONTRACT_REF = :CONTRACT_REF,
                     REG_MILE = :REG_MILE,
                     PROV_CODE = :PROV_CODE,
@@ -3163,7 +3164,7 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     MODEL_YEAR: reqData.model_year,
                     CC: reqData.cc, 
                     REG_NO: reqData.reg_no,
-                    REG_DATE: (new Date(reg_date_dtype)) ?? null,
+                    REG_DATE: reg_date_dtype ?? null,
                     CONTRACT_REF: reqData.contract_ref,
                     REG_MILE: reqData.reg_mile,
                     PROV_CODE: reqData.prov_code,
@@ -3920,6 +3921,88 @@ async function MPLS_getimagefilebyid(req, res, next) {
     }
 }
 
+async function MPLS_getimage_multiple_filebyid(req, res, next) {
+    let connection;
+    try {
+
+        const reqData = req.query
+
+        if (reqData.quotationid == '' || reqData.quotationid == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `missig paremeter`,
+                data: []
+            })
+        }
+
+        // === check record is exist ===
+        oracledb.fetchAsBuffer = [oracledb.BLOB];
+        connection = await oracledb.getConnection(config.database)
+
+        const checkquotation = await connection.execute(`
+            SELECT QUO_KEY_APP_ID FROM MPLS_QUOTATION
+            WHERE QUO_KEY_APP_ID = :QUO_KEY_APP_ID
+        `, {
+            QUO_KEY_APP_ID: reqData.quotationid
+        }, { outFormat: oracledb.OBJECT })
+
+        if (checkquotation.rows.length !== 1) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถระบุรายการ quotation ได้ (rows : ${checkquotation.rows.length})`,
+                data: []
+            })
+        }
+
+        // ===  GET IMAGE FILE LIST OF QUOTATION ===
+
+        const imagelist = await connection.execute(`
+                SELECT FS.IMAGE_NAME, FS.IMAGE_TYPE, FS.IMAGE_CODE, FS.IMAGE_FILE , FS.APP_KEY_ID AS IMAGE_ID , MS.IMAGE_HEADER
+                FROM MPLS_IMAGE_FILE FS
+                LEFT JOIN MPLS_MASTER_IMAGE_P MS
+                ON FS.IMAGE_CODE = MS.IMAGE_CODE
+                WHERE ACTIVE_STATUS = 'Y'
+                AND FS.IMGF_QUO_APP_KEY_ID = :IMGF_QUO_APP_KEY_ID
+                AND FS.IMAGE_CODE IN ('12')
+                ORDER BY CREATED_TIME DESC
+        `, {
+            IMGF_QUO_APP_KEY_ID: reqData.quotationid
+        }, { outFormat: oracledb.OBJECT })
+
+        const resData = imagelist.rows
+        const lowerResData = tolowerService.arrayobjtolower(resData)
+        let returnData = new Object
+        returnData.data = lowerResData
+        returnData.status = 200
+        returnData.message = 'success'
+
+        let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+            result[key.toLowerCase()] = val;
+        });
+        return res.status(200).json(returnDatalowerCase)
+
+    } catch (e) {
+        console.error(e)
+        res.status(200).send({
+            status: false,
+            message: `Error : ${e.message ? e.message : 'No return message'}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                // return next(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Error when close connection : ${e.message ? e.message : 'No return message'}`
+                })
+            }
+        }
+    }
+}
+
 async function MPLS_create_image_attach_file(req, res, next) {
 
     let connection;
@@ -4048,6 +4131,223 @@ async function MPLS_create_image_attach_file(req, res, next) {
                 data: []
             })
         }
+
+        // === create image attach file === 
+        const imageuuid = uuidv4()
+
+        const createimage = await connection.execute(`
+            INSERT INTO MPLS_IMAGE_FILE (
+                    IMGF_QUO_APP_KEY_ID, 
+                    APP_KEY_ID, 
+                    IMAGE_FILE, 
+                    IMAGE_NAME, 
+                    IMAGE_TYPE,
+                    IMAGE_CODE, 
+                    STATUS, 
+                    ACTIVE_STATUS
+                )
+                VALUES 
+                (
+                    :IMGF_QUO_APP_KEY_ID,
+                    :APP_KEY_ID, 
+                    :IMAGE_FILE, 
+                    :IMAGE_NAME, 
+                    :IMAGE_TYPE, 
+                    :IMAGE_CODE, 
+                    0, 
+                    'Y'
+                )
+        `, {
+            IMGF_QUO_APP_KEY_ID: { val: reqData.quotationid, type: oracledb.STRING, maxSize: 50 },
+            APP_KEY_ID: { val: imageuuid, type: oracledb.STRING, maxSize: 50 },
+            IMAGE_FILE: { val: readfileimage, type: oracledb.BLOB, maxSize: 5000000 },
+            IMAGE_NAME: { val: reqData.image_name, type: oracledb.STRING, maxSize: 200 },
+            IMAGE_TYPE: { val: filetype, type: oracledb.STRING, maxSize: 200 },
+            IMAGE_CODE: { val: reqData.image_code, type: oracledb.STRING, maxSize: 4 },
+        })
+
+        // === CHECK RESULT UPDATE ===
+
+        if (createimage.rowsAffected !== 1) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถสร้างรายการไฟล์แนบได้ (rows : ${updateimage.rowsAffected})`,
+                data: []
+            })
+        } else {
+            // === update success ===
+            const commitall = await connection.commit();
+
+            try {
+                commitall
+            } catch (e) {
+                console.err(e.message)
+                return res.send(200).send({
+                    status: 500,
+                    message: `Error : ${e.message ? e.message : 'No message'}`,
+                })
+            }
+
+            // === finish ===
+
+            return res.status(200).send({
+                status: 200,
+                message: `แนบเอกสารประกอบการขอสินเชื่อสำเร็จ`
+            })
+        }
+
+
+
+    } catch (e) {
+        console.error(e)
+        res.status(200).send({
+            status: false,
+            message: `Error : ${e.message ? e.message : 'No return message'}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                // return next(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Error when close connection : ${e.message ? e.message : 'No return message'}`
+                })
+            }
+        }
+    }
+}
+
+async function MPLS_create_image_attach_file_multiple(req, res, next) {
+
+    let connection;
+    const token = req.user
+    const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
+
+    try {
+
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
+
+        let fileData
+        let formData
+        // const form = formidable({ multiples: true })
+        const form = new multiparty.Form()
+        await new Promise(function (resolve, reject) {
+            form.parse(req, (err, fields, files) => {
+                if (err) {
+                    reject(err)
+                    return
+                }
+                formData = fields
+                fileData = files
+                resolve()
+            })
+            return
+        })
+
+        const reqData = JSON.parse(formData.item)
+
+        // === check quotation id param ===
+        if (reqData.quotationid == '' || reqData.quotationid == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบ parameter quotationid`,
+                data: []
+            })
+        }
+
+        // === check image code param === 
+        if (reqData.image_code == '' || reqData.image_code == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบ parameter image_code`,
+                data: []
+            })
+        }
+        // === check image name param === 
+        if (reqData.image_name == '' || reqData.image_name == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบ parameter image_name`,
+                data: []
+            })
+        }
+
+
+        // console.log(`file_image : ${JSON.stringify(fileData.image_file)}`)
+        const create_image_attach = fileData.image_file ? fileData.image_file : null
+
+        if (create_image_attach == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบรายการ paremeter image_file`,
+                data: []
+            })
+        }
+
+        imagetobuffer = (file) => {
+            return fs.readFileSync(file[0].path);
+        }
+
+        const createimagebuffer = create_image_attach ? imagetobuffer(create_image_attach) : null
+
+        if (!createimagebuffer) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถแปลงข้อมูลไฟล์แนบได้ (fail to convert to buffer)`,
+                data: []
+            })
+        }
+
+        const filetype = create_image_attach[0].headers['content-type']
+        const readfileimage = fs.readFileSync(create_image_attach[0].path)
+
+        connection = await oracledb.getConnection(config.database)
+
+        // === check quotation is already exist ===
+        const quocheck = await connection.execute(`
+                SELECT QUO_KEY_APP_ID FROM MPLS_QUOTATION
+                WHERE QUO_KEY_APP_ID = :QUO_KEY_APP_ID
+        `, { QUO_KEY_APP_ID: reqData.quotationid }, { outFormat: oracledb.OBJECT })
+
+        if (quocheck.rows.length !== 1) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถระบุรายการ quotation ได้ (rows : ${quocheck.rows.length})`
+            })
+        }
+
+        // === check image file is already exist (should not) ===
+
+        const imagefile = await connection.execute(`
+                SELECT * FROM MPLS_IMAGE_FILE
+                WHERE IMGF_QUO_APP_KEY_ID = :IMGF_QUO_APP_KEY_ID
+                AND IMAGE_CODE = :IMAGE_CODE
+        `, {
+            IMGF_QUO_APP_KEY_ID: reqData.quotationid,
+            IMAGE_CODE: reqData.image_code
+        }, { outFormat: oracledb.OBJECT })
+
+        // === check file is exist === 
+
+        // if (imagefile.rows.length !== 0) {
+        //     return res.status(200).send({
+        //         status: 500,
+        //         message: `ไม่สามารถสร้างรายการไฟล์แนบประเภทนี้ได้ เนื่องจากมีการ upload ไปแล้ว`,
+        //         data: []
+        //     })
+        // }
 
         // === create image attach file === 
         const imageuuid = uuidv4()
@@ -4336,6 +4636,205 @@ async function MPLS_update_image_attach_file(req, res, next) {
     }
 }
 
+async function MPLS_update_image_attach_file_multiple(req, res, next) {
+    let connection;
+    const token = req.user
+    const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
+
+    try {
+
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: 403,
+                message: `Forbidden`,
+                data: []
+            })
+        }
+
+        let fileData
+        let formData
+        // const form = formidable({ multiples: true })
+        const form = new multiparty.Form()
+        await new Promise(function (resolve, reject) {
+            form.parse(req, (err, fields, files) => {
+                if (err) {
+                    reject(err)
+                    return
+                }
+                formData = fields
+                fileData = files
+                resolve()
+            })
+            return
+        })
+
+        const reqData = JSON.parse(formData.item)
+
+        // === check quotation id param ===
+        if (reqData.quotationid == '' || reqData.quotationid == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบ parameter quotationid`,
+                data: []
+            })
+        }
+
+        // === check image id param === 
+        if (reqData.image_id == '' || reqData.image_id == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบ parameter image_id`,
+                data: []
+            })
+        }
+
+
+        const update_image_attach = fileData.image_file ? fileData.image_file : null
+
+        if (update_image_attach == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบรายการ paremeter image_file`,
+                data: []
+            })
+        }
+
+        imagetobuffer = (file) => {
+            return fs.readFileSync(file[0].path);
+        }
+
+        const updateimagebuffer = update_image_attach ? imagetobuffer(update_image_attach) : null
+
+        if (!updateimagebuffer) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถแปลงข้อมูลไฟล์แนบได้ (fail to convert to buffer)`,
+                data: []
+            })
+        }
+
+        const filetype = update_image_attach[0].headers['content-type']
+        const readfileimage = fs.readFileSync(update_image_attach[0].path)
+
+        connection = await oracledb.getConnection(config.database)
+
+
+        // === check quotation is already exist ===
+        const quocheck = await connection.execute(`
+                SELECT QUO_KEY_APP_ID , QUO_STATUS FROM MPLS_QUOTATION
+                WHERE QUO_KEY_APP_ID = :QUO_KEY_APP_ID
+        `, { QUO_KEY_APP_ID: reqData.quotationid }, { outFormat: oracledb.OBJECT })
+
+        if (quocheck.rows.length !== 1) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถระบุรายการ quotation ได้ (rows : ${quocheck.rows.length})`
+            })
+        }
+
+        // === check quo_status === (if MPLS_QUOTATION.QUO_STATUS = 1 : can't update record)
+        if (quocheck.rows[0].QUO_STATUS == 1) {
+            return res.status(200).send({
+                status: false,
+                message: `สถานะใบคำขออยู่ในขั้นพิจารณา ไม่สามารถแก้ไขข้อมูลได้`,
+                data: []
+            })
+        }
+
+        // === get file attach ===
+
+        const imagefile = await connection.execute(`
+                SELECT * FROM MPLS_IMAGE_FILE
+                WHERE IMGF_QUO_APP_KEY_ID = :IMGF_QUO_APP_KEY_ID 
+                AND APP_KEY_ID = :APP_KEY_ID
+        `, {
+            IMGF_QUO_APP_KEY_ID: reqData.quotationid,
+            APP_KEY_ID: reqData.image_id
+        }, { outFormat: oracledb.OBJECT })
+
+        // === check file is exist === 
+
+        if (imagefile.rows.length !== 1) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบรายการไฟล์แนบตาม image_code , image_id , quotationid`,
+                data: []
+            })
+        }
+
+        // === update image attach file === 
+
+        const updateimage = await connection.execute(`
+                UPDATE MPLS_IMAGE_FILE
+                SET IMAGE_FILE = :IMAGE_FILE,
+                    IMAGE_TYPE = :IMAGE_TYPE,
+                    ACTIVE_STATUS = 'Y'
+                WHERE IMGF_QUO_APP_KEY_ID = :IMGF_QUO_APP_KEY_ID 
+                AND APP_KEY_ID = :APP_KEY_ID
+        `, {
+            IMAGE_FILE: { val: readfileimage, type: oracledb.BLOB, maxSize: 5000000 },
+            IMAGE_TYPE: { val: filetype, type: oracledb.STRING, maxSize: 200 },
+            IMGF_QUO_APP_KEY_ID: { val: reqData.quotationid, type: oracledb.STRING, maxSize: 50 },
+            APP_KEY_ID: { val: reqData.image_id, type: oracledb.STRING, maxSize: 50 }
+        })
+
+        // === CHECK RESULT UPDATE ===
+
+        if (updateimage.rowsAffected !== 1) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถอัพเดทรายการไฟล์แนบได้ (rows : ${updateimage.rowsAffected})`,
+                data: []
+            })
+        } else {
+            // === update success ===
+            const commitall = await connection.commit();
+
+            try {
+                commitall
+            } catch (e) {
+                console.err(e.message)
+                return res.send(200).send({
+                    status: 500,
+                    message: `Error : ${e.message ? e.message : 'No message'}`,
+                })
+            }
+
+            // === finish ===
+
+            return res.status(200).send({
+                status: 200,
+                message: `อัพเดทรายการไฟล์แนบสำเร็จ`
+            })
+        }
+
+
+
+    } catch (e) {
+        console.error(e)
+        res.status(200).send({
+            status: false,
+            message: `Error : ${e.message ? e.message : 'No return message'}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                // return next(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Error when close connection : ${e.message ? e.message : 'No return message'}`
+                })
+            }
+        }
+    }
+}
+
 async function MPLS_delete_image_attach_file(req, res, next) {
     let connection;
     try {
@@ -4529,6 +5028,122 @@ async function MPLS_update_flag_image_attach_file(req, res, next) {
             WHERE QUO_KEY_APP_ID = :QUO_KEY_APP_ID
         `, {
             QUO_IMAGE_ATTACH_VERIFY: flagvalue,
+            QUO_KEY_APP_ID: reqData.quotationid
+        })
+
+        if (updateflag.rowsAffected !== 1) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถระบุรายการไฟล์แนบได้ (update) , rowsAffected : ${updateflag.rowsAffected}`,
+                data: []
+            })
+        }
+
+        // === commit ===
+
+        // === update success ===
+        const commitall = await connection.commit();
+        try {
+            commitall
+        } catch (e) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถอัพเดท FLAG vertify ได้ Error : ${e.message ? e.meesasge : 'No return message'}`,
+                data: []
+            })
+        }
+
+        // === finish ===
+
+        return res.status(200).send({
+            status: 200,
+            message: `อัพเดทสถานะสำเร็จ (Status : ${flagvalue == 'Y' ? 'ไฟล์แนบครบ' : 'ไฟล์แนบยังไม่ครบ'})`
+        })
+
+
+    } catch (e) {
+        console.error(e)
+        res.status(200).send({
+            status: false,
+            message: `Error : ${e.message ? e.message : 'No return message'}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                // return next(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Error when close connection : ${e.message ? e.message : 'No return message'}`
+                })
+            }
+        }
+    }
+}
+
+async function MPLS_update_flag_image_attach_file_multiple(req, res, next) {
+    let connection;
+    try {
+
+        const reqData = req.query
+
+        if (reqData.quotationid == '' || reqData.quotationid == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบรายการ quotation ตามเลข ID`,
+                data: []
+            })
+        }
+
+
+        connection = await oracledb.getConnection(config.database)
+
+        // === check quotation is already exist ===
+        const quocheck = await connection.execute(`
+                SELECT QUO_KEY_APP_ID, QUO_STATUS FROM MPLS_QUOTATION
+                WHERE QUO_KEY_APP_ID = :QUO_KEY_APP_ID
+        `, { QUO_KEY_APP_ID: reqData.quotationid }, { outFormat: oracledb.OBJECT })
+
+        if (quocheck.rows.length !== 1) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถระบุรายการ quotation ได้ (rows : ${quocheck.rows.length})`
+            })
+        }
+
+        // === check image type for verify ('12') ===
+
+        const checkvalidimagetype = await connection.execute(`
+            SELECT IMAGE_CODE FROM MPLS_IMAGE_FILE
+            WHERE IMGF_QUO_APP_KEY_ID = :IMGF_QUO_APP_KEY_ID
+            AND IMAGE_CODE = '12' 
+        `, {
+            IMGF_QUO_APP_KEY_ID: reqData.quotationid
+        }, { outFormat: oracledb.OBJECT })
+
+        if (checkvalidimagetype.rows.length == 0) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบรายการไฟล์แนบ`,
+                data: []
+            })
+        }
+
+        // === check image type contain all require ===
+        const countvalidtype = checkvalidimagetype.rows.filter((item) => { return (item.IMAGE_CODE == '12') })
+
+
+        const flagvalue = countvalidtype.length < 2 ? '' : 'Y';
+
+        // === update flag to quotation (QUO_IMAGE_ATTACH_VERIFY) ===
+        const updateflag = await connection.execute(`
+            UPDATE MPLS_QUOTATION
+            SET QUO_SECONDHAND_CAR_VERIFY = :QUO_SECONDHAND_CAR_VERIFY 
+            WHERE QUO_KEY_APP_ID = :QUO_KEY_APP_ID
+        `, {
+            QUO_SECONDHAND_CAR_VERIFY: flagvalue,
             QUO_KEY_APP_ID: reqData.quotationid
         })
 
@@ -7376,10 +7991,14 @@ module.exports.MPLS_getservertime = MPLS_getservertime
 module.exports.MPLS_create_or_update_credit = MPLS_create_or_update_credit
 module.exports.MPLS_create_or_update_careerandpurpose = MPLS_create_or_update_careerandpurpose
 module.exports.MPLS_getimagefilebyid = MPLS_getimagefilebyid
+module.exports.MPLS_getimage_multiple_filebyid = MPLS_getimage_multiple_filebyid
 module.exports.MPLS_create_image_attach_file = MPLS_create_image_attach_file
+module.exports.MPLS_create_image_attach_file_multiple = MPLS_create_image_attach_file_multiple
 module.exports.MPLS_update_image_attach_file = MPLS_update_image_attach_file
+module.exports.MPLS_update_image_attach_file_multiple = MPLS_update_image_attach_file_multiple
 module.exports.MPLS_delete_image_attach_file = MPLS_delete_image_attach_file
 module.exports.MPLS_update_flag_image_attach_file = MPLS_update_flag_image_attach_file
+module.exports.MPLS_update_flag_image_attach_file_multiple = MPLS_update_flag_image_attach_file_multiple
 module.exports.MPLS_create_consent = MPLS_create_consent
 module.exports.MPLS_create_send_car_deliver_and_loyalty_consent = MPLS_create_send_car_deliver_and_loyalty_consent
 

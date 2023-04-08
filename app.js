@@ -109,13 +109,21 @@ app.post('/MPLS_create_or_update_careerandpurpose', auth, qeconsentService.MPLS_
 
 app.get('/MPLS_getimagefilebyid', auth, qeconsentService.MPLS_getimagefilebyid)
 
+app.get('/MPLS_getimage_multiple_filebyid', auth, qeconsentService.MPLS_getimage_multiple_filebyid)
+
 app.post('/MPLS_create_image_attach_file', auth, qeconsentService.MPLS_create_image_attach_file)
 
+app.post('/MPLS_create_image_attach_file_multiple', auth, qeconsentService.MPLS_create_image_attach_file_multiple)
+
 app.post('/MPLS_update_image_attach_file', auth, qeconsentService.MPLS_update_image_attach_file)
+
+app.post('/MPLS_update_image_attach_file_multiple', auth, qeconsentService.MPLS_update_image_attach_file_multiple)
 
 app.post('/MPLS_delete_image_attach_file', auth, qeconsentService.MPLS_delete_image_attach_file)
 
 app.get('/MPLS_update_flag_image_attach_file', auth, qeconsentService.MPLS_update_flag_image_attach_file)
+
+app.get('/MPLS_update_flag_image_attach_file_multiple', auth, qeconsentService.MPLS_update_flag_image_attach_file_multiple)
 
 app.post('/MPLS_create_consent', auth, qeconsentService.MPLS_create_consent)
 
@@ -200,6 +208,8 @@ app.get('/MasterPaymentCount', auth, masterService.getPaymentCount) // === not a
 app.get('/MasterImageType', auth, masterService.getImageType)
 
 app.get('/getImageTypeAttach', auth, masterService.getImageTypeAttach)
+
+app.get('/getImageTypeAttachMultiple', auth, masterService.getImageTypeAttachMultiple)
 
 app.get('/MasterTitle', auth, masterService.getTitle)
 

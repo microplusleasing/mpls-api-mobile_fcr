@@ -397,6 +397,59 @@ async function getImageTypeAttach(req, res, next) {
 
 }
 
+async function getImageTypeAttachMultiple(req, res, next) {
+    let connection;
+    oracledb.fetchAsString = []
+
+    try {
+
+        connection = await oracledb.getConnection(
+            config.database
+        )
+
+        const results = await connection.execute(`
+            SELECT * FROM MPLS_MASTER_IMAGE_P
+            WHERE IMAGE_CODE IN ('12')
+        `, [] // NO BINDING DATA PARAM
+            , {
+                outFormat: oracledb.OBJECT
+            })
+
+        if (results.rows.length == 0) {
+            return res.status(200).send({
+                status: 500,
+                message: 'No IMAGE TYPE',
+                data: []
+            })
+        } else {
+            const resData = results.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Error : ${e.message ? e.message : 'No return message'}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return next(e);
+            }
+        }
+    }
+
+}
+
 async function getTitle(req, res, next) {
     let connection;
     oracledb.fetchAsString = []
@@ -1766,6 +1819,7 @@ module.exports.getRate = getRate
 module.exports.getPaymentCount = getPaymentCount
 module.exports.getImageType = getImageType
 module.exports.getImageTypeAttach = getImageTypeAttach
+module.exports.getImageTypeAttachMultiple = getImageTypeAttachMultiple
 module.exports.getTitle = getTitle
 module.exports.getTitletimeout = getTitletimeout
 module.exports.getDealer = getDealer
