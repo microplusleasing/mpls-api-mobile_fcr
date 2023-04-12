@@ -2989,6 +2989,242 @@ async function MPLS_getservertime(req, res, next) {
     }
 }
 
+//  ***** step 2 (credit: check type of bussiness_code and image require before call MPLS_create_or_update_credit) *****
+async function MPLS_check_secondhand_car_image_attach(req, res, next) {
+    let connection;
+    const reqData = req.body
+
+    // === check parameter quotationid === 
+
+    if (reqData.quotationid == '' || reqData.quotationid == null) {
+        return res.status(200).send({
+            status: false,
+            valid: false,
+            message: `ไม่พบ parameter : (quotationid : ${reqData.quotationid}, contract_ref: ${reqData.bussiness_code})`
+        })
+    }
+
+    try {
+
+        // *** check quotation record is exists ***
+
+        connection = await oracledb.getConnection(config.database)
+
+        const chkquotation = await connection.execute(`
+        SELECT QUO.QUO_KEY_APP_ID, QUO.QUO_STATUS , CRE.CONTRACT_REF
+        FROM MPLS_QUOTATION QUO, MPLS_CREDIT CRE
+        WHERE QUO.QUO_KEY_APP_ID = :QUOTATIONID
+        AND QUO.QUO_KEY_APP_ID = CRE.CRE_QUO_KEY_APP_ID
+    `, {
+            QUOTATIONID: reqData.quotationid
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        // console.log(`this is result : ${JSON.stringify(chkquotation)}`)
+        // console.log(`this is result : ${JSON.stringify(chkquotation.rows.length)}`)
+
+        if (chkquotation.rows.length != 1) {
+            return res.status(200).send({
+                status: false,
+                valid: false,
+                message: `เลข quotaion ไอดี ไม่สามารถระบุใบคำขอได้`
+            })
+        } else {
+
+            // *** check status ***
+            if (chkquotation.rows[0].QUO_STATUS == 1) {
+                return res.status(200).send({
+                    status: false,
+                    valid: false,
+                    message: `สถานะใบคำขออยู่ในขั้นพิจารณา ไม่สามารถแก้ไขข้อมูลได้`,
+                })
+            }
+
+            // **** check secondhand car image attach valid ****
+            const checkvalidsecondhandcar = await connection.execute(`
+                    SELECT MPC.CRE_QUO_KEY_APP_ID AS QUOTATIONID, MPC.APP_KEY_ID AS CREDITID, MPI.VALID_FIELD
+                    FROM 
+                        MPLS_CREDIT MPC,
+                        (
+                            SELECT 
+                                CASE WHEN COUNT(CASE WHEN IMGF.IMAGE_CODE = '12' THEN IMGF.IMAGE_CODE END) >= 2 
+                                    THEN 'Y' ELSE 'N' 
+                                END AS VALID_FIELD
+                            FROM 
+                                MPLS_IMAGE_FILE IMGF
+                            WHERE 
+                                IMGF.IMGF_QUO_APP_KEY_ID = :QUOTATIONID
+                        ) MPI
+                    WHERE MPC.CRE_QUO_KEY_APP_ID = :QUOTATIONID
+            `, {
+                QUOTATIONID: reqData.quotationid
+            }, {
+                outFormat: oracledb.OBJECT
+            })
+
+            // *** check valid image attach status for secondhand car ***
+            if (checkvalidsecondhandcar.rows.length !== 1) {
+                return res.status(200).send({
+                    status: false,
+                    valid: false,
+                    message: `ไม่พบผลการตรวจสอบสถานะประเภทสินค้า`
+                })
+            } else {
+                // **** check valid is 'Y' ***
+                if (checkvalidsecondhandcar.rows[0].VALID_FIELD == 'Y') {
+                    // *** valid ***
+                    let resData = checkvalidsecondhandcar.rows[0]
+                    const lowerResData = tolowerService.toLowerKeys(resData)
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    console.log(`this is contrct_ref from query: ${reqData.contract_ref}`)
+                    console.log(`this is contrct_ref from database: ${chkquotation.rows[0].CONTRACT_REF}`)
+                    returnData.contract_ref_change = (chkquotation.rows[0].CONTRACT_REF == reqData.contract_ref) ? false : true
+                    returnData.status = 200
+                    // returnData.valid = true
+                    returnData.valid = (returnData.contract_ref_change) ? false : true
+                    returnData.message = 'success'
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+                    res.status(200).json(returnDatalowerCase);
+
+                } else {
+                    // *** not valid ***
+                    return res.status(200).send({
+                        status: true,
+                        valid: false,
+                        message: `not valid (image attach)`
+                    })
+                }
+            }
+
+        }
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: false,
+            message: `Fail check secondhand car image attach : ${e.message ? e.message : 'No message'}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Fail close connection : ${e.message ? e.message : 'No message'}`
+                })
+            }
+        }
+    }
+}
+
+async function MPLS_clear_secondhand_car_image_attach(req, res, next) {
+    let connection;
+
+    const reqData = req.body
+
+    if (reqData.quotationid == '' || reqData.quotationid == null) {
+        return res.status(200).send({
+            status: false,
+            message: `ไม่พบ parameter quotationid`
+        })
+    }
+
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+
+        // === check quotation is already exist ===
+        const chkquotation = await connection.execute(`
+            SELECT QUO_KEY_APP_ID, QUO_STATUS FROM MPLS_QUOTATION
+            WHERE QUO_KEY_APP_ID = :QUOTATIONID
+        `, {
+            QUOTATIONID: reqData.quotationid
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (chkquotation.rows.length != 1) {
+            return res.status(200).send({
+                status: false,
+                message: `เลข QUOTATION ID ไม่สามารถระบุใบคำขอได้`
+            })
+        } else {
+            // *** delete image file '12' of quotationid = :quotationid ***
+            try {
+                const deleteimageresult = await connection.execute(`
+                    DELETE FROM MPLS_IMAGE_FILE
+                    WHERE IMAGE_CODE = '12' 
+                    AND IMGF_QUO_APP_KEY_ID = :QUOTATIONID
+            `, {
+                    QUOTATIONID: reqData.quotationid
+                }, {
+                    autoCommit: true
+                })
+
+                console.log(`success delete second car : ${deleteimageresult.rowsAffected}`)
+
+                const updateflagsecondhandcar = await connection.execute(`
+                                UPDATE MPLS_QUOTATION
+                                SET
+                                    QUO_SECONDHAND_CAR_VERIFY = 'N'
+                                WHERE
+                                    QUO_KEY_APP_ID = :QUO_KEY_APP_ID
+                `, {
+                    QUO_KEY_APP_ID: reqData.quotationid
+                })
+
+                console.log(`success update flag second car : ${updateflagsecondhandcar.rowsAffected}`)
+
+                if (deleteimageresult.rowsAffected == 0 || updateflagsecondhandcar.rowsAffected == 0) {
+                    return res.status(200).send({
+                        status: false,
+                        message: `ไม่สามารถทำรายการได้ (fail to delete secondhand car image or update flag secondhand car)`
+                    })
+                } else {
+                    return res.status(200).send({
+                        status: true,
+                        message: `success delete image_file on quotationid : ${reqData.quotationid}`
+                    })
+                }
+
+
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Fail clear secondhand car image attach : ${e.message ? e.message : 'No message'}`
+                })
+            }
+
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: false,
+            message: `Fail clear secondhand car image attach : ${e.message ? e.message : 'No message'}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Fail close connection : ${e.message ? e.message : 'No message'}`
+                })
+            }
+        }
+    }
+}
+
 // ***** step 2 (credit: MPLS_CREDIT) *****
 async function MPLS_create_or_update_credit(req, res, next) {
     let connection;
@@ -3162,7 +3398,7 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     BUSSINESS_CODE: reqData.bussiness_code,
                     BUSSINESS_NAME: reqData.bussiness_name,
                     MODEL_YEAR: reqData.model_year,
-                    CC: reqData.cc, 
+                    CC: reqData.cc,
                     REG_NO: reqData.reg_no,
                     REG_DATE: reg_date_dtype ?? null,
                     CONTRACT_REF: reqData.contract_ref,
@@ -3199,6 +3435,7 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     try {
                         commitall
                     } catch (e) {
+                        console.log(`err`)
                         console.err(e.message)
                         return res.send(200).send({
                             status: false,
@@ -4409,6 +4646,205 @@ async function MPLS_create_image_attach_file_multiple(req, res, next) {
 
             return res.status(200).send({
                 status: 200,
+                message: `แนบเอกสารประกอบการขอสินเชื่อสำเร็จ`
+            })
+        }
+
+
+
+    } catch (e) {
+        console.error(e)
+        res.status(200).send({
+            status: false,
+            message: `Error : ${e.message ? e.message : 'No return message'}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                // return next(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Error when close connection : ${e.message ? e.message : 'No return message'}`
+                })
+            }
+        }
+    }
+}
+
+async function MPLS_create_image_attach_file_multiple_list(req, res, next) {
+
+    let connection;
+    const token = req.user
+    const userid = token.ID
+    // const username = token.username
+    const radmin = token.radmin
+
+    try {
+
+        // === check permission ===
+        if (radmin == 'Y') {
+            return res.status(403).send({
+                status: false,
+                message: `Forbidden`,
+                data: []
+            })
+        }
+
+        let fileData
+        let formData
+        const form = new multiparty.Form()
+        await new Promise(function (resolve, reject) {
+            form.parse(req, (err, fields, files) => {
+                if (err) {
+                    reject(err)
+                    return
+                }
+                formData = fields
+                fileData = files
+                resolve()
+            })
+            return
+        })
+
+
+        const reqData = JSON.parse(formData.id)
+
+        const reqDataList = JSON.parse(formData.item_list)
+
+
+        let imageAttachList = []
+        for (let i = 0; i < reqDataList.length; i++) {
+            imageAttachList.push({
+                imgf_quo_app_key_id: reqData.quotationid,
+                app_key_id: uuidv4(),
+                image_file: fs.readFileSync(fileData[`image_${i + 1}`][0].path),
+                image_name: `secondhandcar_image`,
+                image_type: fileData[`image_${i + 1}`][0].headers['content-type'],
+                image_code: `12`
+            })
+        }
+
+        // === check quotation id param ===
+        if (reqData.quotationid == '' || reqData.quotationid == null) {
+            return res.status(200).send({
+                status: false,
+                message: `ไม่พบ parameter quotationid`,
+                data: []
+            })
+        }
+        // === check contract ref param ===
+        if (reqData.contract_ref == '' || reqData.contract_ref == null) {
+            return res.status(200).send({
+                status: false,
+                message: `ไม่พบ parameter contract_ref`,
+                data: []
+            })
+        }
+
+        connection = await oracledb.getConnection(config.database)
+
+        // === check quotation is already exist ===
+        const quocheck = await connection.execute(`
+                SELECT QUO_KEY_APP_ID FROM MPLS_QUOTATION
+                WHERE QUO_KEY_APP_ID = :QUO_KEY_APP_ID
+        `, { QUO_KEY_APP_ID: reqData.quotationid }, { outFormat: oracledb.OBJECT })
+
+        if (quocheck.rows.length !== 1) {
+            return res.status(200).send({
+                status: false,
+                message: `ไม่สามารถระบุรายการ quotation ได้ (rows : ${quocheck.rows.length})`
+            })
+        }
+
+        // === create image attach file === 
+        const options = {
+            bindDefs: {
+                imgf_quo_app_key_id: { type: oracledb.STRING, maxSize: 50 },
+                app_key_id: { type: oracledb.STRING, maxSize: 50 },
+                image_file: { type: oracledb.BLOB, maxSize: 5000000 },
+                image_name: { type: oracledb.STRING, maxSize: 200 },
+                image_type: { type: oracledb.STRING, maxSize: 200 },
+                image_code: { type: oracledb.STRING, maxSize: 200 }
+            }
+        }
+
+        const sqlinsertimage = `
+            INSERT INTO MPLS_IMAGE_FILE (
+                    IMGF_QUO_APP_KEY_ID, 
+                    APP_KEY_ID, 
+                    IMAGE_FILE, 
+                    IMAGE_NAME, 
+                    IMAGE_TYPE,
+                    IMAGE_CODE, 
+                    STATUS, 
+                    ACTIVE_STATUS
+                )
+                VALUES 
+                (
+                    :imgf_quo_app_key_id,
+                    :app_key_id, 
+                    :image_file, 
+                    :image_name, 
+                    :image_type, 
+                    :image_code, 
+                    0, 
+                    'Y'
+                )
+        `
+        const resultInsertImage = await connection.executeMany(sqlinsertimage, imageAttachList, options)
+
+        console.log(`sussecc insert image attach file : ${resultInsertImage.rowsAffected}`)
+
+        // === CHECK RESULT UPDATE ===
+
+        if (!resultInsertImage.rowsAffected) {
+            return res.status(200).send({
+                status: false,
+                message: `ไม่สามารถสร้างรายการไฟล์แนบได้ (rows : ${resultInsertImage.rowsAffected})`,
+                data: []
+            })
+        } else {
+
+            // === update contract ref of this record ===
+
+            const updatecontractrefresult = await connection.execute(`
+            UPDATE MPLS_CREDIT
+            SET CONTRACT_REF = :CONTRACT_REF
+            WHERE CRE_QUO_KEY_APP_ID = :CRE_QUO_KEY_APP_ID
+            `, {
+                CONTRACT_REF: reqData.contract_ref,
+                CRE_QUO_KEY_APP_ID: reqData.quotationid
+            })
+
+            console.log(`sussecc update contract ref to MPLS_CREDIT : ${updatecontractrefresult.rowsAffected}`)
+            // === update success ===
+
+            if (resultInsertImage.rowsAffected == 0 || updatecontractrefresult.rowsAffected == 0) {
+                return res.status(200).send({
+                    status: false,
+                    message: `Fail to insert image or update credit contract ref ( insert affected : ${resultInsertImage.rowsAffected}, update affected : ${updatecontractrefresult.rowsAffected})`
+                })
+            }
+
+            const commitall = await connection.commit();
+
+            try {
+                commitall
+            } catch (e) {
+                console.err(e.message)
+                return res.send(200).send({
+                    status: false,
+                    message: `Error : ${e.message ? e.message : 'No message'}`,
+                })
+            }
+
+            // === finish ===
+
+            return res.status(200).send({
+                status: true,
                 message: `แนบเอกสารประกอบการขอสินเชื่อสำเร็จ`
             })
         }
@@ -7988,12 +8424,15 @@ module.exports.MPLS_gen_application_no = MPLS_gen_application_no
 
 module.exports.MPLS_getservertime = MPLS_getservertime
 
+module.exports.MPLS_check_secondhand_car_image_attach = MPLS_check_secondhand_car_image_attach
+module.exports.MPLS_clear_secondhand_car_image_attach = MPLS_clear_secondhand_car_image_attach
 module.exports.MPLS_create_or_update_credit = MPLS_create_or_update_credit
 module.exports.MPLS_create_or_update_careerandpurpose = MPLS_create_or_update_careerandpurpose
 module.exports.MPLS_getimagefilebyid = MPLS_getimagefilebyid
 module.exports.MPLS_getimage_multiple_filebyid = MPLS_getimage_multiple_filebyid
 module.exports.MPLS_create_image_attach_file = MPLS_create_image_attach_file
 module.exports.MPLS_create_image_attach_file_multiple = MPLS_create_image_attach_file_multiple
+module.exports.MPLS_create_image_attach_file_multiple_list = MPLS_create_image_attach_file_multiple_list
 module.exports.MPLS_update_image_attach_file = MPLS_update_image_attach_file
 module.exports.MPLS_update_image_attach_file_multiple = MPLS_update_image_attach_file_multiple
 module.exports.MPLS_delete_image_attach_file = MPLS_delete_image_attach_file

@@ -103,6 +103,10 @@ app.get('/MPLS_update_phone_number', auth, qeconsentService.MPLS_update_phone_nu
 
 app.get('/MPLS_check_application_no', auth, qeconsentService.MPLS_check_application_no)
 
+app.post('/MPLS_check_secondhand_car_image_attach', auth, qeconsentService.MPLS_check_secondhand_car_image_attach)
+
+app.post('/MPLS_clear_secondhand_car_image_attach', auth, qeconsentService.MPLS_clear_secondhand_car_image_attach)
+
 app.post('/MPLS_create_or_update_credit', auth, qeconsentService.MPLS_create_or_update_credit)
 
 app.post('/MPLS_create_or_update_careerandpurpose', auth, qeconsentService.MPLS_create_or_update_careerandpurpose)
@@ -114,6 +118,8 @@ app.get('/MPLS_getimage_multiple_filebyid', auth, qeconsentService.MPLS_getimage
 app.post('/MPLS_create_image_attach_file', auth, qeconsentService.MPLS_create_image_attach_file)
 
 app.post('/MPLS_create_image_attach_file_multiple', auth, qeconsentService.MPLS_create_image_attach_file_multiple)
+
+app.post('/MPLS_create_image_attach_file_multiple_list', auth, qeconsentService.MPLS_create_image_attach_file_multiple_list)
 
 app.post('/MPLS_update_image_attach_file', auth, qeconsentService.MPLS_update_image_attach_file)
 

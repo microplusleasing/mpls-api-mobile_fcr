@@ -3080,6 +3080,52 @@ paths:
         "200":
           description: "success"
 
+  /MPLS_check_secondhand_car_image_attach:
+    post:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      description: Check attach image require for second hand car
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                quotationid:
+                  type: string
+                  example: e20b3b9a-69e0-46f0-b017-3790cef6a13c
+                contract_ref:
+                  type: string
+                  example: '110202206010001'
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Fail
+
+  /MPLS_clear_secondhand_car_image_attach:
+    post:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      description: clear attach image require for second hand car
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                quotationid:
+                  type: string
+                  example: e20b3b9a-69e0-46f0-b017-3790cef6a13c
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Fail
+      
+
   /MPLS_create_or_update_credit:
     post:
       tags:
