@@ -1606,7 +1606,7 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
     let connection;
     try {
 
-        const { p_reg_no, p_sl_code, page_no } = req.body
+        const { p_reg_no, p_sl_code, page_no, quotationid } = req.body
 
         if (!p_reg_no || !p_sl_code || p_reg_no.trim() === '' || p_sl_code.trim() === '') {
             return res.status(200).send({
@@ -1629,6 +1629,13 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
         let query_p_sl_code = ''
 
 
+
+
+        // === check quotationid is not null and not empty string ===
+        if (typeof quotationid === 'string' && quotationid.trim() !== '') {
+            bindParams.QUO_KEY_APP_ID = quotationid
+        }
+
         // === check p_reg_no is not null and not empty string ===
         if (typeof p_reg_no === 'string' && p_reg_no.trim() !== '') {
             query_p_reg = ` AND REG_NO LIKE '%'||:P_REG_NO||'%' `
@@ -1649,7 +1656,8 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
                 (
                     SELECT  REG_NO,prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
                             CHASSIS_NUMBER, CHASSIS_NO_RUNNING, REG_DATE,
-                            PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE, MODEL_YEAR, APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE
+                            PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE, MODEL_YEAR, APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE, 
+                            BTW.GET_MOTO_AGE (TRUNC(REG_DATE),TRUNC(SYSDATE)) AS MOTO_YEAR 
                             FROM(
                             SELECT  D.APPLICATION_NUM , D.CONTRACT_NO , D.SL_CODE ,C.AUCTION_CODE , G.REG_NO REG_NO,
                             BTW.F_GET_PROVINCE_NAME(E.REG_CITY) AS PROV_NAME, BTW.GET_BRAND_NAME(E.PRODUC ,E.BRAND_CODE) AS BRAND_NAME,
@@ -1672,13 +1680,22 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
                             AND D.BUSSINESS_CODE IN ('001','002')
                             AND A.PAY_CODE IN ('80','81')
                             AND NVL(A.CANCELL,'F') = 'F'
-                            AND F_CALCULATE_AGE (TRUNC(G.REG_DATE),TRUNC(SYSDATE)) <= BTW.GET_VALUE_NUM_MARKET_SETTING ('005','002',E.PRODUC ,E.BRAND_CODE ,E.MODEL_CODE ,C.SL_CODE ,TRUNC(SYSDATE))
-                            AND D.CONTRACT_NO NOT IN (select DISTINCT CONTRACT_REF
-                                                    from x_product_detail a,x_cust_mapping_ext b
-                                                    where A.APPLICATION_NUM = B.APPLICATION_NUM
-                                                    AND  B.BUSSINESS_CODE = '002'
-                                                    and (B.LOAN_RESULT in ('Y','Z','W') OR B.LOAN_RESULT IS NULL)
-                                                    and a.REG_NO = G.REG_NO )
+                            AND BTW.GET_MOTO_AGE (TRUNC(G.REG_DATE),TRUNC(SYSDATE)) <= BTW.GET_VALUE_NUM_MARKET_SETTING ('005','002',E.PRODUC ,E.BRAND_CODE ,E.MODEL_CODE ,C.SL_CODE ,TRUNC(SYSDATE))
+                            AND D.CONTRACT_NO NOT IN (
+                                                        SELECT DISTINCT CONTRACT_REF
+                                                        FROM X_PRODUCT_DETAIL A,X_CUST_MAPPING_EXT B
+                                                        WHERE A.APPLICATION_NUM = B.APPLICATION_NUM
+                                                        AND  B.BUSSINESS_CODE = '002'
+                                                        AND (B.LOAN_RESULT in ('Y','Z','W') OR B.LOAN_RESULT IS NULL)
+                                                        AND a.REG_NO = G.REG_NO 
+                                                        UNION
+                                                        SELECT DISTINCT CD.CONTRACT_REF 
+                                                        FROM MPLS_CREDIT CD, MPLS_QUOTATION QUO
+                                                        WHERE CD.CRE_QUO_KEY_APP_ID = QUO.QUO_KEY_APP_ID
+                                                        AND QUO.QUO_STATUS = '4'
+                                                        AND QUO.QUO_KEY_APP_ID NOT IN :QUO_KEY_APP_ID 
+                                                        AND CD.REG_NO = G.REG_NO  
+                                                    )
                             )
                             WHERE APPLICATION_NUM IS NOT NULL
                             ${query_p_reg} 
@@ -1706,7 +1723,8 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
                 (
                     SELECT  REG_NO,prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
                             CHASSIS_NUMBER, CHASSIS_NO_RUNNING, REG_DATE,
-                            PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE, MODEL_YEAR, APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE
+                            PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE, MODEL_YEAR, APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE, 
+                            BTW.GET_MOTO_AGE (TRUNC(REG_DATE),TRUNC(SYSDATE)) AS MOTO_YEAR 
                             FROM(
                             SELECT  D.APPLICATION_NUM , D.CONTRACT_NO , D.SL_CODE ,C.AUCTION_CODE , G.REG_NO REG_NO,
                             BTW.F_GET_PROVINCE_NAME(E.REG_CITY) AS PROV_NAME, BTW.GET_BRAND_NAME(E.PRODUC ,E.BRAND_CODE) AS BRAND_NAME,
@@ -1729,25 +1747,34 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
                             AND D.BUSSINESS_CODE IN ('001','002')
                             AND A.PAY_CODE IN ('80','81')
                             AND NVL(A.CANCELL,'F') = 'F'
-                            AND F_CALCULATE_AGE (TRUNC(G.REG_DATE),TRUNC(SYSDATE)) <= BTW.GET_VALUE_NUM_MARKET_SETTING ('005','002',E.PRODUC ,E.BRAND_CODE ,E.MODEL_CODE ,C.SL_CODE ,TRUNC(SYSDATE))
-                            AND D.CONTRACT_NO NOT IN (select DISTINCT CONTRACT_REF
-                                                    from x_product_detail a,x_cust_mapping_ext b
-                                                    where A.APPLICATION_NUM = B.APPLICATION_NUM
-                                                    AND  B.BUSSINESS_CODE = '002'
-                                                    and (B.LOAN_RESULT in ('Y','Z','W') OR B.LOAN_RESULT IS NULL)
-                                                    and a.REG_NO = G.REG_NO )
-                            )
-                            WHERE APPLICATION_NUM IS NOT NULL
+                            AND BTW.GET_MOTO_AGE (TRUNC(G.REG_DATE),TRUNC(SYSDATE)) <= BTW.GET_VALUE_NUM_MARKET_SETTING ('005','002',E.PRODUC ,E.BRAND_CODE ,E.MODEL_CODE ,C.SL_CODE ,TRUNC(SYSDATE))
+                            AND D.CONTRACT_NO NOT IN (
+                                                        SELECT DISTINCT CONTRACT_REF
+                                                        FROM X_PRODUCT_DETAIL A,X_CUST_MAPPING_EXT B
+                                                        WHERE A.APPLICATION_NUM = B.APPLICATION_NUM
+                                                        AND  B.BUSSINESS_CODE = '002'
+                                                        AND (B.LOAN_RESULT in ('Y','Z','W') OR B.LOAN_RESULT IS NULL)
+                                                        AND a.REG_NO = G.REG_NO 
+                                                        UNION
+                                                        SELECT DISTINCT CD.CONTRACT_REF 
+                                                        FROM MPLS_CREDIT CD, MPLS_QUOTATION QUO
+                                                        WHERE CD.CRE_QUO_KEY_APP_ID = QUO.QUO_KEY_APP_ID
+                                                        AND QUO.QUO_STATUS = '4'
+                                                        AND QUO.QUO_KEY_APP_ID NOT IN :QUO_KEY_APP_ID 
+                                                        AND CD.REG_NO = G.REG_NO  
+                                                    ) 
+                            ) 
+                            WHERE APPLICATION_NUM IS NOT NULL 
                             ${query_p_reg} 
                             ${query_p_sl_code} 
-                            GROUP BY APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE ,  REG_NO,
-                            prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
-                            CHASSIS_NUMBER, CHASSIS_NO_RUNNING,
-                            prov_code,PRODUC,BRAND_CODE,MODEL_CODE, REG_DATE, MODEL_YEAR
+                            GROUP BY APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE ,  REG_NO, 
+                            prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING, 
+                            CHASSIS_NUMBER, CHASSIS_NO_RUNNING, 
+                            prov_code,PRODUC,BRAND_CODE,MODEL_CODE, REG_DATE, MODEL_YEAR 
                 ) CARSEC
                         `
                 let finalsqlconditionlist = `
-                            SELECT * FROM (
+                            SELECT * FROM ( 
                                 ${sqlconditionlist}
                             ) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend`
 

@@ -3104,6 +3104,44 @@ paths:
         "400":
           description: Fail
 
+  /MPLS_check_moto_year:
+    post:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      description: Check moto year valid for second hand car
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                moto_year:
+                  type: number
+                  example: 2
+                bussiness_code:
+                  type: string
+                  example: '003'
+                product_code:
+                  type: string
+                  example: '01'
+                brand_code:
+                  type: string
+                  example: '01'
+                model_code:
+                  type: string
+                  example: '0039'
+                sl_code:
+                  type: string
+                  example: '20220003'
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Fail
+        "500":
+          description: Error
+
   /MPLS_clear_secondhand_car_image_attach:
     post:
       tags:
@@ -3119,6 +3157,27 @@ paths:
                 quotationid:
                   type: string
                   example: e20b3b9a-69e0-46f0-b017-3790cef6a13c
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Fail
+
+  /MPLS_calculate_moto_year:
+    post:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      description: calculate moto year of second hand car from reg date
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                reg_date:
+                  type: string
+                  example: 12/04/2017
       responses:
         "200":
           description: Success

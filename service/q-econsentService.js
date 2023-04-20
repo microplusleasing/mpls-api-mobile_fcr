@@ -3025,11 +3025,33 @@ async function MPLS_check_secondhand_car_image_attach(req, res, next) {
         // console.log(`this is result : ${JSON.stringify(chkquotation.rows.length)}`)
 
         if (chkquotation.rows.length != 1) {
-            return res.status(200).send({
-                status: false,
-                valid: false,
-                message: `เลข quotaion ไอดี ไม่สามารถระบุใบคำขอได้`
+
+            // *** check is new case ( have quo id but no credit id ) ***
+            const checkquoidrecent = await connection.execute(`
+                SELECT QUO_KEY_APP_ID FROM MPLS_QUOTATION
+                WHERE QUO_KEY_APP_ID = :QUO_KEY_APP_ID
+            `, {
+                QUO_KEY_APP_ID: reqData.quotationid
+            }, {
+                outFormat: oracledb.OBJECT
             })
+
+            if (checkquoidrecent.rows.length == 1) {
+
+                // *** is new case (return valid status) ***
+                return res.status(200).send({
+                    status: 200,
+                    message: `succcess`,
+                    valid: false,
+                    newcase: true
+                })
+            } else {
+                return res.status(200).send({
+                    status: false,
+                    valid: false,
+                    message: `เลข quotaion ไอดี ไม่สามารถระบุใบคำขอได้`
+                })
+            }
         } else {
 
             // *** check status ***
@@ -3045,18 +3067,18 @@ async function MPLS_check_secondhand_car_image_attach(req, res, next) {
             const checkvalidsecondhandcar = await connection.execute(`
                     SELECT MPC.CRE_QUO_KEY_APP_ID AS QUOTATIONID, MPC.APP_KEY_ID AS CREDITID, MPI.VALID_FIELD
                     FROM 
-                        MPLS_CREDIT MPC,
+                        MPLS_CREDIT MPC, 
                         (
                             SELECT 
                                 CASE WHEN COUNT(CASE WHEN IMGF.IMAGE_CODE = '12' THEN IMGF.IMAGE_CODE END) >= 2 
                                     THEN 'Y' ELSE 'N' 
-                                END AS VALID_FIELD
+                                END AS VALID_FIELD 
                             FROM 
-                                MPLS_IMAGE_FILE IMGF
+                                MPLS_IMAGE_FILE IMGF 
                             WHERE 
                                 IMGF.IMGF_QUO_APP_KEY_ID = :QUOTATIONID
                         ) MPI
-                    WHERE MPC.CRE_QUO_KEY_APP_ID = :QUOTATIONID
+                    WHERE MPC.CRE_QUO_KEY_APP_ID = :QUOTATIONID 
             `, {
                 QUOTATIONID: reqData.quotationid
             }, {
@@ -3117,6 +3139,64 @@ async function MPLS_check_secondhand_car_image_attach(req, res, next) {
                 return res.status(200).send({
                     status: false,
                     message: `Fail close connection : ${e.message ? e.message : 'No message'}`
+                })
+            }
+        }
+    }
+}
+
+async function MPLS_check_moto_year(req, res, next) {
+
+    let connection;
+    try {
+
+        const reqData = req.body
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(`
+            SELECT CHECK_MOTO_YEAR(:MOTO_YEAR, :BUSSINESS_CODE, :PRODUCT_CODE, :BRAND_CODE, :MODEL_CODE, :SL_CODE) AS RESULT FROM DUAL
+        `
+            , {
+                MOTO_YEAR: reqData.moto_year,
+                BUSSINESS_CODE: reqData.bussiness_code,
+                PRODUCT_CODE: reqData.product_code,
+                BRAND_CODE: reqData.brand_code,
+                MODEL_CODE: reqData.model_code,
+                SL_CODE: reqData.sl_code
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No data',
+                data: []
+            })
+        } else {
+            const resData = result.rows[0]
+            const lowerResData = tolowerService.toLowerKeys(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 500,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
                 })
             }
         }
@@ -3225,6 +3305,74 @@ async function MPLS_clear_secondhand_car_image_attach(req, res, next) {
     }
 }
 
+async function MPLS_calculate_moto_year(req, res, next) {
+
+    let connection;
+    try {
+
+        const reqData = req.body
+
+        let reg_date_dtype;
+        if (reqData.reg_date) {
+            const reg_date_current = moment(new Date(reqData.reg_date)).format("DD/MM/YYYY")
+            reg_date_dtype = reg_date_current
+        } else {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่พบ parameter reg_date`,
+                data: []
+            })
+        }
+
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(`
+                        SELECT
+                            BTW.GET_MOTO_AGE(TRUNC(BTW.BUDDHIST_TO_CHRIS_F(TO_DATE(:REG_DATE, 'DD/MM/YYYY'))), TRUNC(SYSDATE)) AS MOTO_YEAR
+                        FROM DUAL
+`
+            , {
+                REG_DATE: reg_date_dtype
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (result.rows.length !== 1) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No data',
+                data: []
+            })
+        } else {
+            const resData = result.rows[0]
+            const lowerResData = tolowerService.toLowerKeys(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 500,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 // ***** step 2 (credit: MPLS_CREDIT) *****
 async function MPLS_create_or_update_credit(req, res, next) {
     let connection;
@@ -3301,6 +3449,7 @@ async function MPLS_create_or_update_credit(req, res, next) {
                 const reg_date_current = moment(new Date(reqData.reg_date)).format("DD/MM/YYYY")
                 // reg_date_dtype = moment(reg_date_current, 'DD/MM/YYYY').format('LL')
                 reg_date_dtype = reg_date_current
+                console.log(`this is reg_date : ${reg_date_dtype}`)
             } else {
                 reg_date_dtype = null
             }
@@ -3314,6 +3463,88 @@ async function MPLS_create_or_update_credit(req, res, next) {
                         message: `สถานะใบคำขออยู่ในขั้นพิจารณา ไม่สามารถแก้ไขข้อมูลได้`,
                         data: []
                     })
+                }
+
+                // *** check contract ref is already exist (secondhand car only) (with another quotation) (17/04/2023) ***
+                console.log(`update credit`)
+                if (reqData.bussiness_code == '002' || reqData.bussiness_code == '003') {
+                    const checksecondhancdcaractive = await connection.execute(`
+                    SELECT CONTRACT_NO as CONTRACT_REF FROM 
+                    (
+                        SELECT  REG_NO,prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
+                                CHASSIS_NUMBER, CHASSIS_NO_RUNNING, REG_DATE,
+                                PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE, MODEL_YEAR, APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE
+                                FROM(
+                                SELECT  D.APPLICATION_NUM , D.CONTRACT_NO , D.SL_CODE ,C.AUCTION_CODE , G.REG_NO REG_NO,
+                                BTW.F_GET_PROVINCE_NAME(E.REG_CITY) AS PROV_NAME, BTW.GET_BRAND_NAME(E.PRODUC ,E.BRAND_CODE) AS BRAND_NAME,
+                                F.MODEL AS MODEL_NAME,E.COLOR ,F.CC, F.MODEL_YEAR ,G.ENGINE_NUMBER,G.ENGINE_NO_RUNNING,
+                                G.CHASSIS_NUMBER, G.CHASSIS_NO_RUNNING,
+                                E.REG_CITY prov_code,E.PRODUC,E.BRAND_CODE,E.MODEL_CODE,TRUNC(G.REG_DATE) AS REG_DATE
+                                FROM BTW.COLL_RECIEPT A, BTW.X_RECEIVE B, BTW.X_REPOSSESS_AUCTION_P C , BTW.X_CUST_MAPPING_EXT D, BTW.AC_PROVE E, BTW.X_MODEL_P F,
+                                BTW.X_PRODUCT_DETAIL G
+                                WHERE A.RECEIPT_NUMBER_PREFIX = B.RECEIPT_NUMBER_PREFIX
+                                AND A.RECEIPT_NUMBER_POSTFIX = B.RECEIPT_NUMBER_POSTFIX
+                                AND A.HP_NO = B.CONTRACT_NO
+                                AND B.AUCTION_CODE = C.AUCTION_CODE
+                                AND A.HP_NO = D.CONTRACT_NO
+                                AND E.HP_NO = D.CONTRACT_NO
+                                AND E.PRODUC = F.PRO_CODE
+                                AND C.SL_CODE = (SELECT DL_CODE FROM X_DEALER_P WHERE DL_CODE = C.SL_CODE AND ACTIVE_STATUS = 'Y')
+                                AND E.BRAND_CODE = F.BRAND_CODE
+                                AND E.MODEL_CODE = F.MODEL_CODE
+                                AND G.APPLICATION_NUM =D.APPLICATION_NUM
+                                AND D.BUSSINESS_CODE IN ('001','002')
+                                AND A.PAY_CODE IN ('80','81')
+                                AND NVL(A.CANCELL,'F') = 'F'
+                                AND BTW.GET_MOTO_AGE (TRUNC(G.REG_DATE),TRUNC(SYSDATE)) <= BTW.GET_VALUE_NUM_MARKET_SETTING ('005','002',E.PRODUC ,E.BRAND_CODE ,E.MODEL_CODE ,C.SL_CODE ,TRUNC(SYSDATE))
+                                AND D.CONTRACT_NO NOT IN (
+                                                            SELECT DISTINCT CONTRACT_REF
+                                                            FROM X_PRODUCT_DETAIL A,X_CUST_MAPPING_EXT B
+                                                            WHERE A.APPLICATION_NUM = B.APPLICATION_NUM
+                                                            AND  B.BUSSINESS_CODE = '002'
+                                                            AND (B.LOAN_RESULT in ('Y','Z','W') OR B.LOAN_RESULT IS NULL)
+                                                            AND a.REG_NO = G.REG_NO 
+                                                            UNION
+                                                            SELECT DISTINCT CD.CONTRACT_REF 
+                                                            FROM MPLS_CREDIT CD, MPLS_QUOTATION QUO
+                                                            WHERE CD.CRE_QUO_KEY_APP_ID = QUO.QUO_KEY_APP_ID
+                                                            AND QUO.QUO_STATUS = '4'
+                                                            AND QUO.QUO_KEY_APP_ID NOT IN :QUO_KEY_APP_ID 
+                                                            AND CD.REG_NO = G.REG_NO  
+                                                        )
+                                )
+                                WHERE APPLICATION_NUM IS NOT NULL
+                                GROUP BY APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE ,  REG_NO,
+                                prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
+                                CHASSIS_NUMBER, CHASSIS_NO_RUNNING,
+                                prov_code,PRODUC,BRAND_CODE,MODEL_CODE, REG_DATE, MODEL_YEAR
+                    ) CARSEC 
+                    `, {
+                        QUO_KEY_APP_ID: reqData.quotationid
+                    }, {
+                        outFormat: oracledb.OBJECT
+                    })
+
+                    if (checksecondhancdcaractive.rows.length == 0) {
+                        return res.status(200).send({
+                            status: false,
+                            messgae: `ไม่พบรายการรถมือสองที่สามารถเลือกได้`
+                        })
+                    } else {
+                        const checkmatchsecondhandcar = checksecondhancdcaractive.rows.some((x) => x.CONTRACT_REF === reqData.contract_ref);
+
+                        if (!checkmatchsecondhandcar) {
+
+                            // *** allow on case bussiness_code == 003 and contract_ref is empty string (20/04/2023) ***
+
+                            if (!((reqData.contract_ref == '' || reqData.contract_ref == null || reqData.contract_ref == undefined) && reqData.bussiness_code == '003')) {
+                                return res.status(200).send({
+                                    status: false,
+                                    message: `ไม่สามารถบันทึกรายการรถมือสองได้ เนื่องจากไม่พบรถ หรือยังมีเคสรายการอื่นอยู่ในระบบ 1`
+                                })
+                            }
+                        }
+                    }
                 }
 
                 // *** update record MPLS_CREDIT with SQL *** 
@@ -3362,7 +3593,8 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     CONTRACT_REF = :CONTRACT_REF,
                     REG_MILE = :REG_MILE,
                     PROV_CODE = :PROV_CODE,
-                    PROV_NAME = :PROV_NAME
+                    PROV_NAME = :PROV_NAME, 
+                    MOTO_YEAR = :MOTO_YEAR 
                 WHERE
                     CRE_QUO_KEY_APP_ID = :CRE_QUO_KEY_APP_ID
                     AND APP_KEY_ID = :APP_KEY_ID
@@ -3405,6 +3637,7 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     REG_MILE: reqData.reg_mile,
                     PROV_CODE: reqData.prov_code,
                     PROV_NAME: reqData.prov_name,
+                    MOTO_YEAR: reqData.moto_year,
                     CRE_QUO_KEY_APP_ID: quoid,
                     APP_KEY_ID: creid,
                 })
@@ -3453,8 +3686,85 @@ async function MPLS_create_or_update_credit(req, res, next) {
 
             } else {
 
-                console.log(`this is reg_date : ${reqData.reg_date}`)
-                console.log(`this is reg_date_dtype : ${reg_date_dtype}`)
+                // *** check contract ref is already exist (secondhand car only) (with another quotation) (17/04/2023) ***
+
+                if (reqData.bussiness_code == '002' || reqData.bussiness_code == '003') {
+                    const checksecondhancdcaractive = await connection.execute(`
+                    SELECT CONTRACT_NO as CONTRACT_REF FROM 
+                    (
+                        SELECT  REG_NO,prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
+                                CHASSIS_NUMBER, CHASSIS_NO_RUNNING, REG_DATE,
+                                PROV_CODE, PRODUC,BRAND_CODE,MODEL_CODE, MODEL_YEAR, APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE
+                                FROM(
+                                SELECT  D.APPLICATION_NUM , D.CONTRACT_NO , D.SL_CODE ,C.AUCTION_CODE , G.REG_NO REG_NO,
+                                BTW.F_GET_PROVINCE_NAME(E.REG_CITY) AS PROV_NAME, BTW.GET_BRAND_NAME(E.PRODUC ,E.BRAND_CODE) AS BRAND_NAME,
+                                F.MODEL AS MODEL_NAME,E.COLOR ,F.CC, F.MODEL_YEAR ,G.ENGINE_NUMBER,G.ENGINE_NO_RUNNING,
+                                G.CHASSIS_NUMBER, G.CHASSIS_NO_RUNNING,
+                                E.REG_CITY prov_code,E.PRODUC,E.BRAND_CODE,E.MODEL_CODE,TRUNC(G.REG_DATE) AS REG_DATE
+                                FROM BTW.COLL_RECIEPT A, BTW.X_RECEIVE B, BTW.X_REPOSSESS_AUCTION_P C , BTW.X_CUST_MAPPING_EXT D, BTW.AC_PROVE E, BTW.X_MODEL_P F,
+                                BTW.X_PRODUCT_DETAIL G
+                                WHERE A.RECEIPT_NUMBER_PREFIX = B.RECEIPT_NUMBER_PREFIX
+                                AND A.RECEIPT_NUMBER_POSTFIX = B.RECEIPT_NUMBER_POSTFIX
+                                AND A.HP_NO = B.CONTRACT_NO
+                                AND B.AUCTION_CODE = C.AUCTION_CODE
+                                AND A.HP_NO = D.CONTRACT_NO
+                                AND E.HP_NO = D.CONTRACT_NO
+                                AND E.PRODUC = F.PRO_CODE
+                                AND C.SL_CODE = (SELECT DL_CODE FROM X_DEALER_P WHERE DL_CODE = C.SL_CODE AND ACTIVE_STATUS = 'Y')
+                                AND E.BRAND_CODE = F.BRAND_CODE
+                                AND E.MODEL_CODE = F.MODEL_CODE
+                                AND G.APPLICATION_NUM =D.APPLICATION_NUM
+                                AND D.BUSSINESS_CODE IN ('001','002')
+                                AND A.PAY_CODE IN ('80','81')
+                                AND NVL(A.CANCELL,'F') = 'F'
+                                AND BTW.GET_MOTO_AGE (TRUNC(G.REG_DATE),TRUNC(SYSDATE)) <= BTW.GET_VALUE_NUM_MARKET_SETTING ('005','002',E.PRODUC ,E.BRAND_CODE ,E.MODEL_CODE ,C.SL_CODE ,TRUNC(SYSDATE))
+                                AND D.CONTRACT_NO NOT IN (
+                                                            SELECT DISTINCT CONTRACT_REF
+                                                            FROM X_PRODUCT_DETAIL A,X_CUST_MAPPING_EXT B
+                                                            WHERE A.APPLICATION_NUM = B.APPLICATION_NUM
+                                                            AND  B.BUSSINESS_CODE = '002'
+                                                            AND (B.LOAN_RESULT in ('Y','Z','W') OR B.LOAN_RESULT IS NULL)
+                                                            AND a.REG_NO = G.REG_NO 
+                                                            UNION
+                                                            SELECT DISTINCT CD.CONTRACT_REF 
+                                                            FROM MPLS_CREDIT CD, MPLS_QUOTATION QUO
+                                                            WHERE CD.CRE_QUO_KEY_APP_ID = QUO.QUO_KEY_APP_ID
+                                                            AND QUO.QUO_STATUS = '4'
+                                                            AND QUO.QUO_KEY_APP_ID NOT IN :QUO_KEY_APP_ID 
+                                                            AND CD.REG_NO = G.REG_NO  
+                                                        )
+                                )
+                                WHERE APPLICATION_NUM IS NOT NULL
+                                GROUP BY APPLICATION_NUM , CONTRACT_NO , SL_CODE ,AUCTION_CODE ,  REG_NO,
+                                prov_name,  BRAND_NAME,MODEL_NAME,COLOR ,CC ,ENGINE_NUMBER,ENGINE_NO_RUNNING,
+                                CHASSIS_NUMBER, CHASSIS_NO_RUNNING,
+                                prov_code,PRODUC,BRAND_CODE,MODEL_CODE, REG_DATE, MODEL_YEAR
+                    ) CARSEC 
+                    `, {
+                        QUO_KEY_APP_ID: reqData.quotationid
+                    }, {
+                        outFormat: oracledb.OBJECT
+                    })
+
+                    if (checksecondhancdcaractive.rows.length == 0) {
+                        return res.status(200).send({
+                            status: false,
+                            messgae: `ไม่พบรายการรถมือสองที่สามารถเลือกได้`
+                        })
+                    } else {
+                        const checkmatchsecondhandcar = checksecondhancdcaractive.rows.some((x) => x.CONTRACT_REF === reqData.contract_ref);
+
+                        if (!checkmatchsecondhandcar) {
+                            return res.status(200).send({
+                                status: false,
+                                message: `ไม่สามารถบันทึกรายการรถมือสองได้ เนื่องจากไม่พบรถ หรือยังมีเคสรายการอื่นอยู่ในระบบ`
+                            })
+                        }
+                    }
+                }
+
+
+                console.log(`create credit`)
                 // *** create record MPLS_CREDIT with SQL ***
                 const creditid = uuidv4()
 
@@ -3497,7 +3807,8 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     CONTRACT_REF,
                     REG_MILE,
                     PROV_CODE,
-                    PROV_NAME,
+                    PROV_NAME, 
+                    MOTO_YEAR, 
                     CRE_QUO_KEY_APP_ID,
                     APP_KEY_ID
                 )
@@ -3535,11 +3846,12 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     :MODEL_YEAR, 
                     :CC, 
                     :REG_NO, 
-                    TRUNC(:REG_DATE), 
+                    TRUNC(BTW.BUDDHIST_TO_CHRIS_F(TO_DATE(:REG_DATE, 'DD/MM/YYYY'))), 
                     :CONTRACT_REF,
                     :REG_MILE,
                     :PROV_CODE,
-                    :PROV_NAME,
+                    :PROV_NAME, 
+                    :MOTO_YEAR, 
                     :CRE_QUO_KEY_APP_ID,
                     :APP_KEY_ID
                 )
@@ -3576,11 +3888,13 @@ async function MPLS_create_or_update_credit(req, res, next) {
                     MODEL_YEAR: reqData.model_year,
                     CC: reqData.cc,
                     REG_NO: reqData.reg_no,
-                    REG_DATE: (new Date(reg_date_dtype)) ?? null,
+                    // REG_DATE: (new Date(reg_date_dtype)) ?? null,
+                    REG_DATE: reg_date_dtype ?? null,
                     CONTRACT_REF: reqData.contract_ref,
                     REG_MILE: reqData.reg_mile,
                     PROV_CODE: reqData.prov_code,
                     PROV_NAME: reqData.prov_name,
+                    MOTO_YEAR: reqData.moto_year,
                     CRE_QUO_KEY_APP_ID: reqData.quotationid,
                     APP_KEY_ID: creditid
                 })
@@ -4736,12 +5050,15 @@ async function MPLS_create_image_attach_file_multiple_list(req, res, next) {
             })
         }
         // === check contract ref param ===
-        if (reqData.contract_ref == '' || reqData.contract_ref == null) {
-            return res.status(200).send({
-                status: false,
-                message: `ไม่พบ parameter contract_ref`,
-                data: []
-            })
+
+        if (reqData.bussiness_code == '002') {
+            if (reqData.contract_ref == '' || reqData.contract_ref == null) {
+                return res.status(200).send({
+                    status: false,
+                    message: `ไม่พบ parameter contract_ref`,
+                    data: []
+                })
+            }
         }
 
         connection = await oracledb.getConnection(config.database)
@@ -4758,6 +5075,17 @@ async function MPLS_create_image_attach_file_multiple_list(req, res, next) {
                 message: `ไม่สามารถระบุรายการ quotation ได้ (rows : ${quocheck.rows.length})`
             })
         }
+
+        // *** delete recent second hand car image ***
+        const deleteerecentimage = await connection.execute(`
+            DELETE FROM MPLS_IMAGE_FILE
+            WHERE IMAGE_CODE = '12' 
+            AND IMGF_QUO_APP_KEY_ID = :QUOTATIONID
+    `, {
+            QUOTATIONID: reqData.quotationid
+        })
+
+        console.log(`success delete second car recent image : ${deleteerecentimage.rowsAffected}`)
 
         // === create image attach file === 
         const options = {
@@ -4815,17 +5143,31 @@ async function MPLS_create_image_attach_file_multiple_list(req, res, next) {
             SET CONTRACT_REF = :CONTRACT_REF
             WHERE CRE_QUO_KEY_APP_ID = :CRE_QUO_KEY_APP_ID
             `, {
-                CONTRACT_REF: reqData.contract_ref,
+                CONTRACT_REF: reqData.bussiness_code == '003' ? reqData.contract_ref : '',
                 CRE_QUO_KEY_APP_ID: reqData.quotationid
             })
 
+
             console.log(`sussecc update contract ref to MPLS_CREDIT : ${updatecontractrefresult.rowsAffected}`)
+
+            // *** update secondhand car attach image verify status ***
+
+            const updateverifystatus = await connection.execute(`
+                                UPDATE MPLS_QUOTATION
+                                SET
+                                    QUO_SECONDHAND_CAR_VERIFY = 'N'
+                                WHERE
+                                    QUO_KEY_APP_ID = :QUO_KEY_APP_ID
+                `, {
+                QUO_KEY_APP_ID: reqData.quotationid
+            })
+
             // === update success ===
 
-            if (resultInsertImage.rowsAffected == 0 || updatecontractrefresult.rowsAffected == 0) {
+            if (resultInsertImage.rowsAffected == 0 || updatecontractrefresult.rowsAffected == 0 || updateverifystatus.rowsAffected == 0) {
                 return res.status(200).send({
                     status: false,
-                    message: `Fail to insert image or update credit contract ref ( insert affected : ${resultInsertImage.rowsAffected}, update affected : ${updatecontractrefresult.rowsAffected})`
+                    message: `Fail to insert image or update credit contract ref ( insert affected : ${resultInsertImage.rowsAffected}, update affected : ${updatecontractrefresult.rowsAffected}, verify status : ${updateverifystatus.rowsAffected})`
                 })
             }
 
@@ -8425,7 +8767,9 @@ module.exports.MPLS_gen_application_no = MPLS_gen_application_no
 module.exports.MPLS_getservertime = MPLS_getservertime
 
 module.exports.MPLS_check_secondhand_car_image_attach = MPLS_check_secondhand_car_image_attach
+module.exports.MPLS_check_moto_year = MPLS_check_moto_year
 module.exports.MPLS_clear_secondhand_car_image_attach = MPLS_clear_secondhand_car_image_attach
+module.exports.MPLS_calculate_moto_year = MPLS_calculate_moto_year
 module.exports.MPLS_create_or_update_credit = MPLS_create_or_update_credit
 module.exports.MPLS_create_or_update_careerandpurpose = MPLS_create_or_update_careerandpurpose
 module.exports.MPLS_getimagefilebyid = MPLS_getimagefilebyid

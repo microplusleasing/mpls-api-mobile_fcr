@@ -105,7 +105,11 @@ app.get('/MPLS_check_application_no', auth, qeconsentService.MPLS_check_applicat
 
 app.post('/MPLS_check_secondhand_car_image_attach', auth, qeconsentService.MPLS_check_secondhand_car_image_attach)
 
+app.post('/MPLS_check_moto_year', auth, qeconsentService.MPLS_check_moto_year)
+
 app.post('/MPLS_clear_secondhand_car_image_attach', auth, qeconsentService.MPLS_clear_secondhand_car_image_attach)
+
+app.post('/MPLS_calculate_moto_year', auth, qeconsentService.MPLS_calculate_moto_year)
 
 app.post('/MPLS_create_or_update_credit', auth, qeconsentService.MPLS_create_or_update_credit)
 
