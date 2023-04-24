@@ -5085,6 +5085,66 @@ async function MPLS_create_send_car_deliver_and_loyalty_consent(req, res, next) 
     }
 }
 
+async function MPLS_geteconsentimagebyid(req, res, next) {
+
+    let connection;
+    try {
+
+        const reqData = req.body
+        console.log(`this si quo id : ${reqData.quotationid}`)
+        oracledb.fetchAsBuffer = [oracledb.BLOB];
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(`
+            SELECT ECONSENT_IMAGE FROM MPLS_QUOTATION
+            WHERE QUO_KEY_APP_ID = :QUOTATIONID
+        `
+            , {
+                QUOTATIONID: reqData.quotationid
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No data',
+                data: []
+            })
+        } else {
+            const resData = result.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            let returnData = new Object
+            returnData.data = lowerResData
+            returnData.status = 200
+            returnData.message = 'success'
+
+            let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                result[key.toLowerCase()] = val;
+            });
+            return res.status(200).json(returnDatalowerCase)
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 500,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 async function MPLS_getimagetocompareiapp(req, res, next) {
 
     let connection;
@@ -6340,7 +6400,7 @@ async function MPLS_fix_gen_econsent_image(req, res, next) {
     let connection;
     try {
 
-        const { firstname, lastname, birthdate, citizenid, phone_number, application_no, currentDate, currentDateTime, witness_name, witness_lname} = req.body
+        const { firstname, lastname, birthdate, citizenid, phone_number, application_no, currentDate, currentDateTime, witness_name, witness_lname } = req.body
 
         connection = await oracledb.getConnection(config.database)
 
@@ -7272,11 +7332,11 @@ async function genuuid(req, res, next) {
 
     try {
 
-       const uuid = uuidv4()
+        const uuid = uuidv4()
 
-       return res.status(200).send({
-        uuid: uuid
-       })
+        return res.status(200).send({
+            uuid: uuid
+        })
 
     } catch (e) {
         console.error(e);
@@ -7285,7 +7345,7 @@ async function genuuid(req, res, next) {
             message: `Fail : ${e.message ? e.message : 'No err msg'}`,
         })
     } finally {
-            // handle error
+        // handle error
     }
 }
 
@@ -7319,6 +7379,7 @@ module.exports.MPLS_delete_image_attach_file = MPLS_delete_image_attach_file
 module.exports.MPLS_update_flag_image_attach_file = MPLS_update_flag_image_attach_file
 module.exports.MPLS_create_consent = MPLS_create_consent
 module.exports.MPLS_create_send_car_deliver_and_loyalty_consent = MPLS_create_send_car_deliver_and_loyalty_consent
+module.exports.MPLS_geteconsentimagebyid = MPLS_geteconsentimagebyid
 
 
 module.exports.MPLS_get_refid = MPLS_get_refid // === USE _mplsUtil.internal_MPLS_get_refid instead ===

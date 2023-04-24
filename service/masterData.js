@@ -140,7 +140,7 @@ async function getTermNew(req, res, next) {
                 AND PRO_CODE = :pro_code
                 AND TRUNC(SYSDATE) BETWEEN TRUNC(ST_DATE) AND NVL(TRUNC(EN_DATE),TRUNC(SYSDATE))
                 AND BTW.PKG_CALCULATE.RATE_EFFECTIVE(ROUND(TRUNC(BTW.PKG_CAL_VAT.F_GET_AMOUNT_NO_VAT( :net_finance, BTW.GET_VAT (SYSDATE)),3),2),TERM,ROUND(TRUNC(BTW.PKG_CAL_VAT.F_GET_AMOUNT_NO_VAT(CEIL(round(BTW.pkg_installment.CAL_MONTHLY(:net_finance, TERM , :rate ),2)), BTW.GET_VAT (SYSDATE)),3),2))*12 <= (SELECT RATE FROM BTW.EFF_RATE_P WHERE TYPE_CODE = '1')
-                AND TERM >= BTW.GET_MIN_TERM_RATE_P(PRO_CODE,SIZE_CODE,SYSDATE, :rate)
+                AND TERM >= BTW.GET_MIN_TERM_RATE_P(PRO_CODE,SIZE_CODE,SYSDATE, :rate, '001')
                 ORDER BY TERM
         `, {
             size_model: size_model,
