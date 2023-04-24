@@ -6,13 +6,13 @@ const { outFormat } = require('oracledb');
 
 async function getMaxLtv(req, res, next) {
     let connection;
-    const { factory_price, bussi_code, pro_code, brand_code, model_code, dl_code } = req.query
+    const { factory_price, bussi_code, pro_code, brand_code, model_code, dl_code, moto_year } = req.query
     try {
         connection = await oracledb.getConnection(
             config.database
         )
         const results = await connection.execute(`
-        select TRUNC((:factory_price*BTW.GET_VALUE_NUM_MARKET_SETTING('001',:bussi_code,:pro_code,:brand_code,:model_code,:dl_code,SYSDATE))/100)
+        select TRUNC((:factory_price*BTW.GET_VALUE_NUM_MARKET_SETTING('001',:bussi_code,:pro_code,:brand_code,:model_code,:dl_code,SYSDATE, :moto_year))/100)
          maxltv from dual
         `, {
             factory_price: factory_price,
@@ -20,7 +20,8 @@ async function getMaxLtv(req, res, next) {
             pro_code: pro_code,
             brand_code: brand_code,
             model_code: model_code,
-            dl_code: dl_code
+            dl_code: dl_code,
+            moto_year: moto_year
         }, {
             outFormat: oracledb.OBJECT
         })

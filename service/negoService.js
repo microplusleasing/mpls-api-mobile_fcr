@@ -296,7 +296,7 @@ async function getviewcontractlist(req, res, next) {
                   SELECT hp_no, appoint_date, REC_DATE, staff_id, neg_r_code,
                          ROW_NUMBER() OVER (PARTITION BY HP_NO ORDER BY REC_DATE DESC) AS apd_index
                   FROM BTW.NEGO_INFO
-                  WHERE TRUNC(APPOINT_DATE) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(TO_DATE(:apd_date_formate, 'DD/MM/YYYY')))
+                  WHERE TRUNC(APPOINT_DATE) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(TO_DATE(:apd_date_formate , 'DD/MM/YYYY')))
                   ORDER BY REC_DATE DESC
                 )
                 WHERE apd_index = 1) APD , `

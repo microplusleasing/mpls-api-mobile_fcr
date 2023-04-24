@@ -14,3 +14,4 @@ function loopObjtolowerkey(darray) {
   }
   
 module.exports.arrayobjtolower = loopObjtolowerkey
+module.exports.toLowerKeys = toLowerKeys

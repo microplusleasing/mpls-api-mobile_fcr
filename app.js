@@ -95,7 +95,7 @@ app.get('/MPLS_get_witness_econsent', auth, qeconsentService.MPLS_get_witness_ec
 
 app.get('/MPLS_create_otp_econsent', auth, qeconsentService.MPLS_create_otp_econsent)
 
-app.post('/MPLS_validation_otp_econsent', auth, qeconsentService.MPLS_validation_otp_econsent)
+// app.post('/MPLS_validation_otp_econsent', auth, qeconsentService.MPLS_validation_otp_econsent)
 
 app.get('/MPLS_validation_otp_econsent_non', auth, qeconsentService.MPLS_validation_otp_econsent_non)
 
@@ -103,19 +103,37 @@ app.get('/MPLS_update_phone_number', auth, qeconsentService.MPLS_update_phone_nu
 
 app.get('/MPLS_check_application_no', auth, qeconsentService.MPLS_check_application_no)
 
+app.post('/MPLS_check_secondhand_car_image_attach', auth, qeconsentService.MPLS_check_secondhand_car_image_attach)
+
+app.post('/MPLS_check_moto_year', auth, qeconsentService.MPLS_check_moto_year)
+
+app.post('/MPLS_clear_secondhand_car_image_attach', auth, qeconsentService.MPLS_clear_secondhand_car_image_attach)
+
+app.post('/MPLS_calculate_moto_year', auth, qeconsentService.MPLS_calculate_moto_year)
+
 app.post('/MPLS_create_or_update_credit', auth, qeconsentService.MPLS_create_or_update_credit)
 
 app.post('/MPLS_create_or_update_careerandpurpose', auth, qeconsentService.MPLS_create_or_update_careerandpurpose)
 
 app.get('/MPLS_getimagefilebyid', auth, qeconsentService.MPLS_getimagefilebyid)
 
+app.get('/MPLS_getimage_multiple_filebyid', auth, qeconsentService.MPLS_getimage_multiple_filebyid)
+
 app.post('/MPLS_create_image_attach_file', auth, qeconsentService.MPLS_create_image_attach_file)
 
+app.post('/MPLS_create_image_attach_file_multiple', auth, qeconsentService.MPLS_create_image_attach_file_multiple)
+
+app.post('/MPLS_create_image_attach_file_multiple_list', auth, qeconsentService.MPLS_create_image_attach_file_multiple_list)
+
 app.post('/MPLS_update_image_attach_file', auth, qeconsentService.MPLS_update_image_attach_file)
+
+app.post('/MPLS_update_image_attach_file_multiple', auth, qeconsentService.MPLS_update_image_attach_file_multiple)
 
 app.post('/MPLS_delete_image_attach_file', auth, qeconsentService.MPLS_delete_image_attach_file)
 
 app.get('/MPLS_update_flag_image_attach_file', auth, qeconsentService.MPLS_update_flag_image_attach_file)
+
+app.get('/MPLS_update_flag_image_attach_file_multiple', auth, qeconsentService.MPLS_update_flag_image_attach_file_multiple)
 
 app.post('/MPLS_create_consent', auth, qeconsentService.MPLS_create_consent)
 
@@ -187,6 +205,8 @@ app.get('/getbrand', auth, productService.getbrand)
 
 app.get('/getmodel', auth, productService.getmodel)
 
+app.get('/getMasterBussiness', auth, masterService.getMasterBussiness)
+
 app.get('/MasterRate', auth, masterService.getRate)
 
 app.get('/MasterTerm', auth, masterService.getTerm)
@@ -200,6 +220,8 @@ app.get('/MasterPaymentCount', auth, masterService.getPaymentCount) // === not a
 app.get('/MasterImageType', auth, masterService.getImageType)
 
 app.get('/getImageTypeAttach', auth, masterService.getImageTypeAttach)
+
+app.get('/getImageTypeAttachMultiple', auth, masterService.getImageTypeAttachMultiple)
 
 app.get('/MasterTitle', auth, masterService.getTitle)
 
