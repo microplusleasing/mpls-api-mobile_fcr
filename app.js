@@ -139,6 +139,8 @@ app.post('/MPLS_create_consent', auth, qeconsentService.MPLS_create_consent)
 
 app.post('/MPLS_create_send_car_deliver_and_loyalty_consent', auth, qeconsentService.MPLS_create_send_car_deliver_and_loyalty_consent)
 
+app.post('/MPLS_geteconsentimagebyid', qeconsentService.MPLS_geteconsentimagebyid)
+
 app.get('/MPLS_gen_application_no', auth, qeconsentService.MPLS_gen_application_no)
 
 app.get('/MPLS_getservertime', auth, qeconsentService.MPLS_getservertime)

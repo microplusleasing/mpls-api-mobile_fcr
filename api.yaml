@@ -3019,6 +3019,29 @@ paths:
         "200":
           description: "success"
 
+  /MPLS_geteconsentimagebyid:
+    post:
+      tags:
+        - "E-CONSENT"
+      summary: get e-consent image 
+      description: get e-consent image 
+      requestBody:
+        content:
+          application/json:
+            schema:
+                properties:
+                  quotationid:
+                    type: string
+                    example: '44681461-97be-4360-905e-2d621bafbbe8'
+      responses:
+        "200":
+          description: 'success'
+        "400":
+          description: 'Fail'
+        "500":
+          description: 'Error'
+      
+
   /MPLS_fix_gen_econsent_image:
     post:
       tags:
