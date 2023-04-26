@@ -4554,6 +4554,91 @@ async function MPLS_getimage_multiple_filebyid(req, res, next) {
     }
 }
 
+async function MPLS_getimage_multiple_filebyappid(req, res, next) {
+    let connection;
+    try {
+
+        const reqData = req.query
+
+        if (reqData.applicationid == '' || reqData.applicationid == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `missig paremeter applicationid`,
+                data: []
+            })
+        }
+
+        // === check record is exist ===
+        oracledb.fetchAsBuffer = [oracledb.BLOB];
+        connection = await oracledb.getConnection(config.database)
+
+        const checkquotation = await connection.execute(`
+            SELECT QUO_KEY_APP_ID FROM MPLS_QUOTATION
+            WHERE APPLICATION_NUM = :APPLICATION_NUM
+        `, {
+            APPLICATION_NUM: reqData.applicationid
+        }, { outFormat: oracledb.OBJECT })
+
+        if (checkquotation.rows.length !== 1) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถระบุรายการ quotation ได้ (rows : ${checkquotation.rows.length})`,
+                data: []
+            })
+        }
+
+        // === set quotationid from result ===
+        const quoid = checkquotation.rows[0].QUO_KEY_APP_ID
+
+        // ===  GET IMAGE FILE LIST OF QUOTATION ===
+
+        const imagelist = await connection.execute(`
+                SELECT FS.IMAGE_NAME, FS.IMAGE_TYPE, FS.IMAGE_CODE, FS.IMAGE_FILE , FS.APP_KEY_ID AS IMAGE_ID , MS.IMAGE_HEADER
+                FROM MPLS_IMAGE_FILE FS
+                LEFT JOIN MPLS_MASTER_IMAGE_P MS
+                ON FS.IMAGE_CODE = MS.IMAGE_CODE
+                WHERE ACTIVE_STATUS = 'Y'
+                AND FS.IMGF_QUO_APP_KEY_ID = :IMGF_QUO_APP_KEY_ID
+                AND FS.IMAGE_CODE IN ('12')
+                ORDER BY CREATED_TIME DESC
+        `, {
+            IMGF_QUO_APP_KEY_ID: quoid
+        }, { outFormat: oracledb.OBJECT })
+
+        const resData = imagelist.rows
+        const lowerResData = tolowerService.arrayobjtolower(resData)
+        let returnData = new Object
+        returnData.data = lowerResData
+        returnData.status = 200
+        returnData.message = 'success'
+
+        let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+            result[key.toLowerCase()] = val;
+        });
+        return res.status(200).json(returnDatalowerCase)
+
+    } catch (e) {
+        console.error(e)
+        res.status(200).send({
+            status: false,
+            message: `Error : ${e.message ? e.message : 'No return message'}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                // return next(e);
+                return res.status(200).send({
+                    status: false,
+                    message: `Error when close connection : ${e.message ? e.message : 'No return message'}`
+                })
+            }
+        }
+    }
+}
+
 async function MPLS_create_image_attach_file(req, res, next) {
 
     let connection;
@@ -5051,15 +5136,15 @@ async function MPLS_create_image_attach_file_multiple_list(req, res, next) {
         }
         // === check contract ref param ===
 
-        if (reqData.bussiness_code == '002') {
-            if (reqData.contract_ref == '' || reqData.contract_ref == null) {
-                return res.status(200).send({
-                    status: false,
-                    message: `ไม่พบ parameter contract_ref`,
-                    data: []
-                })
-            }
-        }
+        // if (reqData.bussiness_code == '002') {
+        //     if (reqData.contract_ref == '' || reqData.contract_ref == null) {
+        //         return res.status(200).send({
+        //             status: false,
+        //             message: `ไม่พบ parameter contract_ref`,
+        //             data: []
+        //         })
+        //     }
+        // }
 
         connection = await oracledb.getConnection(config.database)
 
@@ -8834,6 +8919,7 @@ module.exports.MPLS_create_or_update_credit = MPLS_create_or_update_credit
 module.exports.MPLS_create_or_update_careerandpurpose = MPLS_create_or_update_careerandpurpose
 module.exports.MPLS_getimagefilebyid = MPLS_getimagefilebyid
 module.exports.MPLS_getimage_multiple_filebyid = MPLS_getimage_multiple_filebyid
+module.exports.MPLS_getimage_multiple_filebyappid = MPLS_getimage_multiple_filebyappid
 module.exports.MPLS_create_image_attach_file = MPLS_create_image_attach_file
 module.exports.MPLS_create_image_attach_file_multiple = MPLS_create_image_attach_file_multiple
 module.exports.MPLS_create_image_attach_file_multiple_list = MPLS_create_image_attach_file_multiple_list

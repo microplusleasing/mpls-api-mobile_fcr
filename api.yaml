@@ -3262,6 +3262,24 @@ paths:
         "200":
           description: "success"
 
+  /MPLS_getimage_multiple_filebyappid:
+    get:
+      tags:
+        - "E-CONSENT"
+      summary: This return a single Object
+      description: get image file of quotation by id
+      parameters:
+        - in: query
+          name: quotationid
+          required: true
+          schema:
+            type: string
+            example: b6b1e65d-86e9-4951-a96b-eb928061c492
+          description: ID of Quotation
+      responses:
+        "200":
+          description: "success"
+
   /bypassquotation2:
     post:
       tags:

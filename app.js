@@ -119,6 +119,8 @@ app.get('/MPLS_getimagefilebyid', auth, qeconsentService.MPLS_getimagefilebyid)
 
 app.get('/MPLS_getimage_multiple_filebyid', auth, qeconsentService.MPLS_getimage_multiple_filebyid)
 
+app.get('/MPLS_getimage_multiple_filebyappid', qeconsentService.MPLS_getimage_multiple_filebyappid)
+
 app.post('/MPLS_create_image_attach_file', auth, qeconsentService.MPLS_create_image_attach_file)
 
 app.post('/MPLS_create_image_attach_file_multiple', auth, qeconsentService.MPLS_create_image_attach_file_multiple)
