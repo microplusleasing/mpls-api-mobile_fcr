@@ -62,14 +62,8 @@ paths:
           required: true
           schema:
             type: string
-            example: "R@mire008"
-        - in: query
-          name: channal
-          description: "The channal for login (0: for store, 1: for checker)"
-          required: true
-          schema:
-            type: number
-            example: 1
+            example: ""
+
       responses:
         200:
           description: "successful operation"

@@ -21,7 +21,7 @@ log4js.configure({
 
 async function loginUser(req, res, next) {
     let connection;
-    const { username, password, channal } = req.query
+    const { username, password } = req.query
     // console.log(`this is userID : ${username}`)
     const logger = log4js.getLogger("login");
 
@@ -32,192 +32,131 @@ async function loginUser(req, res, next) {
         connection = await oracledb.getConnection(
             config.database
         )
-        const results = await connection.execute(`
-            select btw.TOOLKIT.encrypt (:password) as epassword from dual
-        `, {
-            password: password
-        },
-            {
-                outFormat: oracledb.OBJECT
-            })
 
-        if (results.rows.length == 0) {
-            const noresultFormatJson = {
-                status: 201,
-                message: 'enctypt service error',
-                data: []
-            }
-            return res.status(201).send(noresultFormatJson)
-        } else {
-            let encryptpassword = results.rows[0].EPASSWORD
-            try {
-                let queryStr;
-
-                if (channal == 0) {
-                    queryStr = `
-                    SELECT A.USERID ,A.USERNAME, (B.DL_FNAME || ' ' || B.DL_NAME || ' ' || B.DL_LNAME) AS FULLNAME , (B.DL_FNAME || ' ' || B.DL_NAME) AS FNAME , (B.DL_LNAME) AS LNAME, 
-                    B.DL_EMAIL, A.RADMIN , A.STATUS, B.DL_CODE AS SELLER_ID, TO_CHAR(A.DATE_CHPWS, 'DD/MM/YYYY') AS EXPIRE_DATE, 
-                    B.CHECKER_CODE , C.EMP_NAME AS WITNESS_NAME , C.EMP_LNAME AS WITNESS_LNAME , D.TITLE_NAME AS WITNESS_TITLE_NAME 
-                    FROM BTW.USERS A , BTW.X_DEALER_P B , BTW.EMP C, BTW.TITLE_P D 
-                    WHERE A.USERNAME = :username 
-                    and a.password = :encryptpassword 
-                    and B.CHECKER_CODE = C.EMP_ID 
-                    and C.TITLE_ID = D.TITLE_ID 
-                    and A.USERNAME = B.DL_CODE 
-                    and A.USER_TYPE = 'P' 
-                    and A.ACTIVATE = 'T' 
-                    `
-                } else if (channal == 1 || channal == 2) {
-                    queryStr = `
+        try {
+            let queryStr = `
                     select a.userid ,a.username, (b.emp_name) as fname , (b.emp_lname) as lname, b.email, a.radmin , a.status, TO_CHAR(a.DATE_CHPWS, 'DD/MM/YYYY') AS EXPIRE_DATE
                     from btw.users a , BTW.EMP b
                     where a.username = :username
-                    and a.password = :encryptpassword
+                    and a.password = BTW.TOOLKIT.encrypt (:password)
                     and a.userid = b.emp_id
                     and a.activate = 'T'
                     `
-                } else {
-                    logger.error(`user ${username} fail to login : not found chaannal type`);
-                    const nochannalFormatjson = {
-                        status: 201,
-                        message: 'not found chaannal type'
-                    }
-                    return res.status(201).send(nochannalFormatjson)
+
+
+            const resultLogin = await connection.execute(queryStr,
+                {
+                    username: username,
+                    password: password
+                },
+                {
+                    outFormat: oracledb.OBJECT
+                })
+
+            if (resultLogin.rows.length == 0) {
+                logger.error(`user ${username} fail to login : Not found user with ID/PW login`);
+                const noresultFormatJson = {
+                    status: 201,
+                    message: 'Not found user with ID/PW login'
                 }
+                res.status(201).send(noresultFormatJson)
+            } else {
 
-                resultLogin = await connection.execute(queryStr,
-                    {
-                        username: username,
-                        encryptpassword: encryptpassword
-                    },
-                    {
-                        outFormat: oracledb.OBJECT
-                    })
+                let resData = resultLogin.rows[0]
 
-                if (resultLogin.rows.length == 0) {
-                    logger.error(`user ${username} fail to login : Not found user with ID/PW login`);
-                    const noresultFormatJson = {
-                        status: 201,
-                        message: 'Not found user with ID/PW login'
-                    }
-                    res.status(201).send(noresultFormatJson)
-                } else {
+                // === log user login (04/09/2022) === 
+                try {
 
-                    let resData = resultLogin.rows[0]
+                    // === check password expire date (19/10/2022) === 
 
-                    // === log user login (04/09/2022) === 
-                    try {
+                    const nowdate = moment().toDate()
 
-                        // === check password expire date (19/10/2022) === 
+                    const expire_date = moment(resData.EXPIRE_DATE, 'DD/MM/YYYY').toDate()
 
-                        const nowdate = moment().toDate()
+                    // if (nowdate >= expire_date) {
+                    //     return res.status(200).send({
+                    //         status: 200,
+                    //         message: `รหัสผ่านหมดอายุหรือยังไม่ได้ยินยันตัวกรุณากรอกรหัสผ่านใหม่`,
+                    //         data: {
+                    //             expire: 'Y'
+                    //         }
+                    //     })
+                    // }
 
-                        const expire_date = moment(resData.EXPIRE_DATE, 'DD/MM/YYYY').toDate()
-
-                        // if (nowdate >= expire_date) {
-                        //     return res.status(200).send({
-                        //         status: 200,
-                        //         message: `รหัสผ่านหมดอายุหรือยังไม่ได้ยินยันตัวกรุณากรอกรหัสผ่านใหม่`,
-                        //         data: {
-                        //             expire: 'Y'
-                        //         }
-                        //     })
-                        // }
-
-                        // console.log(`this is now (moment) : ${nowdate} , expire_date : ${expire_date}`)
+                    // console.log(`this is now (moment) : ${nowdate} , expire_date : ${expire_date}`)
 
 
 
-                        const resultinsertloglogin = await connection.execute(`
+                    const resultinsertloglogin = await connection.execute(`
                             INSERT INTO MPLS_LOGIN_LOG (
                                 USERID
                             ) VALUES (:USERID)
                         `, {
-                            USERID: resData.USERID
-                        }, {
-                            autoCommit: true
-                        })
+                        USERID: resData.USERID
+                    }, {
+                        autoCommit: true
+                    })
 
-                        console.log(`success log login user : ${resultinsertloglogin.rowsAffected}`)
-                    } catch (e) {
-                        console.log(`can't log login : ${e.message}`)
-                    }
-
-                    // resData.channal = (channal == 0) ? 'dealer' : 'checker';
-                    resData.channal = setchannalbyvalue(channal)
-                    resData.expire = 'N'
-                    if (channal == 1) {
-                        // === set full name (checker) === 
-                        resData.FULLNAME = `${resData.FNAME} ${resData.LNAME}`
-                        // === set ID (checker) ===
-                        resData.ID = resData.USERID
-                        // === set username ==== 
-                        resData.USERNAME = username
-                        resData.WITNESS_NAME = resData.FNAME
-                        resData.WITNESS_LNAME = resData.LNAME
-                    } else if (channal == 0) {
-                        // === set full name (checker) === 
-                        resData.FULLNAME = `${resData.FNAME} ${resData.LNAME}`
-                        // === set ID (checker) ===
-                        resData.ID = resData.USERID
-                        // === set username ==== 
-                        resData.USERNAME = username
-
-                        resData.WITNESS_NAME = resData.WITNESS_NAME
-                        resData.WITNESS_LNAME = resData.WITNESS_LNAME
-                    } else if (channal == 2) {
-                        // === set full name (checker) === 
-                        resData.FULLNAME = `${resData.FNAME} ${resData.LNAME}`
-                        // === set ID (checker) ===
-                        resData.ID = resData.USERID
-                        // === set username ==== 
-                        resData.USERNAME = username
-                        resData.WITNESS_NAME = resData.FNAME
-                        resData.WITNESS_LNAME = resData.LNAME
-                    }
-                    const token = jwt.sign(
-                        {
-                            ID: resData.ID,
-                            user_id: resData.USERNAME,
-                            password: resData.PASSWORD,
-                            fullname: resData.FULLNAME,
-                            email: resData.EMAIL,
-                            radmin: resData.RADMIN ? resData.RADMIN : '',
-                            role: resData.ROLE,
-                            channal: resData.channal,
-                            seller_id: resData.SELLER_ID,
-                            username: resData.USERNAME,
-                            witness_name: resData.WITNESS_NAME,
-                            witness_lname: resData.WITNESS_LNAME
-                        },
-                        process.env.JWT_KEY, {
-                        expiresIn: "24h",
-                    }
-                    )
-                    let returnData = new Object
-                    returnData.token = token;
-                    returnData.data = resData
-                    returnData.status = 200,
-                        returnData.message = 'success'
-
-                    // === tran all upperCase to lowerCase === 
-                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
-                        result[key.toLowerCase()] = val;
-                    });
-
-                    // res.status(200).json(results.rows[0]);
-                    // logger.info(`user ${username} login successfully`);
-                    res.status(200).json(returnDatalowerCase);
+                    console.log(`success log login user : ${resultinsertloglogin.rowsAffected}`)
+                } catch (e) {
+                    console.log(`can't log login : ${e.message}`)
                 }
-            } catch (e) {
-                logger.error(`user ${username} fail to login : ${e}`);
-                return res.status(400).send({
-                    status: 400,
-                    message: `fail : ${e}`,
-                    data: []
-                })
+
+
+                resData.expire = 'N'
+
+                // === set full name (checker) === 
+                resData.FULLNAME = `${resData.FNAME} ${resData.LNAME}`
+                // === set ID (checker) ===
+                resData.ID = resData.USERID
+                // === set username ==== 
+                resData.USERNAME = username
+                resData.WITNESS_NAME = resData.FNAME
+                resData.WITNESS_LNAME = resData.LNAME
+
+                const token = jwt.sign(
+                    {
+                        ID: resData.ID,
+                        user_id: resData.USERNAME,
+                        password: resData.PASSWORD,
+                        fullname: resData.FULLNAME,
+                        email: resData.EMAIL,
+                        radmin: resData.RADMIN ? resData.RADMIN : '',
+                        role: resData.ROLE,
+                        channal: resData.channal,
+                        seller_id: resData.SELLER_ID,
+                        username: resData.USERNAME,
+                        witness_name: resData.WITNESS_NAME,
+                        witness_lname: resData.WITNESS_LNAME
+                    },
+                    process.env.JWT_KEY, {
+                    expiresIn: "24h",
+                }
+                )
+                let returnData = new Object
+                returnData.token = token;
+                returnData.data = resData
+                returnData.status = 200,
+                    returnData.message = 'success'
+
+                // === tran all upperCase to lowerCase === 
+                let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                    result[key.toLowerCase()] = val;
+                });
+
+                // res.status(200).json(results.rows[0]);
+                // logger.info(`user ${username} login successfully`);
+                res.status(200).json(returnDatalowerCase);
             }
+        } catch (e) {
+            logger.error(`user ${username} fail to login : ${e}`);
+            return res.status(400).send({
+                status: 400,
+                message: `fail : ${e}`,
+                data: []
+            })
         }
+
 
     } catch (e) {
         logger.error(`user ${username} fail to login : ${e}`);
@@ -470,13 +409,13 @@ async function resetpassword(req, res, next) {
                         ) ONPW
                     WHERE ONPW.PASSWORD_NEW = btw.TOOLKIT.encrypt(:newpassword)
                 `, {
-                    username: resultusername,
-                    newpassword: newpassword
-                }, {
-                    outFormat: oracledb.OBJECT
-                })
+            username: resultusername,
+            newpassword: newpassword
+        }, {
+            outFormat: oracledb.OBJECT
+        })
 
-        if(chkpasswordrepeat.rows.length !== 0) {
+        if (chkpasswordrepeat.rows.length !== 0) {
             // === password invalid (repeat last 3 time) ===
             return res.status(200).send({
                 status: 400,
@@ -540,21 +479,21 @@ async function resetpassword(req, res, next) {
                 message: `ไม่สามารถอัพเดทรหัสผ่านได้ตามเงื่อนไข`,
                 data: []
             })
-        } 
-        
+        }
+
         if (resultupdatepassword.rowsAffected !== 1) {
             return res.status(200).send({
                 status: 400,
                 message: `ไม่สามารถอัพเดทรหัสผ่านได้ เงื่อนไขไม่ถูกต้อง (Duplication rows update)`,
                 data: []
             })
-        } 
+        }
 
         // === insert password_log record (26/10/2022) ===
 
         try {
 
-            
+
             const insertpasswordlog = await connection.execute(`
             INSERT INTO BTW.PASSWORD_LOG (
                 USER_NAME, 
@@ -576,36 +515,36 @@ async function resetpassword(req, res, next) {
                 PASSWORD_OLD: oldpassword,
                 PASSWORD_NEW: newpassword
             })
-    
+
             console.log(`sussecc create password log record : ${insertpasswordlog.rowsAffected}`)
-    
-            } catch (e) {
-                console.log(`error create password_log : ${e}`)
-                logger.error(`user ${userid} : ข้อมูลเอกสารสัญญาไม่ถูกต้อง : ${e.message ? e.message : `No message`}`)
-                return res.status(200).send({
-                    status: 400,
-                    message: `สร้าง password log record ไม่สำเร็จ : ${e.message ? e.message : `No message`}`
-                })
-            }
 
-            // === success update password ==== 
-
-            const commitall = await connection.commit();
-            try {
-                commitall
-            } catch {
-                console.err(err.message)
-                res.send(200).send({
-                    status: 400,
-                    message: `เกิดข้อผิดพลาดที่ server : ${e.message ? e.message : 'No return message'}`
-                })
-            }
-
+        } catch (e) {
+            console.log(`error create password_log : ${e}`)
+            logger.error(`user ${userid} : ข้อมูลเอกสารสัญญาไม่ถูกต้อง : ${e.message ? e.message : `No message`}`)
             return res.status(200).send({
-                status: 200,
-                message: `อัพเดทรหัสผ่านสำเร็จ, กลับหน้า login เพื่อเข้าสู่ระบบ`,
-                data: []
+                status: 400,
+                message: `สร้าง password log record ไม่สำเร็จ : ${e.message ? e.message : `No message`}`
             })
+        }
+
+        // === success update password ==== 
+
+        const commitall = await connection.commit();
+        try {
+            commitall
+        } catch {
+            console.err(err.message)
+            res.send(200).send({
+                status: 400,
+                message: `เกิดข้อผิดพลาดที่ server : ${e.message ? e.message : 'No return message'}`
+            })
+        }
+
+        return res.status(200).send({
+            status: 200,
+            message: `อัพเดทรหัสผ่านสำเร็จ, กลับหน้า login เพื่อเข้าสู่ระบบ`,
+            data: []
+        })
 
 
 

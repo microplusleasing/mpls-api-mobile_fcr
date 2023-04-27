@@ -289,14 +289,14 @@ async function getviewcontractlist(req, res, next) {
         }
 
         if (apd && apd !== '') {
-            const  apd_date_formate =  moment(new Date(apd)).format("DD/MM/YYYY")
+            const apd_date_formate = moment(new Date(apd)).format("DD/MM/YYYY")
             // queryapd1 = ` NEGO_INFO, `
             queryapd1 = ` (SELECT *
                 FROM (
                   SELECT hp_no, appoint_date, REC_DATE, staff_id, neg_r_code,
                          ROW_NUMBER() OVER (PARTITION BY HP_NO ORDER BY REC_DATE DESC) AS apd_index
                   FROM BTW.NEGO_INFO
-                  WHERE TRUNC(APPOINT_DATE) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(TO_DATE('25/06/2018', 'DD/MM/YYYY')))
+                  WHERE TRUNC(APPOINT_DATE) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(TO_DATE(:apd_date_formate, 'DD/MM/YYYY')))
                   ORDER BY REC_DATE DESC
                 )
                 WHERE apd_index = 1) APD , `
@@ -407,7 +407,7 @@ async function getviewcontractlist(req, res, next) {
                 ${sqlbase}${wherecondition})
                 `
 
-                console.log(`fin sql = : ${finishsql}`)
+        // console.log(`fin sql = : ${finishsql}`)
         const resultcontractcount = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
 
         if (resultcontractcount.rows[0].count == 0) {
@@ -2008,88 +2008,6 @@ async function insertnegolist(req, res, next) {
         )
 
 
-        // ==== insert nego record ====
-        try {
-
-            let appointmentquerynego1 = '';
-            let appointmentquerynego2 = '';
-            let bindparamnego = {}
-            let mainquerynego1 = `INSERT INTO BTW.NEGO_INFO (
-                BRANCH_CODE,
-                HP_NO,
-                NEG_R_CODE,
-                REC_DATE,
-                MESSAGE1,
-                MESSAGE2,
-                STAFF_ID,
-                USER_NAME,
-                CUST_ID`
-            let mainqerynego2 = ` ) VALUES (
-                :branch_code,
-                :hp_no,
-                :neg_r_code,
-                :rec_date,
-                :message1,
-                :message2,
-                :staff_id,
-                :user_name,
-                :cust_id
-            `
-
-            bindparamnego.branch_code = branch_code
-            bindparamnego.hp_no = hp_no,
-                bindparamnego.neg_r_code = neg_r_code,
-                bindparamnego.rec_date = (new Date(currentDate)) ?? null
-            bindparamnego.message1 = message1
-            bindparamnego.message2 = message2
-            bindparamnego.staff_id = staff_id
-            bindparamnego.user_name = user_name
-            bindparamnego.cust_id = cust_id
-
-            if (appoint_date_dtype) {
-                appointmentquerynego1 = `, APPOINT_DATE `
-                appointmentquerynego2 = `, BTW.BUDDHIST_TO_CHRIS_F(:appoint_date) `
-                bindparamnego.appoint_date = (new Date(appoint_date_dtype)) ?? null
-            }
-
-            const finalqueryinsertnego = `${mainquerynego1}${appointmentquerynego1}${mainqerynego2}${appointmentquerynego2})`
-
-            // console.log(`sql final : ${finalqueryinsertnego}`)
-            // console.log(`bind final : ${JSON.stringify(bindparamnego)}`)
-
-            const insertnegorecord = await connection.execute(finalqueryinsertnego, bindparamnego, {
-                // autoCommit: true
-            })
-
-            console.log(`create nego_info success : ${JSON.stringify(insertnegorecord)}`)
-
-        } catch (e) {
-            console.log(`error create nego record : ${e}`)
-            try {
-                if (connection) {
-                    console.log(`trigger rollback (create nego_info)`)
-                    await connection.rollback()
-                    console.log(`rollback success (create nego_info)`)
-                    return res.status(200).send({
-                        status: 400,
-                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
-                    })
-                } else {
-                    console.log(`error create nego record (no - connection) (create nego_info)`)
-                    return res.status(200).send({
-                        status: 400,
-                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
-                    })
-                }
-
-            } catch (e) {
-                return res.status(200).send({
-                    status: 400,
-                    message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record) , (rollback fail): ${e.message ? e.message : `No message`}`
-                })
-            }
-        }
-
         // ==== insert call track info record ====
         try {
             const insertCallTrackinfo = await connection.execute(`
@@ -2129,7 +2047,7 @@ async function insertnegolist(req, res, next) {
                 rec_day: (new Date(currentDate)) ?? null
 
             }, {
-                // autoCommit: true
+                autoCommit: true
             })
 
 
@@ -2160,27 +2078,84 @@ async function insertnegolist(req, res, next) {
             }
         }
 
-        // === commit all record if all created record success ===
-        const commitall = await connection.commit();
-
+        // ==== insert nego record ====
         try {
-            commitall
-        } catch (e) {
 
-            if (connection) {
-                console.log(`trigger rollback (commit fail)`)
-                await connection.rollback();
-                console.log(`rollback success (commit fail)`)
-                res.send(200).send({
+            let appointmentquerynego1 = '';
+            let appointmentquerynego2 = '';
+            let bindparamnego = {}
+            let mainquerynego1 = `INSERT INTO BTW.NEGO_INFO (
+                        BRANCH_CODE,
+                        HP_NO,
+                        NEG_R_CODE,
+                        REC_DATE,
+                        MESSAGE1,
+                        MESSAGE2,
+                        STAFF_ID,
+                        USER_NAME,
+                        CUST_ID`
+            let mainqerynego2 = ` ) VALUES (
+                        :branch_code,
+                        :hp_no,
+                        :neg_r_code,
+                        :rec_date,
+                        :message1,
+                        :message2,
+                        :staff_id,
+                        :user_name,
+                        :cust_id
+                    `
+
+            bindparamnego.branch_code = branch_code
+            bindparamnego.hp_no = hp_no,
+                bindparamnego.neg_r_code = neg_r_code,
+                bindparamnego.rec_date = (new Date(currentDate)) ?? null
+            bindparamnego.message1 = message1
+            bindparamnego.message2 = message2
+            bindparamnego.staff_id = staff_id
+            bindparamnego.user_name = user_name
+            bindparamnego.cust_id = cust_id
+
+            if (appoint_date_dtype) {
+                appointmentquerynego1 = `, APPOINT_DATE `
+                appointmentquerynego2 = `, BTW.BUDDHIST_TO_CHRIS_F(:appoint_date) `
+                bindparamnego.appoint_date = (new Date(appoint_date_dtype)) ?? null
+            }
+
+            const finalqueryinsertnego = `${mainquerynego1}${appointmentquerynego1}${mainqerynego2}${appointmentquerynego2})`
+
+            // console.log(`sql final : ${finalqueryinsertnego}`)
+            // console.log(`bind final : ${JSON.stringify(bindparamnego)}`)
+
+            const insertnegorecord = await connection.execute(finalqueryinsertnego, bindparamnego, {
+                autoCommit: true
+            })
+
+            console.log(`create nego_info success : ${JSON.stringify(insertnegorecord)}`)
+
+        } catch (e) {
+            console.log(`error create nego record : ${e}`)
+            try {
+                if (connection) {
+                    console.log(`trigger rollback (create nego_info)`)
+                    await connection.rollback()
+                    console.log(`rollback success (create nego_info)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
+                    })
+                } else {
+                    console.log(`error create nego record (no - connection) (create nego_info)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
+                    })
+                }
+
+            } catch (e) {
+                return res.status(200).send({
                     status: 400,
-                    message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail)`,
-                    data: []
-                })
-            } else {
-                res.send(200).send({
-                    status: 400,
-                    message: `สร้างรายการประวัตืการติดตามไม่สำเร็จ (commit fail)`,
-                    data: []
+                    message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record) , (rollback fail): ${e.message ? e.message : `No message`}`
                 })
             }
         }
@@ -2191,7 +2166,7 @@ async function insertnegolist(req, res, next) {
             message: `success`,
             data: []
         })
-        
+
 
     } catch (e) {
         // console.error(e)
