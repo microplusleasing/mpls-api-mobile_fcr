@@ -65,7 +65,7 @@ app.get('/viewportallogin', portalService.viewportallogin)
 
 app.get('/loginuser', loginUserservice.loginUser) // === avalible === 
 
-app.get('/getquotationlist', auth, quotationservice.getquotationlist)
+// app.get('/getquotationlist', auth, quotationservice.getquotationlist)
 
 app.post('/createquotation', auth, quotationservice.createquotation)
 
@@ -177,7 +177,7 @@ app.get('/getimagebyid/:id', auth, imageService.getimagebyid)
 
 app.get('/getimagelistbyid/:id', auth, imageService.getimagelistbyid)
 
-app.get('/getquotationbyid/:id', auth, quotationservice.getquotationbyid)
+// app.get('/getquotationbyid/:id', auth, quotationservice.getquotationbyid)
 
 app.get('/getbrand', auth, productService.getbrand)
 
