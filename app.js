@@ -393,12 +393,8 @@ app.listen(process.env.API_PORT, () => {
   console.log(`UP & running on port ${process.env.API_PORT}`)
 })
 
-
 // app.listen(process.env.PORT, () => {
 //   // console.log(ip.address());
 //   console.log(`UP & running on port ${process.env.PORT}`)
 // })
  
-
-
-
