@@ -2161,6 +2161,8 @@ async function insertnegolist(req, res, next) {
         }
 
         // ==== success create nego and call track record then commit complete ==== 
+
+        // console.log(`before return success value`)
         return res.status(200).send({
             status: 200,
             message: `success`,
