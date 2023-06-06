@@ -197,7 +197,7 @@ async function getviewcontractlist(req, res, next) {
     let connection;
     try {
         // let cust_id = [];
-        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus, holder, apd } = req.query
+        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus, holder, apd, group_dpd, stage_no } = req.query
 
         const indexstart = (pageno - 1) * 5 + 1
         const indexend = (pageno * 5)
@@ -225,6 +225,10 @@ async function getviewcontractlist(req, res, next) {
         let queryholder = ''
         let queryapd1 = ''
         let queryapd2 = ''
+        // *** add query dpd on 02/06/2023 ****
+        let querydpd = ''
+        let querystageno = ''
+
         // ==== build query string form execute ====
 
         if (name) {
@@ -304,6 +308,20 @@ async function getviewcontractlist(req, res, next) {
             bindparams.apd_date_formate = apd_date_formate
         }
 
+        if (group_dpd && group_dpd !== null && group_dpd !== 'null') {
+            querydpd = ` and COLL_INFO_DPD.GROUP_DPD_ID = :groupdpd `
+            bindparams.groupdpd = group_dpd
+        }
+
+        if (stage_no && stage_no !== '') {
+            if (stage_no !== '0') {
+                querystageno = ` and coll_info_monthly_view.stage_no = :stageno `
+                bindparams.stageno = stage_no
+            } else {
+                querystageno = ` and coll_info_monthly_view.stage_no IS NULL `
+            }
+        }
+
         const sqlbase = `
             SELECT coll_info_monthly_view.hp_no,
                                     title_p.title_id,
@@ -360,7 +378,9 @@ async function getviewcontractlist(req, res, next) {
                                     x_cust_mapping_ext.bussiness_code,
                                     x_cust_mapping_ext.dl_code,
                                     coll_info_monthly_view.ROLLBACK_CALL,
-                                    X_DEALER_P.DL_BRANCH
+                                    X_DEALER_P.DL_BRANCH,
+                                    COLL_INFO_DPD.GROUP_DPD,
+                                    COLL_INFO_DPD.GROUP_DPD_ID 
                                    -- ROW_NUMBER() OVER (ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, coll_info_monthly_view.hp_no ASC) LINE_NUMBER
                             FROM coll_info_monthly_view,
                                     black1,
@@ -370,6 +390,7 @@ async function getviewcontractlist(req, res, next) {
                                     status_call,
                                     x_cust_mapping_ext,
                                     X_DEALER_P,
+                                    BTW.COLL_INFO_DPD, 
                                     ${queryapd1}
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
@@ -384,8 +405,11 @@ async function getviewcontractlist(req, res, next) {
                                         AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
-                                        AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null
-                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
+                                        AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null 
+                                        AND COLL_INFO_MONTHLY_VIEW.HP_NO =  COLL_INFO_DPD.HP_NO 
+                                        AND COLL_INFO_MONTHLY_VIEW.MONTH_END = COLL_INFO_DPD.MONTH_END 
+                                        AND COLL_INFO_MONTHLY_VIEW.YEAR_END = COLL_INFO_DPD.YEAR_END 
+                                        ${querydpd}${querystageno}${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) a
                         `
@@ -491,7 +515,9 @@ async function getviewcontractlist(req, res, next) {
                                     x_cust_mapping_ext.bussiness_code,
                                     x_cust_mapping_ext.dl_code,
                                     coll_info_monthly_view.ROLLBACK_CALL,
-                                    X_DEALER_P.DL_BRANCH
+                                    X_DEALER_P.DL_BRANCH, 
+                                    COLL_INFO_DPD.GROUP_DPD, 
+                                    COLL_INFO_DPD.GROUP_DPD_ID 
                                    -- ROW_NUMBER() OVER (ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, coll_info_monthly_view.hp_no ASC) LINE_NUMBER
                             FROM coll_info_monthly_view,
                                     black1,
@@ -501,6 +527,7 @@ async function getviewcontractlist(req, res, next) {
                                     status_call,
                                     x_cust_mapping_ext,
                                     X_DEALER_P, 
+                                    BTW.COLL_INFO_DPD, 
                                     ${queryapd1}
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
@@ -515,8 +542,12 @@ async function getviewcontractlist(req, res, next) {
                                         AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
-                                        AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null
-                                        ${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
+                                        AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null 
+                                        AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null 
+                                        AND COLL_INFO_MONTHLY_VIEW.HP_NO =  COLL_INFO_DPD.HP_NO 
+                                        AND COLL_INFO_MONTHLY_VIEW.MONTH_END = COLL_INFO_DPD.MONTH_END 
+                                        AND COLL_INFO_MONTHLY_VIEW.YEAR_END = COLL_INFO_DPD.YEAR_END 
+                                        ${querydpd}${querystageno}${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) A
                 `

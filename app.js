@@ -321,6 +321,10 @@ app.get('/getbranch', auth, masterService.getbranch)
 
 app.get('/getcarcheckstatus', auth, masterService.getcarcheckstatus)
 
+app.get('/getDPD', auth, masterService.getDPD)
+
+app.get('/getStageno', auth, masterService.getStageno)
+
 app.get('/genbarcodeqrold', portalService.genbarcodeqrold) // === no client yaml === 
 
 app.get('/genbarcodeqr', portalauth, portalService.genbarcodeqr) // === deprecate ===

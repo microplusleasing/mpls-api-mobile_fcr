@@ -2238,6 +2238,30 @@ paths:
         "200":
           description: "success"
 
+  /getDPD:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning Carcheck status list objects
+      responses:
+        "200":
+          description: "success"
+
+  /getStageno:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Returning Carcheck status list objects
+      responses:
+        "200":
+          description: "success"
+
   /testGetTime:
     get:
       tags:

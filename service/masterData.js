@@ -1611,6 +1611,108 @@ async function MPLS_getsecondhandcarbyreg(req, res, next) {
     }
 }
 
+async function getDPD(req, res, next) {
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(`
+        SELECT * FROM BTW.COLL_GROUP_DPD_VIEW`
+            , {
+                
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No data',
+                data: []
+            })
+        } else {
+            const resData = result.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function getStageno(req, res, next) {
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(`
+        SELECT * FROM BTW.COLL_GROUP_STAGE_NO_VIEW`
+            , {
+
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No data',
+                data: []
+            })
+        } else {
+            const resData = result.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 module.exports.getRate = getRate
 module.exports.getPaymentCount = getPaymentCount
 module.exports.getImageType = getImageType
@@ -1639,3 +1741,5 @@ module.exports.getHouseOwnerType = getHouseOwnerType
 module.exports.MPLS_getbrand = MPLS_getbrand
 module.exports.MPLS_getmodel = MPLS_getmodel
 module.exports.MPLS_getsecondhandcarbyreg = MPLS_getsecondhandcarbyreg
+module.exports.getStageno = getStageno
+module.exports.getDPD = getDPD
