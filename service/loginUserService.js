@@ -73,17 +73,17 @@ async function loginUser(req, res, next) {
 
                     const expire_date = moment(resData.EXPIRE_DATE, 'DD/MM/YYYY').toDate()
 
-                    // if (nowdate >= expire_date) {
-                    //     return res.status(200).send({
-                    //         status: 200,
-                    //         message: `รหัสผ่านหมดอายุหรือยังไม่ได้ยินยันตัวกรุณากรอกรหัสผ่านใหม่`,
-                    //         data: {
-                    //             expire: 'Y'
-                    //         }
-                    //     })
-                    // }
+                    if (nowdate >= expire_date) {
+                        return res.status(401).send({
+                            status: 401,
+                            message: `รหัสผ่านหมดอายุหรือยังไม่ได้ยินยันตัวกรุณากรอกรหัสผ่านใหม่`,
+                            data: {
+                                expire: 'Y'
+                            }
+                        })
+                    }
 
-                    // console.log(`this is now (moment) : ${nowdate} , expire_date : ${expire_date}`)
+                    console.log(`this is now (moment) : ${nowdate} , expire_date : ${expire_date}`)
 
 
 
@@ -137,7 +137,7 @@ async function loginUser(req, res, next) {
                 returnData.token = token;
                 returnData.data = resData
                 returnData.status = 200,
-                    returnData.message = 'success'
+                returnData.message = 'success'
 
                 // === tran all upperCase to lowerCase === 
                 let returnDatalowerCase = _.transform(returnData, function (result, val, key) {

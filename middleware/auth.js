@@ -17,7 +17,7 @@ const verifyToken = (req,res,next) => {
         // return res.status(401).send("Invalid Token")
         return res.status(401).send({
             status: 401,
-            message: 'Invalid Token',
+            message: 'Token was expire, please login',
         })
     }
 

@@ -124,7 +124,7 @@ async function getmrtainsurance(req, res, next) {
     try {
         connection = await oracledb.getConnection(config.database)
         const resultinsurance = await connection.execute(`
-                SELECT A.INSURER_CODE , A.INSURER_NAME , B.INSURANCE_CODE , C.AGE_MIN ,C.AGE_MAX, C.YEARS_INSUR , C.RATE_INSUR,CEIL((:P_OUT_STAND* C.RATE_INSUR)/1000) PREMIUM_INSUR
+                SELECT A.INSURER_CODE , A.INSURER_NAME , B.INSURANCE_CODE , C.AGE_MIN ,C.AGE_MAX, C.YEARS_INSUR , C.RATE_INSUR,CEIL((:P_OUT_STAND* C.RATE_INSUR)/1000) PREMIUM_INSUR, C.PLAN 
                 FROM X_INSURER_INFO A , X_INSURANCE B, BTW.X_INSURANCE_MRTA_DETAIL C
                 WHERE A.INSURER_CODE = B.INSURER_CODE
                 AND B.INSURANCE_CODE =C.INSURANCE_CODE
