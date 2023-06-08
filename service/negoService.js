@@ -380,7 +380,17 @@ async function getviewcontractlist(req, res, next) {
                                     coll_info_monthly_view.ROLLBACK_CALL,
                                     X_DEALER_P.DL_BRANCH,
                                     COLL_INFO_DPD.GROUP_DPD,
-                                    COLL_INFO_DPD.GROUP_DPD_ID 
+                                    COLL_INFO_DPD.GROUP_DPD_ID,
+                                    X_REPOSSESS_STOCK.REPOS_DATE, 
+                                    X_REPOSSESS_STOCK.ESTIMATE_BRANCH_BY, 
+                                    X_REPOSSESS_STOCK.ESTIMATE_BRANCH_DATETIME, 
+                                    X_REPOSSESS_STOCK.ESTIMATE_AUCTION_BY, 
+                                    X_REPOSSESS_STOCK.ESTIMATE_AUCTION_DATETIME, 
+                                    ESTIMATE_REPO_CHECK_MASTER.WAREHOUSE_STOP, 
+                                    ESTIMATE_REPO_CHECK_MASTER.MAKER_DATE,
+                                    ESTIMATE_REPO_CHECK_MASTER.MAKER_NAME,
+                                    ESTIMATE_REPO_CHECK_MASTER.CHECKER_DATE,
+                                    ESTIMATE_REPO_CHECK_MASTER.CHECKER_NAME 
                                    -- ROW_NUMBER() OVER (ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, coll_info_monthly_view.hp_no ASC) LINE_NUMBER
                             FROM coll_info_monthly_view,
                                     black1,
@@ -391,6 +401,8 @@ async function getviewcontractlist(req, res, next) {
                                     x_cust_mapping_ext,
                                     X_DEALER_P,
                                     BTW.COLL_INFO_DPD, 
+                                    BTW.X_REPOSSESS_STOCK, 
+                                    MOBILEMPLS.ESTIMATE_REPO_CHECK_MASTER, 
                                     ${queryapd1}
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
@@ -406,9 +418,11 @@ async function getviewcontractlist(req, res, next) {
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null 
-                                        AND COLL_INFO_MONTHLY_VIEW.HP_NO =  COLL_INFO_DPD.HP_NO 
-                                        AND COLL_INFO_MONTHLY_VIEW.MONTH_END = COLL_INFO_DPD.MONTH_END 
-                                        AND COLL_INFO_MONTHLY_VIEW.YEAR_END = COLL_INFO_DPD.YEAR_END 
+                                        AND COLL_INFO_MONTHLY_VIEW.HP_NO =  COLL_INFO_DPD.HP_NO (+) 
+                                        AND COLL_INFO_MONTHLY_VIEW.MONTH_END = COLL_INFO_DPD.MONTH_END (+) 
+                                        AND COLL_INFO_MONTHLY_VIEW.YEAR_END = COLL_INFO_DPD.YEAR_END (+)
+                                        AND COLL_INFO_MONTHLY_VIEW.HP_NO = X_REPOSSESS_STOCK.CONTRACT_NO (+) 
+                                        AND COLL_INFO_MONTHLY_VIEW.HP_NO = ESTIMATE_REPO_CHECK_MASTER.CONTACT_NO (+) 
                                         ${querydpd}${querystageno}${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) a
@@ -517,7 +531,17 @@ async function getviewcontractlist(req, res, next) {
                                     coll_info_monthly_view.ROLLBACK_CALL,
                                     X_DEALER_P.DL_BRANCH, 
                                     COLL_INFO_DPD.GROUP_DPD, 
-                                    COLL_INFO_DPD.GROUP_DPD_ID 
+                                    COLL_INFO_DPD.GROUP_DPD_ID, 
+                                    X_REPOSSESS_STOCK.REPOS_DATE, 
+                                    BTW.F_GET_EMP_NAME_BY_USERNAME(X_REPOSSESS_STOCK.ESTIMATE_BRANCH_BY) AS ESTIMATE_BRANCH_BY, 
+                                    X_REPOSSESS_STOCK.ESTIMATE_BRANCH_DATETIME, 
+                                    BTW.F_GET_EMP_NAME_BY_USERNAME(X_REPOSSESS_STOCK.ESTIMATE_AUCTION_BY) AS ESTIMATE_AUCTION_BY, 
+                                    X_REPOSSESS_STOCK.ESTIMATE_AUCTION_DATETIME, 
+                                    ESTIMATE_REPO_CHECK_MASTER.WAREHOUSE_STOP, 
+                                    ESTIMATE_REPO_CHECK_MASTER.MAKER_DATE,
+                                    ESTIMATE_REPO_CHECK_MASTER.MAKER_NAME,
+                                    ESTIMATE_REPO_CHECK_MASTER.CHECKER_DATE,
+                                    ESTIMATE_REPO_CHECK_MASTER.CHECKER_NAME 
                                    -- ROW_NUMBER() OVER (ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, coll_info_monthly_view.hp_no ASC) LINE_NUMBER
                             FROM coll_info_monthly_view,
                                     black1,
@@ -528,6 +552,8 @@ async function getviewcontractlist(req, res, next) {
                                     x_cust_mapping_ext,
                                     X_DEALER_P, 
                                     BTW.COLL_INFO_DPD, 
+                                    BTW.X_REPOSSESS_STOCK, 
+                                    MOBILEMPLS.ESTIMATE_REPO_CHECK_MASTER, 
                                     ${queryapd1}
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
@@ -544,9 +570,11 @@ async function getviewcontractlist(req, res, next) {
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null 
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null 
-                                        AND COLL_INFO_MONTHLY_VIEW.HP_NO =  COLL_INFO_DPD.HP_NO 
-                                        AND COLL_INFO_MONTHLY_VIEW.MONTH_END = COLL_INFO_DPD.MONTH_END 
-                                        AND COLL_INFO_MONTHLY_VIEW.YEAR_END = COLL_INFO_DPD.YEAR_END 
+                                        AND COLL_INFO_MONTHLY_VIEW.HP_NO =  COLL_INFO_DPD.HP_NO (+)  
+                                        AND COLL_INFO_MONTHLY_VIEW.MONTH_END = COLL_INFO_DPD.MONTH_END (+)  
+                                        AND COLL_INFO_MONTHLY_VIEW.YEAR_END = COLL_INFO_DPD.YEAR_END (+)  
+                                        AND COLL_INFO_MONTHLY_VIEW.HP_NO = X_REPOSSESS_STOCK.CONTRACT_NO (+) 
+                                        AND COLL_INFO_MONTHLY_VIEW.HP_NO = ESTIMATE_REPO_CHECK_MASTER.CONTACT_NO (+) 
                                         ${querydpd}${querystageno}${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) A
