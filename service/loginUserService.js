@@ -69,9 +69,48 @@ async function loginUser(req, res, next) {
 
                     // === check password expire date (19/10/2022) === 
 
+                    // *** chage check expire date from field expire that plus auto from resetpassword to check with paremeter when login (P Thep Khor) (09/06/2023)
+
+                    // === get expire time change from oracle X_CPS_INIT (25/10/2022) ===
+
+                    const resultexpireduration = await connection.execute(`
+                            SELECT DETAIL FROM BTW.X_CPS_INIT
+                            WHERE HEADER = 'DAY_CHANGE_PWS'
+                        `, {}, {
+                        outFormat: oracledb.OBJECT
+                    })
+
+                    if (resultexpireduration.rows.length == 0) {
+                        return res.status(200).send({
+                            status: 400,
+                            message: `ไม่พบการกำหนดค่าวันหมดอายุของระบบ, ไม่สามารถเข้าใช้งานได้`,
+                            data: []
+                        })
+                    }
+
+                    // === create expire duration ====
+
+                    const expireduration = resultexpireduration.rows[0].DETAIL
+
+                    console.log(`result expire duration : ${expireduration}`)
+
+                    if (!expireduration) {
+                        return res.status(200).send({
+                            status: 400,
+                            message: `ไม่พบการกำหนดค่า expire duration บนระบบ`,
+                            data: []
+                        })
+                    }
+
                     const nowdate = moment().toDate()
 
-                    const expire_date = moment(resData.EXPIRE_DATE, 'DD/MM/YYYY').toDate()
+                    // *** chage check expire date from field expire that plus auto from resetpassword to check with paremeter when login (P Thep Khor) (09/06/2023)\
+
+                    // ***=== when 09/06/2023 chage field in sql DATE_CHPWS (in api is expire_date) that before is EXPIRE_DATE into keep date that change password (request fix by P Thep) ===***
+
+                    // const expire_date = moment(resData.EXPIRE_DATE, 'DD/MM/YYYY').toDate()
+                    const expire_date = moment(resData.EXPIRE_DATE, 'DD/MM/YYYY').add(90, 'days').toDate();
+
 
                     if (nowdate >= expire_date) {
                         return res.status(200).send({
@@ -97,7 +136,18 @@ async function loginUser(req, res, next) {
                         autoCommit: true
                     })
 
+                    // *** update last login (08/06/2023) ***
+                    const updatelastlogin = await connection.execute(`
+                     UPDATE USERS  SET LAST_LOGIN = SYSDATE
+                             WHERE USERNAME = :USERNAME
+                 `, {
+                        USERNAME: username
+                    }, {
+                        autoCommit: true
+                    })
+
                     console.log(`success log login user : ${resultinsertloglogin.rowsAffected}`)
+                    console.log(`success log last login : ${updatelastlogin.rowsAffected}`)
                 } catch (e) {
                     console.log(`can't log login : ${e.message}`)
                 }
@@ -137,7 +187,7 @@ async function loginUser(req, res, next) {
                 returnData.token = token;
                 returnData.data = resData
                 returnData.status = 200,
-                returnData.message = 'success'
+                    returnData.message = 'success'
 
                 // === tran all upperCase to lowerCase === 
                 let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
@@ -454,17 +504,20 @@ async function resetpassword(req, res, next) {
             })
         }
 
-        // === update with new password (and add expire date next 3 month.) ===
+        // === update with new password (and add expire date next 3 month.) === (deprecate) (09/06/2023) ===
+
+        // *** chage check expire date from field expire that plus auto from resetpassword to check with paremeter when login (P Thep Khor) (09/06/2023) === instead 
+
+        // **** ==== (replace 'DATE_CHPWS = SYSDATE' instead of 'DATE_CHPWS = SYSDATE + :expireduration') (09/06/2023) ****
 
         const resultupdatepassword = await connection.execute(`
                 UPDATE BTW.USERS
                 SET PASSWORD = btw.TOOLKIT.encrypt(:newpassword),
-                    DATE_CHPWS = SYSDATE + :expireduration
+                    DATE_CHPWS = SYSDATE
                 WHERE USERNAME = :resultusername
                 AND ACTIVATE = 'T'
         `, {
             newpassword: newpassword,
-            expireduration: expireduration,
             resultusername: resultusername
         }, {
             outFormat: oracledb.OBJECT
