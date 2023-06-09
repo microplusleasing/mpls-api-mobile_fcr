@@ -74,9 +74,9 @@ async function loginUser(req, res, next) {
                     const expire_date = moment(resData.EXPIRE_DATE, 'DD/MM/YYYY').toDate()
 
                     if (nowdate >= expire_date) {
-                        return res.status(401).send({
-                            status: 401,
-                            message: `รหัสผ่านหมดอายุหรือยังไม่ได้ยินยันตัวกรุณากรอกรหัสผ่านใหม่`,
+                        return res.status(200).send({
+                            status: 202,
+                            message: `รหัสผ่านหมดอายุหรือยังไม่ได้ยืนยันตัวกรุณาเปลี่ยนรหัสผ่านใหม่`,
                             data: {
                                 expire: 'Y'
                             }
