@@ -21,7 +21,8 @@ log4js.configure({
 
 async function loginUser(req, res, next) {
     let connection;
-    const { username, password } = req.query
+    // const { username, password } = req.query
+    const { username, password } = req.body
     // console.log(`this is userID : ${username}`)
     const logger = log4js.getLogger("login");
 
@@ -173,7 +174,8 @@ async function loginUser(req, res, next) {
                         email: resData.EMAIL,
                         radmin: resData.RADMIN ? resData.RADMIN : '',
                         role: resData.ROLE,
-                        channal: resData.channal,
+                        // channal: resData.channal,
+                        channal: 'collector',
                         seller_id: resData.SELLER_ID,
                         username: resData.USERNAME,
                         witness_name: resData.WITNESS_NAME,
