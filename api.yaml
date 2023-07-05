@@ -43,27 +43,25 @@ paths:
           description: "Database connection problem"
 
   /loginuser:
-    get:
+    post:
       tags:
         - "checker"
       summary: "Logs user (checker) into the system"
       description: ""
-      parameters:
-        - in: query
-          name: username
-          required: true
-          schema:
-            type: string
-            example: "10654004"
-          description: Username for login
-        - in: query
-          name: password
-          description: "The password for login in clear text"
-          required: true
-          schema:
-            type: string
-            example: ""
-
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                username:
+                  type: string
+                  example: "10654004"
+                password:
+                  type: string
+                  example: ""
+                channal:
+                  type: number
+                  example: 1
       responses:
         200:
           description: "successful operation"
@@ -73,6 +71,7 @@ paths:
           description: "Not found Data"
         500:
           description: "Database connection problem"
+          
   /user:
     get:
       tags:

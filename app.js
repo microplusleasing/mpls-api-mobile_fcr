@@ -63,7 +63,7 @@ app.get('/portallogin', portalService.portallogin) // === deprecate ===
 
 app.get('/viewportallogin', portalService.viewportallogin)
 
-app.get('/loginuser', loginUserservice.loginUser) // === avalible === 
+app.post('/loginuser', loginUserservice.loginUser) // === avalible === 
 
 // app.get('/getquotationlist', auth, quotationservice.getquotationlist)
 
