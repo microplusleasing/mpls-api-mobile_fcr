@@ -36,6 +36,7 @@ const welcomeCallService = require('./service/welcomeCallService')
 const bodyParser = require("body-parser")
 const swaggerJSDoc = YAML.load("./api.yaml")
 const test2 = require('./service/test2')
+const callMobileService = require('./service/callService')
 // const ip = require('ip');
 
 
@@ -386,6 +387,17 @@ app.get('/generatetokenWelcomeCall', auth, welcomeCallService.generatetokenWelco
 // *** image util ***
 
 app.post('/compressimage', imageUtilService.compressimage)
+
+// *** call mobile dial service (07/07/2023) (TOM) ***
+app.post('/callMobileDial', auth, callMobileService.callMobileDial)
+
+app.post('/checkcallrecent', auth, callMobileService.checkcallrecent)
+
+app.post('/createcalltrackdial', auth, callMobileService.createcalltrackdial)
+
+app.post('/updatefailcalldial', auth, callMobileService.updatefailcalldial)
+
+app.post('/insertnegotocalltrack', auth, callMobileService.insertnegotocalltrack)
 
 // app.get('/genqr', barcodeService.genqr)
 // switch on lissten port 

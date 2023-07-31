@@ -185,8 +185,18 @@ async function loginUser(req, res, next) {
                     expiresIn: "24h",
                 }
                 )
+
+                const dialer_token = jwt.sign(
+                    {
+                       userId: resData.USERNAME
+                    },
+                    process.env.MOBILE_DIAL_KEY, {
+                    expiresIn: "24h",
+                }
+                )
                 let returnData = new Object
-                returnData.token = token;
+                returnData.token = token
+                returnData.dialer_token = dialer_token
                 returnData.data = resData
                 returnData.status = 200,
                     returnData.message = 'success'

@@ -1581,12 +1581,12 @@ async function createQuotation(req, res, next) {
         // }
 
         // === step create attach file  v2 ===
-        const isidcardinclude = imageData.find(items => items.code == 01);
-        const iscustomerfaceinclude = imageData.find(items => items.code == 03);
+        const isidcardinclude = imageData.find(items => items.code == '01');
+        const iscustomerfaceinclude = imageData.find(items => items.code == '03');
 
         // === add require image type for quotation (28/10/2022) ===
-        const iscizcardimagesign = imageData.find(items => items.code == 09)
-        const isncbconsent = imageData.find(items => items.code == 10)
+        const iscizcardimagesign = imageData.find(items => items.code == '09')
+        const isncbconsent = imageData.find(items => items.code == '10')
 
         // console.log(`iscizcardimagesign : ${iscizcardimagesign.code}`)
         // console.log(`isncbconsent : ${isncbconsent.code}`)

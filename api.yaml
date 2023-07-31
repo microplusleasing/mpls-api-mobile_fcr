@@ -71,7 +71,7 @@ paths:
           description: "Not found Data"
         500:
           description: "Database connection problem"
-          
+
   /user:
     get:
       tags:
@@ -867,7 +867,7 @@ paths:
         "500":
           description: "internal server Error"
 
-  /MPLS_getsecondhandcarbyreg :
+  /MPLS_getsecondhandcarbyreg:
     post:
       tags:
         - "product"
@@ -3314,6 +3314,134 @@ paths:
           description: "success"
         "500":
           description: "Error with message"
+
+  # Call Mobile Dial Service (tom) (07/07/2023)
+
+  /callMobileDial:
+    post:
+      tags:
+        - "DIAL"
+      security:
+        - bearerAuth: []
+      summary: "Call Api call Service (Dial) "
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                username:
+                  type: string
+                  description: test1
+                  example: "test1"
+                token_key:
+                  type: string
+                  description: key1
+                  example: "key1"
+                phone_no:
+                  type: string
+                  description: 'phone Number'
+                  example: "0999999999"
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+        500:
+          description: "Database connection problem"
+
+  /checkcallrecent:
+    post:
+      tags:
+        - "DIAL"
+      security:
+        - bearerAuth: []
+      summary: "Check recent dial call"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                branch_code:
+                  type: string
+                  description: 'branch_code'
+                  example: "10"
+                con_r_code:
+                  type: string
+                  description: Category of Call track Info.
+                  example: "CON"
+                cust_id:
+                  type: string
+                  description: cust_id
+                  example: "100001684"
+                hp_no:
+                  type: string
+                  description: hp_no
+                  example: "110202200000006"
+                phone_no:
+                  type: string
+                  description: phone_no
+                  example: "0655492596"
+                staff_id:
+                  type: string
+                  description: staff_id
+                  example: "654004"
+                user_name:
+                  type: string
+                  description: user_name
+                  example: "10654004"
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /updatefailcalldial:
+    post:
+      tags:
+        - "DIAL"
+      security:
+        - bearerAuth: []
+      summary: "update fail dial to call track info"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                uuid:
+                  type: string
+                  description: 'branch_code'
+                  example: "5b44e6534a9f4dc0b7cdae00afffa930"
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /insertnegotocalltrack:
+    post:
+      tags:
+        - "DIAL"
+      security:
+        - bearerAuth: []
+      summary: "update calltrackinfo and create negoinfo"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                key1:
+                  type: string
+                  description: 'key1'
+                  example: "1"
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
 
 components:
   requestBodies:
