@@ -1686,7 +1686,7 @@ async function getphonenolistcust(req, res, next) {
         WHERE PHONE_INFO.CUST_ID = CUST_INFO.CUST_NO
             AND PHONE_INFO.PHONE_STATUS_CODE = 'CN'
             AND CUST_INFO.CUST_NO = :cust_id
-            AND PHONE_TYPE_CODE NOT IN ('REF', 'RF1')
+            AND PHONE_TYPE_CODE NOT IN ('REF', 'RF1', 'SMS')
         `, {
             cust_id: cust_id
         }, {
@@ -1716,7 +1716,7 @@ async function getphonenolistcust(req, res, next) {
                     WHERE PHONE_INFO.CUST_ID = CUST_INFO.CUST_NO
                     AND PHONE_INFO.PHONE_STATUS_CODE = 'CN'
                     AND CUST_INFO.CUST_NO = :cust_id
-                    AND PHONE_TYPE_CODE NOT IN ('REF', 'RF1')
+                    AND PHONE_TYPE_CODE NOT IN ('REF', 'RF1', 'SMS')
                 )
                 where LINE_NUMBER between :indexstart AND :indexend
                 `, {
@@ -2039,7 +2039,7 @@ async function insertnegolist(req, res, next) {
 
         const objectjson = req.body
         let { hp_no, cust_id, phone_no, staff_id, user_name, neg_r_code,
-            appoint_date, message1, message2, con_r_code,
+            appoint_date, message1, message2, con_r_code, recall, dunning_letter, assign_fcr
         } = objectjson
 
         console.log(`params that send : hp_no : ${hp_no ? hp_no : '-'},  cust_id : ${cust_id ? cust_id : '-'},  phone_no : ${phone_no ? phone_no : '-'}, staff_id : ${staff_id ? staff_id : '-'},` +
@@ -2152,7 +2152,10 @@ async function insertnegolist(req, res, next) {
                         MESSAGE2,
                         STAFF_ID,
                         USER_NAME,
-                        CUST_ID`
+                        CUST_ID, 
+                        STATUS_RECALL, 
+                        REQ_DUNNING_LETTER, 
+                        REQ_ASSIGN_FCR`
             let mainqerynego2 = ` ) VALUES (
                         :branch_code,
                         :hp_no,
@@ -2162,7 +2165,10 @@ async function insertnegolist(req, res, next) {
                         :message2,
                         :staff_id,
                         :user_name,
-                        :cust_id
+                        :cust_id,
+                        :status_recall,
+                        :req_dunning_letter,
+                        :req_assign_fcr 
                     `
 
             bindparamnego.branch_code = branch_code
@@ -2174,12 +2180,17 @@ async function insertnegolist(req, res, next) {
             bindparamnego.staff_id = staff_id
             bindparamnego.user_name = user_name
             bindparamnego.cust_id = cust_id
+            // *** add more 3 optional field (31/07/2023) ***
+            bindparamnego.status_recall = recall
+            bindparamnego.req_dunning_letter = dunning_letter
+            bindparamnego.req_assign_fcr = assign_fcr
 
             if (appoint_date_dtype) {
                 appointmentquerynego1 = `, APPOINT_DATE `
                 appointmentquerynego2 = `, BTW.BUDDHIST_TO_CHRIS_F(:appoint_date) `
                 bindparamnego.appoint_date = (new Date(appoint_date_dtype)) ?? null
             }
+
 
             const finalqueryinsertnego = `${mainquerynego1}${appointmentquerynego1}${mainqerynego2}${appointmentquerynego2})`
 
