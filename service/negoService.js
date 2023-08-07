@@ -666,6 +666,170 @@ async function getviewcontractlist(req, res, next) {
 
 }
 
+async function getagentcollinfomonthly(req, res, next) {
+
+    let connection;
+    try {
+
+        const { pageno, due, branch, holder } = req.body
+
+
+        // if (!(pageno && due && holder)) {
+        if (!(pageno)) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters`,
+                data: []
+            })
+        }
+        const indexstart = (pageno - 1) * 5 + 1
+        const indexend = (pageno * 5)
+        let rowCount;
+
+        let bindparams = {};
+        let querydue = ''
+        let querybranch = ''
+        let queryholder = ''
+
+        if (due) {
+
+            querydue = ` AND SUBSTR(TO_CHAR(CM.FIRST_DUE, 'dd/mm/yyyy'), 1,2) = :due `
+            const formatdue = _util.build2digitstringdate(due)
+            bindparams.due = formatdue
+
+        }
+
+        if (holder) {
+            queryholder = ` AND CM.HP_HOLD = :holder `
+            bindparams.holder = holder
+        }
+
+        connection = await oracledb.getConnection(config.database)
+        const sqlbase = `
+                SELECT   
+                    ROWNUM AS LINE_NUMBER, 
+                    CM.HP_NO,
+                    BTW.PKG_CUST_INFO.F_GET_FNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_NAME,
+                    BTW.PKG_CUST_INFO.F_GET_SNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_LASTNAME,
+                    CM.BILL_BEG,
+                    CM.BILL_SUB_BEG,
+                    CM.BILL_CURR,
+                    CM.BILL_SUB_CURR,
+                    CM.MONTHLY,
+                    CM.FIRST_DUE,
+                    CM.HP_HOLD,
+                    CASE
+                    WHEN LENGTH(NVL(CT.hp_no,0))=1 THEN 'รอการติดต่อ'
+                    WHEN LENGTH(NVL(CT.hp_no,0)) > 1 AND NVL(CT.STATUS_RECALL,'N') ='Y'  THEN 'Recall'
+                    END  as STATUS_CALL_TRACK_INFO,  --สถานะการติดตาม (รอการติดต่อ,Recall)
+                    '' as BRANCH_CODE, 
+                    BTW.GET_BRANCH_SL_BY_HP_NO(CM.HP_NO) As branch_hp_no,
+                    STAGE_NO as STAGE,  --
+                    dpd_mth.DPD,
+                    dpd_mth.GROUP_DPD
+                FROM COLL_INFO_MONTHLY CM,
+                        (SELECT HP_NO ,STATUS_RECALL
+                        FROM(
+                        select ct.HP_NO ,ng.REC_DATE,ng.STATUS_RECALL,ct.rec_day
+                        from btw.CALL_TRACK_INFO ct, btw.nego_info ng
+                        WHERE TO_CHAR(ct.rec_day,'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(ng.rec_date,'dd/mm/yyyy hh24:mi:ss')
+                        and ng.STATUS_RECALL = 'Y'
+                        AND TRUNC(ng.REC_DATE) = TRUNC(SYSDATE)
+                        order by ng.rec_date desc
+                        )
+                        WHERE  ROWNUM < 2
+                        ) CT,
+                        BTW.COLL_INFO_DPD  dpd_mth
+                WHERE   CM.HP_NO =  dpd_mth.HP_NO
+                        AND CM.month_end = dpd_mth.MONTH_END
+                        AND CM.year_end = dpd_mth.YEAR_END
+                        and CM.HP_NO = CT.HP_NO(+)
+                        AND CM.month_end = TO_CHAR (SYSDATE, 'MM')
+                        AND CM.year_end = TO_CHAR (SYSDATE, 'YYYY')
+                        AND CM.STAPAY1 IS NULL 
+                        AND TO_CHAR(CM.FIRST_DUE,'MMYYYY') = TO_CHAR(SYSDATE,'MMYYYY')
+                        ${querydue}${queryholder}`
+
+        const sqlcount = `select count(hp_no) as rowCount from (${sqlbase})`
+
+        const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
+
+        if (resultCount.rows.length == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: 'NO RECORD FOUND',
+                data: []
+            })
+        } else {
+
+            try {
+                rowCount = resultCount.rows[0].ROWCOUNT
+                bindparams.indexstart = indexstart
+                bindparams.indexend = indexend
+                const finishsql = `SELECT * FROM(${sqlbase}) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `
+
+                const result = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
+
+                if (result.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 200,
+                        message: 'No negotaiation agent record',
+                        data: []
+                    })
+                } else {
+
+                    let resData = result.rows
+
+                    const lowerResData = tolowerService.arrayobjtolower(resData)
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    returnData.status = 200
+                    returnData.message = 'success'
+                    returnData.CurrentPage = Number(pageno)
+                    returnData.pageSize = 5
+                    returnData.rowCount = rowCount
+                    returnData.pageCount = Math.ceil(rowCount / 5);
+
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+
+                    // res.status(200).json(results.rows[0]);
+                    res.status(200).json(returnDatalowerCase);
+                }
+            } catch (e) {
+                console.error(e)
+                return res.status(200).send({
+                    status: 400,
+                    mesasage: `error during get list data of colletion : ${e.message}`,
+                    data: []
+                })
+            }
+
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 async function getnegotiationbyid(req, res, next) {
     let connection;
     try {
@@ -2948,6 +3112,7 @@ module.exports.getaddresscustlist = getaddresscustlist
 module.exports.getaddressncblist = getaddressncblist
 module.exports.getfollowuppaymentlist = getfollowuppaymentlist
 module.exports.getviewcontractlist = getviewcontractlist
+module.exports.getagentcollinfomonthly = getagentcollinfomonthly
 module.exports.insertnegolist = insertnegolist
 module.exports.getphonenolist = getphonenolist
 module.exports.getphonenolistcust = getphonenolistcust
