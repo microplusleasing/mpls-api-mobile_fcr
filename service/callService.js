@@ -120,7 +120,10 @@ async function createcalltrackdial(req, res, next) {
     try {
 
 
-        const { branch_code, hp_no, cust_id, phone_no, staff_id, con_r_code, user_name } = req.body
+        // const { branch_code, hp_no, cust_id, phone_no, staff_id, con_r_code, user_name } = req.body
+        const { branch_code, hp_no, cust_id, phone_no, staff_id, con_r_code } = req.body
+        const token = req.user
+        const user_name = token.user_id
         const currentDate = moment()
         const currentTime = moment(currentDate).format("HH:mm:ss");
         // Generate a UUID
@@ -265,6 +268,8 @@ async function updatefailcalldial(req, res, next) {
         // const response_date = `2023-07-26T07:51:34.1185769Z`
         const timestamp_bind = timestamp !== null ? timestamp : moment().format('YYYY-MM-DD HH:mm:ss.SSSSSSS ZZ');
         const currentUtcTime = moment.utc(timestamp_bind).format('DD/MM/YYYY HH:mm:ss');
+        console.log(`timestamp_bind : ${timestamp_bind}`)
+        console.log(`currentUtcTime : ${currentUtcTime}`)
         const result = await connection.execute(`
         UPDATE BTW.CALL_TRACK_INFO
             SET

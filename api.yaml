@@ -72,6 +72,26 @@ paths:
         500:
           description: "Database connection problem"
 
+  /getcurrentUserFormToken:
+    post:
+      tags:
+        - "Agent Call"
+      summary: "Login user to FCR web with token"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                token_oracle:
+                  type: string
+                  example: "37751277892222498773"
+      responses:
+        200:
+          description: "successful"
+        400:
+          description: "Invalid Token"
+
   /user:
     get:
       tags:
@@ -468,6 +488,37 @@ paths:
           schema:
             type: number
             example: 3
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /getagentcollinfomonthly:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get data from collection (agent)
+      description: load data from "Database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  example: 1
+                due:
+                  type: string
+                  example: "01"
+                branch:
+                  type: string
+                  example: ""
+                holder:
+                  type: string
+                  example: "654089"
       responses:
         200:
           description: "successful get data"

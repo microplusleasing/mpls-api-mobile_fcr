@@ -66,6 +66,8 @@ app.get('/viewportallogin', portalService.viewportallogin)
 
 app.post('/loginuser', loginUserservice.loginUser) // === avalible === 
 
+app.post('/getcurrentUserFormToken', loginUserservice.getcurrentUserFormToken) // === avalible (Token form oracle support) === 
+
 // app.get('/getquotationlist', auth, quotationservice.getquotationlist)
 
 app.post('/createquotation', auth, quotationservice.createquotation)
@@ -285,6 +287,8 @@ app.post(`/resetpassword`, loginUserservice.resetpassword)
 // app.get('/getcontractlist',auth,  negoService.getcontractlist)
 
 app.get('/getviewcontractlist', auth, negoService.getviewcontractlist)
+
+app.post('/getagentcollinfomonthly', auth, negoService.getagentcollinfomonthly)
 
 app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 

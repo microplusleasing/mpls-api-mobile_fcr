@@ -666,6 +666,177 @@ async function getviewcontractlist(req, res, next) {
 
 }
 
+async function getagentcollinfomonthly(req, res, next) {
+
+    let connection;
+    try {
+
+        const { pageno, due, branch, holder } = req.body
+
+
+        // if (!(pageno && due && holder)) {
+        if (!(pageno)) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters`,
+                data: []
+            })
+        }
+        const indexstart = (pageno - 1) * 5 + 1
+        const indexend = (pageno * 5)
+        let rowCount;
+
+        let bindparams = {};
+        let querydue = ''
+        let querybranch = ''
+        let queryholder = ''
+
+        if (due) {
+
+            querydue = ` AND SUBSTR(TO_CHAR(CM.FIRST_DUE, 'dd/mm/yyyy'), 1,2) = :due `
+            const formatdue = _util.build2digitstringdate(due)
+            bindparams.due = formatdue
+
+        }
+
+        if (holder) {
+            queryholder = ` AND CM.HP_HOLD = :holder `
+            bindparams.holder = holder
+        }
+
+        if (branch) {
+
+            if (branch !== 0 && branch !== '0') {
+                querybranch = ` AND BRANCH_CODE = :branch `
+                bindparams.branch = branch
+            }
+        }
+
+        connection = await oracledb.getConnection(config.database)
+        const sqlbase =
+            `SELECT *
+                            FROM(
+                            SELECT   
+                                    ROWNUM AS LINE_NUMBER, 
+                                    CM.HP_NO,
+                                    BTW.PKG_CUST_INFO.F_GET_FNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_NAME,
+                                    BTW.PKG_CUST_INFO.F_GET_SNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_LASTNAME,
+                                    CM.BILL_BEG,
+                                    CM.BILL_SUB_BEG,
+                                    CM.BILL_CURR,
+                                    CM.BILL_SUB_CURR,
+                                    CM.MONTHLY,
+                                    TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) AS DUE,
+                                    CM.FIRST_DUE,  
+                                    BTW.GET_BRANCH_SL_BY_HP_NO(CM.HP_NO) As branch_name_hp_no,
+                                    (        SELECT  PV.PROV_CODE
+                                        FROM X_CUST_MAPPING_EXT CME,X_CUST_MAPPING CM,X_DEALER_P DL,PROVINCE_P PV
+                                        WHERE CME.APPLICATION_NUM = CM.APPLICATION_NUM
+                                        AND  CME.SL_CODE = DL.DL_CODE
+                                        AND  DL.DL_BRANCH = PV.PROV_CODE
+                                        AND CM.CUST_STATUS = '0'
+                                        AND CME.CONTRACT_NO = CM.HP_NO) AS branch_code,
+                                    STAGE_NO as STAGE,  --
+                                    dpd_mth.DPD,
+                                    dpd_mth.GROUP_DPD,
+                                    BTW.GET_CALL_STATUS(CM.HP_NO) as STATUS_CALL_TRACK_INFO,  --สถานะการติดตาม ล่าสุด(รอการติดต่อ,Recall)
+                                    BTW.GET_lastcall_rec_day(CM.HP_NO) as LASTCALL_REC_DAYTIME ---rec_day ติดตามล่าสุด
+                                FROM COLL_INFO_MONTHLY CM,
+                                        BTW.COLL_INFO_DPD  dpd_mth
+                                WHERE   CM.HP_NO =  dpd_mth.HP_NO
+                                        AND CM.month_end = dpd_mth.MONTH_END
+                                        AND CM.year_end = dpd_mth.YEAR_END
+                                        AND CM.month_end = TO_CHAR (SYSDATE, 'MM')
+                                        AND CM.year_end = TO_CHAR (SYSDATE, 'YYYY')
+                                        AND CM.STAPAY1 IS NULL 
+                                        AND TO_CHAR(CM.FIRST_DUE,'MMYYYY') = TO_CHAR(SYSDATE,'MMYYYY') 
+                                        ${querydue}${queryholder}
+                                        ORDER BY TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) , CM.hp_no  ASC
+                                        )
+                                        WHERE STATUS_CALL_TRACK_INFO IN('W','R') 
+                                        ${querybranch}
+                                    order by TO_NUMBER(TO_CHAR (first_due, 'DD')) , hp_no asc`
+
+        const sqlcount = `select count(hp_no) as rowCount from (${sqlbase})`
+
+        const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
+
+        if (resultCount.rows.length == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: 'NO RECORD FOUND',
+                data: []
+            })
+        } else {
+
+            try {
+                rowCount = resultCount.rows[0].ROWCOUNT
+                bindparams.indexstart = indexstart
+                bindparams.indexend = indexend
+                const finishsql = `SELECT * FROM(${sqlbase}) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `
+
+                const result = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
+
+                if (result.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 200,
+                        message: 'No negotaiation agent record',
+                        data: []
+                    })
+                } else {
+
+                    let resData = result.rows
+
+                    const lowerResData = tolowerService.arrayobjtolower(resData)
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    returnData.status = 200
+                    returnData.message = 'success'
+                    returnData.CurrentPage = Number(pageno)
+                    returnData.pageSize = 5
+                    returnData.rowCount = rowCount
+                    returnData.pageCount = Math.ceil(rowCount / 5);
+
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+
+                    // res.status(200).json(results.rows[0]);
+                    res.status(200).json(returnDatalowerCase);
+                }
+            } catch (e) {
+                console.error(e)
+                return res.status(200).send({
+                    status: 400,
+                    mesasage: `error during get list data of colletion : ${e.message}`,
+                    data: []
+                })
+            }
+
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 async function getnegotiationbyid(req, res, next) {
     let connection;
     try {
@@ -2948,6 +3119,7 @@ module.exports.getaddresscustlist = getaddresscustlist
 module.exports.getaddressncblist = getaddressncblist
 module.exports.getfollowuppaymentlist = getfollowuppaymentlist
 module.exports.getviewcontractlist = getviewcontractlist
+module.exports.getagentcollinfomonthly = getagentcollinfomonthly
 module.exports.insertnegolist = insertnegolist
 module.exports.getphonenolist = getphonenolist
 module.exports.getphonenolistcust = getphonenolistcust
