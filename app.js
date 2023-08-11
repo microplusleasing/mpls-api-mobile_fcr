@@ -290,6 +290,8 @@ app.get('/getviewcontractlist', auth, negoService.getviewcontractlist)
 
 app.post('/getagentcollinfomonthly', auth, negoService.getagentcollinfomonthly)
 
+app.post('/getagentgroupdpd', auth, negoService.getagentgroupdpd)
+
 app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
