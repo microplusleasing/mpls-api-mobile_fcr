@@ -682,187 +682,8 @@ async function getagentcollinfomonthly(req, res, next) {
                 data: []
             })
         }
-        const indexstart = (pageno - 1) * 5 + 1
-        const indexend = (pageno * 5)
-        let rowCount;
-
-        let bindparams = {};
-        let querydue = ''
-        let querybranch = ''
-        let queryholder = ''
-        let querysort = ''
-
-        if (due) {
-
-            querydue = ` AND SUBSTR(TO_CHAR(CM.FIRST_DUE, 'dd/mm/yyyy'), 1,2) = :due `
-            const formatdue = _util.build2digitstringdate(due)
-            bindparams.due = formatdue
-
-        }
-
-        if (holder) {
-            queryholder = ` AND CM.HP_HOLD = :holder `
-            bindparams.holder = holder
-        }
-
-        if (branch) {
-
-            if (branch !== 0 && branch !== '0') {
-                querybranch = ` AND BRANCH_CODE = :branch `
-                bindparams.branch = branch
-            }
-        }
-
-        if (sort_type && sort_field) {
-            querysort = ` ORDER BY ${sort_field} ${sort_type} `
-        } else {
-            querysort = ``
-        }
-
-        connection = await oracledb.getConnection(config.database)
-        const sqlbase =
-            `SELECT ROWNUM AS LINE_NUMBER, T.*
-            FROM(
-            SELECT   
-                    CM.HP_NO,
-                    BTW.PKG_CUST_INFO.F_GET_FNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_NAME,
-                    BTW.PKG_CUST_INFO.F_GET_SNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_LASTNAME,
-                    CM.BILL_BEG,
-                    CM.BILL_SUB_BEG,
-                    CM.BILL_CURR,
-                    CM.BILL_SUB_CURR,
-                    CM.MONTHLY,
-                    TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) AS DUE,
-                    CM.FIRST_DUE,  
-                    BTW.GET_BRANCH_SL_BY_HP_NO(CM.HP_NO) As branch_name_hp_no,
-                    (        SELECT  PV.PROV_CODE
-                        FROM X_CUST_MAPPING_EXT CME,X_CUST_MAPPING CM,X_DEALER_P DL,PROVINCE_P PV
-                        WHERE CME.APPLICATION_NUM = CM.APPLICATION_NUM
-                        AND  CME.SL_CODE = DL.DL_CODE
-                        AND  DL.DL_BRANCH = PV.PROV_CODE
-                        AND CM.CUST_STATUS = '0'
-                        AND CME.CONTRACT_NO = CM.HP_NO) AS branch_code,
-                    STAGE_NO as STAGE,  --
-                    dpd_mth.DPD,
-                    dpd_mth.GROUP_DPD,
-                    BTW.GET_CALL_STATUS(CM.HP_NO) as STATUS_CALL_TRACK_INFO,  --สถานะการติดตาม ล่าสุด(รอการติดต่อ,Recall)
-                    BTW.GET_lastcall_rec_day(CM.HP_NO) as LASTCALL_REC_DAYTIME ---rec_day ติดตามล่าสุด
-                FROM COLL_INFO_MONTHLY CM,
-                        BTW.COLL_INFO_DPD  dpd_mth
-                WHERE   CM.HP_NO =  dpd_mth.HP_NO
-                        AND CM.month_end = dpd_mth.MONTH_END
-                        AND CM.year_end = dpd_mth.YEAR_END
-                        AND CM.month_end = TO_CHAR (SYSDATE, 'MM')
-                        AND CM.year_end = TO_CHAR (SYSDATE, 'YYYY')
-                        AND CM.STAPAY1 IS NULL 
-                        AND TO_CHAR(CM.FIRST_DUE,'MMYYYY') = TO_CHAR(SYSDATE,'MMYYYY') 
-                      ${querydue}${queryholder}
-                --ORDER BY TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) , CM.hp_no  ASC
-                ${querysort}
-                ) T
-            WHERE STATUS_CALL_TRACK_INFO IN('W','R') 
-              ${querybranch}`
-
-        const sqlcount = `select count(LINE_NUMBER) as rowCount from (${sqlbase})`
-
-        // console.log(`sqlstr: ${sqlcount}`)
-
-        const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
-
-        if (resultCount.rows.length == 0) {
-            return res.status(200).send({
-                status: 200,
-                message: 'NO RECORD FOUND',
-                data: []
-            })
-        } else {
-
-            try {
-                rowCount = resultCount.rows[0].ROWCOUNT
-                bindparams.indexstart = indexstart
-                bindparams.indexend = indexend
-                const finishsql = `SELECT * FROM(${sqlbase}) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `
-
-                const result = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
-
-                if (result.rows.length == 0) {
-                    return res.status(200).send({
-                        status: 200,
-                        message: 'No negotaiation agent record',
-                        data: []
-                    })
-                } else {
-
-                    let resData = result.rows
-
-                    const lowerResData = tolowerService.arrayobjtolower(resData)
-                    let returnData = new Object
-                    returnData.data = lowerResData
-                    returnData.status = 200
-                    returnData.message = 'success'
-                    returnData.CurrentPage = Number(pageno)
-                    returnData.pageSize = 5
-                    returnData.rowCount = rowCount
-                    returnData.pageCount = Math.ceil(rowCount / 5);
-
-                    // === tran all upperCase to lowerCase === 
-                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
-                        result[key.toLowerCase()] = val;
-                    });
-
-                    // res.status(200).json(results.rows[0]);
-                    res.status(200).json(returnDatalowerCase);
-                }
-            } catch (e) {
-                console.error(e)
-                return res.status(200).send({
-                    status: 400,
-                    mesasage: `error during get list data of colletion : ${e.message}`,
-                    data: []
-                })
-            }
-
-        }
-
-    } catch (e) {
-        console.error(e);
-        return res.status(200).send({
-            status: 500,
-            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
-        })
-    } finally {
-        if (connection) {
-            try {
-                await connection.close();
-            } catch (e) {
-                console.error(e);
-                return res.status(200).send({
-                    status: 200,
-                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
-                })
-            }
-        }
-    }
-}
-
-async function getagentgroupdpd(req, res, next) {
-
-    let connection;
-    try {
-
-        const { pageno, due, branch, holder, sort_type, sort_field } = req.body
-
-
-        // if (!(pageno && due && holder)) {
-        if (!(pageno)) {
-            return res.status(200).send({
-                status: 400,
-                message: `missing parameters`,
-                data: []
-            })
-        }
-        const indexstart = (pageno - 1) * 5 + 1
-        const indexend = (pageno * 5)
+        const indexstart = (pageno - 1) * 10 + 1
+        const indexend = (pageno * 10)
         let rowCount;
 
         let bindparams = {};
@@ -926,30 +747,7 @@ async function getagentgroupdpd(req, res, next) {
                     dpd_mth.GROUP_DPD, 
                     dpd_mth.GROUP_DPD_ID, 
                     BTW.GET_CALL_STATUS(CM.HP_NO) as STATUS_CALL_TRACK_INFO,  --สถานะการติดตาม ล่าสุด(รอการติดต่อ,Recall)
-                    BTW.GET_lastcall_rec_day(CM.HP_NO) as LASTCALL_REC_DAYTIME, ---rec_day ติดตามล่าสุด 
-                    (
-                        SELECT appoint_date
-                        FROM
-                        (
-                            SELECT
-                                CT.HP_NO,
-                                NG.REC_DATE,
-                                NG.NEG_R_CODE,
-                                NG.APPOINT_DATE
-                            FROM
-                                BTW.CALL_TRACK_INFO CT,
-                                BTW.NEGO_INFO NG,
-                                NEG_RESULT_P NG_DESC
-                            WHERE
-                                CT.HP_NO = NG.HP_NO
-                                AND TO_CHAR(CT.REC_DAY, 'DD/MM/YYYY HH24:MI:SS') = TO_CHAR(NG.REC_DATE, 'DD/MM/YYYY HH24:MI:SS')
-                                AND NG.NEG_R_CODE = NG_DESC.NEG_R_CODE
-                            ORDER BY
-                                NG.REC_DATE DESC
-                        )
-                       WHERE  ROWNUM < 2
-                       AND HP_NO = CM.HP_NO
-                    ) AS LAST_APPOINT_DATE 
+                    BTW.GET_lastcall_rec_day(CM.HP_NO) as LASTCALL_REC_DAYTIME ---rec_day ติดตามล่าสุด
                 FROM COLL_INFO_MONTHLY CM,
                         BTW.COLL_INFO_DPD  dpd_mth
                 WHERE   CM.HP_NO =  dpd_mth.HP_NO
@@ -1004,9 +802,433 @@ async function getagentgroupdpd(req, res, next) {
                     returnData.status = 200
                     returnData.message = 'success'
                     returnData.CurrentPage = Number(pageno)
-                    returnData.pageSize = 5
+                    returnData.pageSize = 10
                     returnData.rowCount = rowCount
-                    returnData.pageCount = Math.ceil(rowCount / 5);
+                    returnData.pageCount = Math.ceil(rowCount / 10);
+
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+
+                    // res.status(200).json(results.rows[0]);
+                    res.status(200).json(returnDatalowerCase);
+                }
+            } catch (e) {
+                console.error(e)
+                return res.status(200).send({
+                    status: 400,
+                    mesasage: `error during get list data of colletion : ${e.message}`,
+                    data: []
+                })
+            }
+
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function getagentgroupdpd(req, res, next) {
+
+    let connection;
+    try {
+
+        const { pageno, due, branch, holder, sort_type, sort_field, groupdpd } = req.body
+
+
+        // if (!(pageno && due && holder)) {
+        if (!(pageno)) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters`,
+                data: []
+            })
+        }
+        const indexstart = (pageno - 1) * 10 + 1
+        const indexend = (pageno * 10)
+        let rowCount;
+
+        let bindparams = {};
+        let querydue = ''
+        let querybranch = ''
+        let queryholder = ''
+        let querysort = ''
+        let querydpd = ''
+
+        if (due) {
+
+            querydue = ` AND SUBSTR(TO_CHAR(CM.FIRST_DUE, 'dd/mm/yyyy'), 1,2) = :due `
+            const formatdue = _util.build2digitstringdate(due)
+            bindparams.due = formatdue
+
+        }
+
+        if (holder) {
+            queryholder = ` AND CM.HP_HOLD = :holder `
+            bindparams.holder = holder
+        }
+
+        if (branch) {
+
+            if (branch !== 0 && branch !== '0') {
+                querybranch = ` AND BRANCH_CODE = :branch `
+                bindparams.branch = branch
+            }
+        }
+
+        if (sort_type && sort_field) {
+            querysort = ` ORDER BY ${sort_field} ${sort_type} `
+        } else {
+            querysort = ``
+        }
+
+        if (groupdpd) {
+            if (groupdpd == 1 || groupdpd == 2) {
+                querydpd = ` AND dpd_mth.GROUP_DPD_ID IN (2) `
+            } else {
+                querydpd = ' AND dpd_mth.GROUP_DPD_ID = :groupdpd '
+                bindparams.groupdpd = groupdpd
+            }
+
+        }
+
+        connection = await oracledb.getConnection(config.database)
+        const sqlbase =
+            `SELECT ROWNUM AS LINE_NUMBER, T.*
+            FROM(
+            SELECT   
+                    CM.HP_NO,
+                    BTW.PKG_CUST_INFO.F_GET_FNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_NAME,
+                    BTW.PKG_CUST_INFO.F_GET_SNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_LASTNAME,
+                    CM.BILL_BEG,
+                    CM.BILL_SUB_BEG,
+                    CM.BILL_CURR,
+                    CM.BILL_SUB_CURR,
+                    CM.MONTHLY,
+                    TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) AS DUE,
+                    CM.FIRST_DUE,  
+                    BTW.GET_BRANCH_SL_BY_HP_NO(CM.HP_NO) As branch_name_hp_no,
+                    (        SELECT  PV.PROV_CODE
+                        FROM X_CUST_MAPPING_EXT CME,X_CUST_MAPPING CM,X_DEALER_P DL,PROVINCE_P PV
+                        WHERE CME.APPLICATION_NUM = CM.APPLICATION_NUM
+                        AND  CME.SL_CODE = DL.DL_CODE
+                        AND  DL.DL_BRANCH = PV.PROV_CODE
+                        AND CM.CUST_STATUS = '0'
+                        AND CME.CONTRACT_NO = CM.HP_NO) AS branch_code,
+                    STAGE_NO as STAGE,  --
+                    dpd_mth.DPD,
+                    dpd_mth.GROUP_DPD, 
+                    dpd_mth.GROUP_DPD_ID, 
+                    BTW.GET_CALL_STATUS(CM.HP_NO) as STATUS_CALL_TRACK_INFO,  --สถานะการติดตาม ล่าสุด(รอการติดต่อ,Recall)
+                    BTW.GET_lastcall_rec_day(CM.HP_NO) as LASTCALL_REC_DAYTIME, ---rec_day ติดตามล่าสุด 
+                    (
+                        SELECT appoint_date
+                        FROM
+                        (
+                            SELECT
+                                CT.HP_NO,
+                                NG.REC_DATE,
+                                NG.NEG_R_CODE,
+                                NG.APPOINT_DATE
+                            FROM
+                                BTW.CALL_TRACK_INFO CT,
+                                BTW.NEGO_INFO NG,
+                                NEG_RESULT_P NG_DESC
+                            WHERE
+                                CT.HP_NO = NG.HP_NO
+                                AND TO_CHAR(CT.REC_DAY, 'DD/MM/YYYY HH24:MI:SS') = TO_CHAR(NG.REC_DATE, 'DD/MM/YYYY HH24:MI:SS')
+                                AND NG.NEG_R_CODE = NG_DESC.NEG_R_CODE
+                            ORDER BY
+                                NG.REC_DATE DESC
+                        )
+                       WHERE  ROWNUM < 2
+                       AND HP_NO = CM.HP_NO
+                    ) AS LAST_APPOINT_DATE 
+                FROM COLL_INFO_MONTHLY CM,
+                        BTW.COLL_INFO_DPD  dpd_mth
+                WHERE   CM.HP_NO =  dpd_mth.HP_NO
+                        AND CM.month_end = dpd_mth.MONTH_END
+                        AND CM.year_end = dpd_mth.YEAR_END
+                        AND CM.month_end = TO_CHAR (SYSDATE, 'MM')
+                        AND CM.year_end = TO_CHAR (SYSDATE, 'YYYY')
+                        AND CM.STAPAY1 IS NULL 
+                        ${querydpd}
+                      ${querydue}${queryholder}
+                --ORDER BY TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) , CM.hp_no  ASC
+                ${querysort}
+                ) T
+            WHERE STATUS_CALL_TRACK_INFO IN('W','R') 
+              ${querybranch}`
+
+        const sqlcount = `select count(LINE_NUMBER) as rowCount from (${sqlbase})`
+
+        // console.log(`sqlstr: ${sqlcount}`)
+
+        const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
+
+        if (resultCount.rows.length == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: 'NO RECORD FOUND',
+                data: []
+            })
+        } else {
+
+            try {
+                rowCount = resultCount.rows[0].ROWCOUNT
+                bindparams.indexstart = indexstart
+                bindparams.indexend = indexend
+                const finishsql = `SELECT * FROM(${sqlbase}) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `
+
+                const result = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
+
+                if (result.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 200,
+                        message: 'No negotaiation agent record',
+                        data: []
+                    })
+                } else {
+
+                    let resData = result.rows
+
+                    const lowerResData = tolowerService.arrayobjtolower(resData)
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    returnData.status = 200
+                    returnData.message = 'success'
+                    returnData.CurrentPage = Number(pageno)
+                    returnData.pageSize = 10
+                    returnData.rowCount = rowCount
+                    returnData.pageCount = Math.ceil(rowCount / 10);
+
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+
+                    // res.status(200).json(results.rows[0]);
+                    res.status(200).json(returnDatalowerCase);
+                }
+            } catch (e) {
+                console.error(e)
+                return res.status(200).send({
+                    status: 400,
+                    mesasage: `error during get list data of colletion : ${e.message}`,
+                    data: []
+                })
+            }
+
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function getagentgroupstage(req, res, next) {
+
+    let connection;
+    try {
+
+        const { pageno, due, branch, holder, sort_type, sort_field, stage } = req.body
+
+
+        // if (!(pageno && due && holder)) {
+        if (!(pageno)) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters`,
+                data: []
+            })
+        }
+        const indexstart = (pageno - 1) * 10 + 1
+        const indexend = (pageno * 10)
+        let rowCount;
+
+        let bindparams = {};
+        let querydue = ''
+        let querybranch = ''
+        let queryholder = ''
+        let querysort = ''
+        let querystage = ''
+
+        if (due) {
+
+            querydue = ` AND SUBSTR(TO_CHAR(CM.FIRST_DUE, 'dd/mm/yyyy'), 1,2) = :due `
+            const formatdue = _util.build2digitstringdate(due)
+            bindparams.due = formatdue
+
+        }
+
+        if (holder) {
+            queryholder = ` AND CM.HP_HOLD = :holder `
+            bindparams.holder = holder
+        }
+
+        if (branch) {
+
+            if (branch !== 0 && branch !== '0') {
+                querybranch = ` AND BRANCH_CODE = :branch `
+                bindparams.branch = branch
+            }
+        }
+
+        if (sort_type && sort_field) {
+            querysort = ` ORDER BY ${sort_field} ${sort_type} `
+        } else {
+            querysort = ``
+        }
+
+        if (stage) {
+            querystage = ' AND CM.STAGE_NO IN :stage '
+            bindparams.stage = stage
+
+        }
+
+        connection = await oracledb.getConnection(config.database)
+        const sqlbase =
+            `SELECT ROWNUM AS LINE_NUMBER, T.*
+            FROM(
+            SELECT   
+                    CM.HP_NO,
+                    BTW.PKG_CUST_INFO.F_GET_FNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_NAME,
+                    BTW.PKG_CUST_INFO.F_GET_SNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_LASTNAME,
+                    CM.BILL_BEG,
+                    CM.BILL_SUB_BEG,
+                    CM.BILL_CURR,
+                    CM.BILL_SUB_CURR,
+                    CM.MONTHLY,
+                    TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) AS DUE,
+                    CM.FIRST_DUE,  
+                    BTW.GET_BRANCH_SL_BY_HP_NO(CM.HP_NO) As branch_name_hp_no,
+                    (        SELECT  PV.PROV_CODE
+                        FROM X_CUST_MAPPING_EXT CME,X_CUST_MAPPING CM,X_DEALER_P DL,PROVINCE_P PV
+                        WHERE CME.APPLICATION_NUM = CM.APPLICATION_NUM
+                        AND  CME.SL_CODE = DL.DL_CODE
+                        AND  DL.DL_BRANCH = PV.PROV_CODE
+                        AND CM.CUST_STATUS = '0'
+                        AND CME.CONTRACT_NO = CM.HP_NO) AS branch_code,
+                    STAGE_NO as STAGE,  --
+                    dpd_mth.DPD,
+                    dpd_mth.GROUP_DPD, 
+                    dpd_mth.GROUP_DPD_ID, 
+                    BTW.GET_CALL_STATUS(CM.HP_NO) as STATUS_CALL_TRACK_INFO,  --สถานะการติดตาม ล่าสุด(รอการติดต่อ,Recall)
+                    BTW.GET_lastcall_rec_day(CM.HP_NO) as LASTCALL_REC_DAYTIME, ---rec_day ติดตามล่าสุด 
+                    (
+                        SELECT appoint_date
+                        FROM
+                        (
+                            SELECT
+                                CT.HP_NO,
+                                NG.REC_DATE,
+                                NG.NEG_R_CODE,
+                                NG.APPOINT_DATE
+                            FROM
+                                BTW.CALL_TRACK_INFO CT,
+                                BTW.NEGO_INFO NG,
+                                NEG_RESULT_P NG_DESC
+                            WHERE
+                                CT.HP_NO = NG.HP_NO
+                                AND TO_CHAR(CT.REC_DAY, 'DD/MM/YYYY HH24:MI:SS') = TO_CHAR(NG.REC_DATE, 'DD/MM/YYYY HH24:MI:SS')
+                                AND NG.NEG_R_CODE = NG_DESC.NEG_R_CODE
+                            ORDER BY
+                                NG.REC_DATE DESC
+                        )
+                       WHERE  ROWNUM < 2
+                       AND HP_NO = CM.HP_NO
+                    ) AS LAST_APPOINT_DATE 
+                FROM COLL_INFO_MONTHLY CM,
+                        BTW.COLL_INFO_DPD  dpd_mth
+                WHERE   CM.HP_NO =  dpd_mth.HP_NO
+                        AND CM.month_end = dpd_mth.MONTH_END
+                        AND CM.year_end = dpd_mth.YEAR_END
+                        AND CM.month_end = TO_CHAR (SYSDATE, 'MM')
+                        AND CM.year_end = TO_CHAR (SYSDATE, 'YYYY')
+                        AND CM.STAPAY1 IS NULL 
+                        ${querystage}
+                      ${querydue}${queryholder}
+                --ORDER BY TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) , CM.hp_no  ASC
+                ${querysort}
+                ) T
+            WHERE STATUS_CALL_TRACK_INFO IN('W','R') 
+              ${querybranch}`
+
+        const sqlcount = `select count(LINE_NUMBER) as rowCount from (${sqlbase})`
+
+        // console.log(`sqlstr: ${sqlcount}`)
+
+        const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
+
+        if (resultCount.rows.length == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: 'NO RECORD FOUND',
+                data: []
+            })
+        } else {
+
+            try {
+                rowCount = resultCount.rows[0].ROWCOUNT
+                bindparams.indexstart = indexstart
+                bindparams.indexend = indexend
+                const finishsql = `SELECT * FROM(${sqlbase}) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `
+
+                const result = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
+
+                if (result.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 200,
+                        message: 'No negotaiation agent record',
+                        data: []
+                    })
+                } else {
+
+                    let resData = result.rows
+
+                    const lowerResData = tolowerService.arrayobjtolower(resData)
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    returnData.status = 200
+                    returnData.message = 'success'
+                    returnData.CurrentPage = Number(pageno)
+                    returnData.pageSize = 10
+                    returnData.rowCount = rowCount
+                    returnData.pageCount = Math.ceil(rowCount / 10);
 
                     // === tran all upperCase to lowerCase === 
                     let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
@@ -1271,7 +1493,8 @@ async function getmotocyclenego(req, res, next) {
                 X_PRODUCT_DETAIL.ENGINE_NUMBER||X_PRODUCT_DETAIL.ENGINE_NO_RUNNING AS ENGINE_NUMBER,
                 X_PRODUCT_DETAIL.CHASSIS_NUMBER||X_PRODUCT_DETAIL.CHASSIS_NO_RUNNING AS CHASSIS_NUMBER,
                 AC_PROVE.REG_NO,
-                AC_PROVE.REG_CITY
+                AC_PROVE.REG_CITY, 
+                BTW.GET_PROVINCE(AC_PROVE.REG_CITY) AS REG_CITY_NAME 
         FROM coll_info_monthly_view,
                 black1,
                 title_p,
@@ -2342,7 +2565,8 @@ async function getfollowuppaymentlist(req, res, next) {
                     AND TO_DATE(CALL_TRACK_INFO.REC_DAY,'DD/MM/YYYY') 
                     BETWEEN TRUNC(ADD_MONTHS(TO_DATE(SYSDATE,'DD/MM/YYYY'),-2),'MM') 
                     AND LAST_DAY(TO_DATE(SYSDATE,'DD/MM/YYYY')))
-                    and CALL_TRACK_INFO.HP_NO = :applicationid
+                    and CALL_TRACK_INFO.HP_NO = :applicationid 
+                    and CALL_TRACK_INFO.REC_DATE is not null
                     )
                     WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend
                 `, {
@@ -3322,6 +3546,162 @@ async function getholdermaster(req, res, next) {
     }
 }
 
+async function getagentholdermaster(req, res, next) {
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const holder_list = await connection.execute(`
+                                SELECT hp_hold
+                                FROM
+                                (SELECT T.*,
+                                        ep.DETAILS
+                                FROM
+                                    (SELECT A.*
+                                    FROM
+                                        (SELECT coll_info_monthly_view.hp_hold,
+                                                coll_info_monthly_view.HP_NO
+                                        FROM coll_info_monthly_view,
+                                            black1,
+                                            title_p,
+                                            type_p,
+                                            branch_p,
+                                            status_call,
+                                            x_cust_mapping_ext,
+                                            X_DEALER_P,
+
+                                        (SELECT DISTINCT hp_no
+                                            FROM btw.CALL_TRACK_INFO
+                                            WHERE trunc(rec_day) = trunc(sysdate)
+                                        ) cti
+                                        WHERE ((coll_info_monthly_view.hp_no = black1.hp(+))
+                                                AND (title_p.title_id(+) = black1.fname_code)
+                                                AND (black1.TYPE = type_p.type_code(+))--AND (coll_info_monthly_view.branch_code = branch_p.branch_code)
+
+                                                AND (coll_info_monthly_view.flag = status_call.flag)
+                                                AND coll_info_monthly_view.hp_no = x_cust_mapping_ext.contract_no)
+                                        AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
+                                        AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
+                                        AND coll_info_monthly_view.hp_no = cti.hp_no(+)
+                                        AND COLL_INFO_MONTHLY_VIEW.STAPAY1 IS NULL ) A
+                                    WHERE HP_NO IS NOT NULL
+                                        AND HP_HOLD IS NOT NULL ) T,
+                                        ESTIMATE_REPO_CHECK_MASTER em,
+                                        ESTIMATE_REPO_CHECK_MASTER_P ep
+                                WHERE T.HP_NO = em.CONTACT_NO(+)
+                                    AND em.STATUS = ep.STATUS(+))
+                                GROUP BY hp_hold`
+            , {
+
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        // check length 
+
+        if (holder_list.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No holder data',
+                data: []
+            })
+        } else {
+
+            const filter_holder = holder_list.rows.map(obj => `'${obj.HP_HOLD}'`);
+
+            // console.log(`filter holder : ${filter_holder}`)
+
+            // maping emp id with name from EMP db
+
+            const mappingHolder = await connection.execute(`
+            SELECT  
+                EMP_ID, EMP_NAME, EMP_NAME ||' '|| EMP_LNAME AS EMP_FULLNAME, EMP_LNAME 
+            FROM EMP
+            WHERE EMP_ID IN (${filter_holder})
+            `, {}, { outFormat: oracledb.OBJECT })
+
+            if (mappingHolder.rows.length == 0) {
+                return res.status(200).send({
+                    status: 400,
+                    message: 'No holder data',
+                    data: []
+                })
+            } else {
+                const resData = mappingHolder.rows
+                const lowerResData = tolowerService.arrayobjtolower(resData)
+                return res.status(200).send({
+                    status: 200,
+                    message: 'success',
+                    data: lowerResData
+                })
+            }
+
+        }
+
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+
+async function gentokene01(req, res, next) {
+
+    try {
+
+        const { contractno } = req.body
+        const token = req.user
+        const userid = token.user_id
+
+        const jwtdecode = jwt.sign(
+            {
+                contract_no: contractno,
+                user_id: userid
+            },
+            process.env.EO1_TOKEN_KEY,
+            {
+                expiresIn: "24h",
+            }
+        )
+
+        if (jwtdecode) {
+            return res.status(200).send({
+                status: 200,
+                token: jwtdecode
+            })
+        } else {
+            return res.status(200).send({
+                status: 400,
+                token: ''
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } 
+}
+
 // module.exports.getcontractlist = getcontractlist
 module.exports.getnegotiationlist = getnegotiationlist
 module.exports.getnegotiationbyid = getnegotiationbyid
@@ -3332,6 +3712,7 @@ module.exports.getfollowuppaymentlist = getfollowuppaymentlist
 module.exports.getviewcontractlist = getviewcontractlist
 module.exports.getagentcollinfomonthly = getagentcollinfomonthly
 module.exports.getagentgroupdpd = getagentgroupdpd
+module.exports.getagentgroupstage = getagentgroupstage
 module.exports.insertnegolist = insertnegolist
 module.exports.getphonenolist = getphonenolist
 module.exports.getphonenolistcust = getphonenolistcust
@@ -3343,3 +3724,5 @@ module.exports.updatenegolalon = updatenegolalon
 module.exports.createaddressInfo = createaddressInfo
 
 module.exports.getholdermaster = getholdermaster
+module.exports.getagentholdermaster = getagentholdermaster
+module.exports.gentokene01 = gentokene01

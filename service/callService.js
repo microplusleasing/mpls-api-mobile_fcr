@@ -34,7 +34,9 @@ async function checkcallrecent(req, res, next) {
     try {
 
         // const { application_id, user_id } = req.body
-        const { user_id } = req.body
+        // const { user_id } = req.body
+        const token = req.user
+        const user_id = token.user_id
         connection = await oracledb.getConnection(config.database)
         const result = await connection.execute(`
         SELECT COUNT(*) AS WAITING_DIAL
@@ -73,7 +75,7 @@ async function checkcallrecent(req, res, next) {
         } else {
             const check_recent_dial = result.rows[0].WAITING_DIAL
             // console.log(`this is : ${check_recent_dial}`)
-
+            console.log(`checkrecentdail : ${check_recent_dial}`)
             if (check_recent_dial == 0) {
                 return res.status(200).send({
                     status: 200,
@@ -83,13 +85,59 @@ async function checkcallrecent(req, res, next) {
                     }
                 })
             } else {
-                return res.status(200).send({
-                    status: 200,
-                    message: 'No data',
-                    data: {
-                        no_recent_dial: false
-                    }
+
+                // *** GET RECENT HP_NO (15/08/2023) ****
+                const dupdata = await connection.execute(`
+                SELECT * 
+                FROM 
+                (
+                SELECT          CALL_TRACK_INFO.hp_no,NVL(NEGO_INFO.hp_no,'Y') AS STATUS_WAIT
+                                FROM NEGO_INFO, CALL_TRACK_INFO,NEG_RESULT_P,emp em
+                                WHERE ( (CALL_TRACK_INFO.hp_no = NEGO_INFO.hp_no(+)) 
+                                and NEGO_INFO.staff_id = em.emp_id(+)
+                                AND (CALL_TRACK_INFO.cust_id = NEGO_INFO.cust_id(+)) 
+                                AND (CALL_TRACK_INFO.STAFF_ID = NEGO_INFO.STAFF_ID(+))
+                                AND (NEGO_INFO.NEG_R_CODE = NEG_RESULT_P.NEG_R_CODE(+)) 
+                                AND (TO_CHAR(CALL_TRACK_INFO.rec_day,'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(NEGO_INFO.rec_date(+),'dd/mm/yyyy hh24:mi:ss')) 
+                                AND TO_DATE(CALL_TRACK_INFO.REC_DAY,'DD/MM/YYYY') 
+                                BETWEEN TRUNC(ADD_MONTHS(TO_DATE(SYSDATE,'DD/MM/YYYY'),-2),'MM') 
+                                AND LAST_DAY(TO_DATE(SYSDATE,'DD/MM/YYYY')))
+                                -- AND CALL_TRACK_INFO.HP_NO = :APPLICATION_ID
+                                AND CALL_TRACK_INFO.USER_NAME = :USER_ID
+                                AND CALL_TRACK_INFO.CON_R_CODE = 'CON'
+                                AND CALL_TRACK_INFO.PHONE_NO <> '0'
+                                ORDER BY CALL_TRACK_INFO.REC_DATE DESC
+                )
+                                WHERE STATUS_WAIT = 'Y' 
+                `, {
+                    user_id: user_id
+                }, {
+                    outFormat: oracledb.OBJECT
                 })
+
+
+                if (dupdata.rows[0].HP_NO) {
+                    const recent_hp_no = dupdata.rows[0].HP_NO
+
+                    return res.status(200).send({
+                        status: 200,
+                        message: 'No data',
+                        data: {
+                            no_recent_dial: false,
+                            recent_hp_no: recent_hp_no
+                        }
+                    })
+                } else {
+                    return res.status(200).send({
+                        status: 200,
+                        message: 'No data',
+                        data: {
+                            no_recent_dial: false,
+                            recent_hp_no: ''
+                        }
+                    })
+                }
+
             }
         }
 
@@ -231,7 +279,8 @@ async function gettokenmobiledial(req, res, next) {
         const token = jwt.sign(
             {
                 userId: user_id
-            }
+            }, 
+            
         )
 
     } catch (e) {
@@ -445,53 +494,53 @@ async function insertnegotocalltrack(req, res, next) {
                         // if (response_call_status == '500') {
                         // **** CHANGE TO !== 200 DO THIS (P'THEP) (31/07/2023) ***
                         if (response_call_status !== '200') {
-                        try {
+                            try {
 
-                            // *** update recent call_track ***
-                            const update_call_track_info = await connection.execute(`
+                                // *** update recent call_track ***
+                                const update_call_track_info = await connection.execute(`
                                     UPDATE BTW.CALL_TRACK_INFO 
                                     SET REC_DATE = TO_CHAR(SYSDATE, 'hh24:mi:ss') 
                                     WHERE CALL_KEYAPP_ID = :CALL_KEYAPP_ID
                                 `, {
-                                CALL_KEYAPP_ID: call_keyapp_id
-                            }, {
-                                autoCommit: true
-                            })
+                                    CALL_KEYAPP_ID: call_keyapp_id
+                                }, {
+                                    autoCommit: true
+                                })
 
-                            console.log(`update call_track_info success : ${JSON.stringify(update_call_track_info)}`)
+                                console.log(`update call_track_info success : ${JSON.stringify(update_call_track_info)}`)
 
-                        } catch (e) {
-                            try {
-                                if (connection) {
-                                    await connection.rollback()
-                                    return res.status(200).send({
+                            } catch (e) {
+                                try {
+                                    if (connection) {
+                                        await connection.rollback()
+                                        return res.status(200).send({
+                                            status: 400,
+                                            message: `อัพเดทประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
+                                        })
+                                    } else {
+                                        console.log(`create call_track_info success (no-connection) (update call track)`)
+                                        return res.status(200).send({
+                                            status: 400,
+                                            message: `อัพเดทประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
+                                        })
+                                    }
+                                } catch (e) {
+                                    return res.status(400).send({
                                         status: 400,
-                                        message: `อัพเดทประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
-                                    })
-                                } else {
-                                    console.log(`create call_track_info success (no-connection) (update call track)`)
-                                    return res.status(200).send({
-                                        status: 400,
-                                        message: `อัพเดทประวัติการติดตามไม่สำเร็จ (call track info record): ${e.message ? e.message : `No message`}`
+                                        message: `อัพเดทประวัติการติดตามไม่สำเร็จ (call track info record), (rollback fail): ${e.message ? e.message : `No message`}`
                                     })
                                 }
-                            } catch (e) {
-                                return res.status(400).send({
-                                    status: 400,
-                                    message: `อัพเดทประวัติการติดตามไม่สำเร็จ (call track info record), (rollback fail): ${e.message ? e.message : `No message`}`
-                                })
                             }
                         }
-                    }
 
-                    // *** create nego info to call track info ***
+                        // *** create nego info to call track info ***
 
-                    try {
+                        try {
 
-                        let appointmentquerynego1 = '';
-                        let appointmentquerynego2 = '';
-                        let bindparamnego = {}
-                        let mainquerynego1 = `INSERT INTO BTW.NEGO_INFO (
+                            let appointmentquerynego1 = '';
+                            let appointmentquerynego2 = '';
+                            let bindparamnego = {}
+                            let mainquerynego1 = `INSERT INTO BTW.NEGO_INFO (
                                         BRANCH_CODE,
                                         HP_NO,
                                         NEG_R_CODE,
@@ -505,7 +554,7 @@ async function insertnegotocalltrack(req, res, next) {
                                         REQ_DUNNING_LETTER, 
                                         REQ_ASSIGN_FCR, 
                                         CALL_KEYAPP_ID`
-                        let mainqerynego2 = ` ) VALUES (
+                            let mainqerynego2 = ` ) VALUES (
                                         :branch_code,
                                         :hp_no,
                                         :neg_r_code,
@@ -521,92 +570,92 @@ async function insertnegotocalltrack(req, res, next) {
                                         :call_keyapp_id
                                     `
 
-                        bindparamnego.branch_code = branch_code
-                        bindparamnego.hp_no = hp_no,
-                            bindparamnego.neg_r_code = neg_r_code,
-                            bindparamnego.rec_date = (new Date(rec_day)) ?? null
-                        bindparamnego.message1 = message1
-                        bindparamnego.message2 = message2
-                        bindparamnego.staff_id = userid
-                        bindparamnego.user_name = user_name
-                        bindparamnego.cust_id = cust_id
-                        // *** add more 3 optional field (31/07/2023) ***
-                        bindparamnego.status_recall = recall
-                        bindparamnego.req_dunning_letter = dunning_letter
-                        bindparamnego.req_assign_fcr = assign_fcr
-                        bindparamnego.call_keyapp_id = call_keyapp_id
+                            bindparamnego.branch_code = branch_code
+                            bindparamnego.hp_no = hp_no,
+                                bindparamnego.neg_r_code = neg_r_code,
+                                bindparamnego.rec_date = (new Date(rec_day)) ?? null
+                            bindparamnego.message1 = message1
+                            bindparamnego.message2 = message2
+                            bindparamnego.staff_id = userid
+                            bindparamnego.user_name = user_name
+                            bindparamnego.cust_id = cust_id
+                            // *** add more 3 optional field (31/07/2023) ***
+                            bindparamnego.status_recall = recall
+                            bindparamnego.req_dunning_letter = dunning_letter
+                            bindparamnego.req_assign_fcr = assign_fcr
+                            bindparamnego.call_keyapp_id = call_keyapp_id
 
-                        if (appoint_date_dtype) {
-                            appointmentquerynego1 = `, APPOINT_DATE `
-                            appointmentquerynego2 = `, BTW.BUDDHIST_TO_CHRIS_F(:appoint_date) `
-                            bindparamnego.appoint_date = (new Date(appoint_date_dtype)) ?? null
-                        }
-
-                        const finalqueryinsertnego = `${mainquerynego1}${appointmentquerynego1}${mainqerynego2}${appointmentquerynego2})`
-
-                        // console.log(`sql final : ${finalqueryinsertnego}`)
-                        // console.log(`bind final : ${JSON.stringify(bindparamnego)}`)
-
-                        const insertnegorecord = await connection.execute(finalqueryinsertnego, bindparamnego, {
-                            autoCommit: true
-                        })
-
-                        console.log(`create nego_info success : ${JSON.stringify(insertnegorecord)}`)
-
-                    } catch (e) {
-                        console.log(`error create nego record : ${e}`)
-                        try {
-                            if (connection) {
-                                await connection.rollback()
-                                return res.status(200).send({
-                                    status: 400,
-                                    message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
-                                })
-                            } else {
-                                console.log(`error create nego record (no - connection) (create nego_info)`)
-                                return res.status(200).send({
-                                    status: 400,
-                                    message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
-                                })
+                            if (appoint_date_dtype) {
+                                appointmentquerynego1 = `, APPOINT_DATE `
+                                appointmentquerynego2 = `, BTW.BUDDHIST_TO_CHRIS_F(:appoint_date) `
+                                bindparamnego.appoint_date = (new Date(appoint_date_dtype)) ?? null
                             }
 
-                        } catch (e) {
-                            return res.status(200).send({
-                                status: 400,
-                                message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record) , (rollback fail): ${e.message ? e.message : `No message`}`
+                            const finalqueryinsertnego = `${mainquerynego1}${appointmentquerynego1}${mainqerynego2}${appointmentquerynego2})`
+
+                            // console.log(`sql final : ${finalqueryinsertnego}`)
+                            // console.log(`bind final : ${JSON.stringify(bindparamnego)}`)
+
+                            const insertnegorecord = await connection.execute(finalqueryinsertnego, bindparamnego, {
+                                autoCommit: true
                             })
+
+                            console.log(`create nego_info success : ${JSON.stringify(insertnegorecord)}`)
+
+                        } catch (e) {
+                            console.log(`error create nego record : ${e}`)
+                            try {
+                                if (connection) {
+                                    await connection.rollback()
+                                    return res.status(200).send({
+                                        status: 400,
+                                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
+                                    })
+                                } else {
+                                    console.log(`error create nego record (no - connection) (create nego_info)`)
+                                    return res.status(200).send({
+                                        status: 400,
+                                        message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record): ${e.message ? e.message : `No message`}`
+                                    })
+                                }
+
+                            } catch (e) {
+                                return res.status(200).send({
+                                    status: 400,
+                                    message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record) , (rollback fail): ${e.message ? e.message : `No message`}`
+                                })
+                            }
                         }
+
+                        return res.status(200).send({
+                            status: 200,
+                            message: `สร้างรายการผลการติดตามเรียบร้อย (ระบบ Mobile Call Dial)`
+                        })
+
                     }
-
-                    return res.status(200).send({
-                        status: 200,
-                        message: `สร้างรายการผลการติดตามเรียบร้อย (ระบบ Mobile Call Dial)`
-                    })
-
                 }
             }
         }
-    }
 
     } catch (e) {
-    console.error(e);
-    return res.status(200).send({
-        status: 500,
-        message: `Fail : ${e.message ? e.message : 'No err msg'}`,
-    })
-} finally {
-    if (connection) {
-        try {
-            await connection.close();
-        } catch (e) {
-            console.error(e);
-            return res.status(200).send({
-                status: 200,
-                message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
-            })
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
         }
     }
-}
 }
 
 

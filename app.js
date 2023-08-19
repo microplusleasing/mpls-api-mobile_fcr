@@ -292,6 +292,8 @@ app.post('/getagentcollinfomonthly', auth, negoService.getagentcollinfomonthly)
 
 app.post('/getagentgroupdpd', auth, negoService.getagentgroupdpd)
 
+app.post('/getagentgroupstage', auth, negoService.getagentgroupstage)
+
 app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
@@ -299,6 +301,10 @@ app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
 app.get('/getmotocyclenego', auth, negoService.getmotocyclenego)
 
 app.get('/getholdermaster', auth, negoService.getholdermaster)
+
+app.get('/getagentholdermaster', auth, negoService.getagentholdermaster)
+
+app.post('/gentokene01', auth, negoService.gentokene01)
 
 app.get('/gethistorypaymentlist', auth, negoService.gethistorypaymentlist)
 
