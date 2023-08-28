@@ -407,7 +407,7 @@ async function getviewcontractlist(req, res, next) {
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
                                         where trunc(rec_day) = trunc(sysdate)
-                                        and phone_no=0)  cti
+                                        and phone_no = '0')  cti
                                     WHERE (    (coll_info_monthly_view.hp_no = black1.hp(+))
                                         AND (title_p.title_id(+) = black1.fname_code)
                                         AND (black1.TYPE = type_p.type_code(+))
@@ -558,7 +558,7 @@ async function getviewcontractlist(req, res, next) {
                                     (select distinct hp_no
                                         from btw.CALL_TRACK_INFO 
                                         where trunc(rec_day) = trunc(sysdate)
-                                        and phone_no=0)  cti
+                                        and phone_no = '0')  cti
                                     WHERE (    (coll_info_monthly_view.hp_no = black1.hp(+))
                                         AND (title_p.title_id(+) = black1.fname_code)
                                         AND (black1.TYPE = type_p.type_code(+))
@@ -3459,7 +3459,7 @@ async function getholdermaster(req, res, next) {
                                         (SELECT DISTINCT hp_no
                                             FROM btw.CALL_TRACK_INFO
                                             WHERE trunc(rec_day) = trunc(sysdate)
-                                            AND phone_no=0) cti
+                                            AND phone_no = '0') cti
                                         WHERE ((coll_info_monthly_view.hp_no = black1.hp(+))
                                                 AND (title_p.title_id(+) = black1.fname_code)
                                                 AND (black1.TYPE = type_p.type_code(+))--AND (coll_info_monthly_view.branch_code = branch_p.branch_code)
@@ -3670,6 +3670,14 @@ async function gentokene01(req, res, next) {
         const token = req.user
         const userid = token.user_id
 
+        if (!contractno) {
+            return res.status(200).send({
+                status: 400,
+                message: 'ไม่พบเลขสัญญา CONTRACT NO',
+                token: ''
+            })
+        }
+
         const jwtdecode = jwt.sign(
             {
                 contract_no: contractno,
@@ -3684,11 +3692,13 @@ async function gentokene01(req, res, next) {
         if (jwtdecode) {
             return res.status(200).send({
                 status: 200,
+                message: 'success',
                 token: jwtdecode
             })
         } else {
             return res.status(200).send({
                 status: 400,
+                message: 'ไม่สามารถระบุ Token ได้',
                 token: ''
             })
         }

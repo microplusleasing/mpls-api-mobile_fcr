@@ -412,16 +412,16 @@ app.post('/updatefailcalldial', auth, callMobileService.updatefailcalldial)
 app.post('/insertnegotocalltrack', auth, callMobileService.insertnegotocalltrack)
 
 // app.get('/genqr', barcodeService.genqr)
-// switch on lissten port 
+// switch on lissten port s
 // process.env.PORT
 // process.env.API_PORT
 
-app.listen(process.env.API_PORT, () => {
-  // console.log(ip.address());
-  console.log(`UP & running on port ${process.env.API_PORT}`)
-})
-
-// app.listen(process.env.PORT, () => {
+// app.listen(process.env.API_PORT, () => {
 //   // console.log(ip.address());
-//   console.log(`UP & running on port ${process.env.PORT}`)
+//   console.log(`UP & running on port ${process.env.API_PORT}`)
 // })
+
+app.listen(process.env.PORT, () => {
+  // console.log(ip.address());
+  console.log(`UP & running on port ${process.env.PORT}`)
+})
