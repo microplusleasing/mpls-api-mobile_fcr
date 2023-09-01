@@ -980,7 +980,7 @@ async function getagentgroupdpd(req, res, next) {
 
         const sqlcount = `select count(LINE_NUMBER) as rowCount from (${sqlbase})`
 
-        // console.log(`sqlstr: ${sqlcount}`)
+        console.log(`sqlstr: ${sqlbase}`)
 
         const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
 
@@ -2092,7 +2092,7 @@ async function getphonenolist(req, res, next) {
         const resultCountphone = await connection.execute(`
                             SELECT COUNT (PHONE_NO) AS COUNT FROM
                             (
-                                    SELECT PHONE_NO,
+                                    SELECT PHONE_NO, PHONE_NUMBER, 
                                     CASE PHONE_TYPE_CODE
                                     WHEN 'REF' THEN 
                                     (SELECT 'บุคคลอ้างอิง ที่ 1 :  '||REFERNCE||' , ความสัมพันธ์  :  '||RELATION_REF
@@ -2159,7 +2159,7 @@ async function getphonenolist(req, res, next) {
                 const resultphoneList = await connection.execute(`
                 select * from 
                 (
-                    SELECT PHONE_NO,
+                    SELECT PHONE_NO, PHONE_NUMBER, 
                     CASE PHONE_TYPE_CODE
                   WHEN 'REF' THEN 
                   (SELECT 'บุคคลอ้างอิง ที่ 1 :  '||REFERNCE||' , ความสัมพันธ์  :  '||RELATION_REF
@@ -2314,7 +2314,7 @@ async function getphonenolistcust(req, res, next) {
                 const resultphoneList = await connection.execute(`
                 select * from 
                 (
-                    SELECT PHONE_INFO.PHONE_NO, PHONE_INFO.CUST_ID, CUST_INFO.NAME, CUST_INFO.SNAME, 
+                    SELECT PHONE_INFO.PHONE_NO, PHONE_INFO.PHONE_NUMBER, PHONE_INFO.CUST_ID, CUST_INFO.NAME, CUST_INFO.SNAME, 
                     ROW_NUMBER() OVER (ORDER BY PHONE_INFO.REC_DATE DESC) LINE_NUMBER
                     FROM
                     BTW.PHONE_INFO, BTW.CUST_INFO
