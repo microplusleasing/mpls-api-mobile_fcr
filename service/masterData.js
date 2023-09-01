@@ -1094,6 +1094,7 @@ async function getnegomasterstatus(req, res, next) {
         const results = await connection.execute(`
         SELECT * FROM 
         BTW.NEG_RESULT_P
+        WHERE NEG_R_CODE NOT IN ('W01') 
         `, [], // NO Bind
             {
                 outFormat: oracledb.OBJECT

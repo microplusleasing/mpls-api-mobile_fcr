@@ -66,6 +66,8 @@ app.get('/viewportallogin', portalService.viewportallogin)
 
 app.post('/loginuser', loginUserservice.loginUser) // === avalible === 
 
+app.post('/getcurrentUserFormToken', loginUserservice.getcurrentUserFormToken) // === avalible (Token form oracle support) === 
+
 // app.get('/getquotationlist', auth, quotationservice.getquotationlist)
 
 app.post('/createquotation', auth, quotationservice.createquotation)
@@ -286,6 +288,12 @@ app.post(`/resetpassword`, loginUserservice.resetpassword)
 
 app.get('/getviewcontractlist', auth, negoService.getviewcontractlist)
 
+app.post('/getagentcollinfomonthly', auth, negoService.getagentcollinfomonthly)
+
+app.post('/getagentgroupdpd', auth, negoService.getagentgroupdpd)
+
+app.post('/getagentgroupstage', auth, negoService.getagentgroupstage)
+
 app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
@@ -293,6 +301,10 @@ app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
 app.get('/getmotocyclenego', auth, negoService.getmotocyclenego)
 
 app.get('/getholdermaster', auth, negoService.getholdermaster)
+
+app.get('/getagentholdermaster', auth, negoService.getagentholdermaster)
+
+app.post('/gentokene01', auth, negoService.gentokene01)
 
 app.get('/gethistorypaymentlist', auth, negoService.gethistorypaymentlist)
 
@@ -400,7 +412,7 @@ app.post('/updatefailcalldial', auth, callMobileService.updatefailcalldial)
 app.post('/insertnegotocalltrack', auth, callMobileService.insertnegotocalltrack)
 
 // app.get('/genqr', barcodeService.genqr)
-// switch on lissten port 
+// switch on lissten port s
 // process.env.PORT
 // process.env.API_PORT
 
