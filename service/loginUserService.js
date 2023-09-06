@@ -36,7 +36,7 @@ async function loginUser(req, res, next) {
 
         try {
             let queryStr = `
-                    select a.userid ,a.username, (b.emp_name) as fname , (b.emp_lname) as lname, b.email, a.radmin , a.status, TO_CHAR(a.DATE_CHPWS, 'DD/MM/YYYY') AS EXPIRE_DATE
+                    select a.userid,a.username, (b.emp_name) as fname , (b.emp_lname) as lname, b.email, a.radmin , a.status, TO_CHAR(a.DATE_CHPWS, 'DD/MM/YYYY') AS EXPIRE_DATE
                     from btw.users a , BTW.EMP b
                     where a.username = :username
                     and a.password = BTW.TOOLKIT.encrypt (:password)
@@ -187,6 +187,8 @@ async function loginUser(req, res, next) {
                 }
                 )
 
+                console.log(`token : ${token}`)
+
                 const dialer_token = jwt.sign(
                     {
                         userId: resData.USERNAME
@@ -200,7 +202,7 @@ async function loginUser(req, res, next) {
                 returnData.dialer_token = dialer_token
                 returnData.data = resData
                 returnData.status = 200,
-                    returnData.message = 'success'
+                returnData.message = 'success'
 
                 // === tran all upperCase to lowerCase === 
                 let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
@@ -957,6 +959,275 @@ async function getcurrentUserFormToken(req, res, next) {
     }
 }
 
+async function getsignjwtfromouter(req, res, next) {
+
+    let connection;
+    try {
+
+        const { token } = req.body
+        connection = await oracledb.getConnection(config.database)
+
+        if(!token) {
+            return res.status(403).send('A token is require for authentication')
+        }
+    
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_FROM_ANGULAR)
+            const userData = decoded.user_id
+
+            if (!userData) {
+                return res.status(200).send({
+                    status: 400,
+                    message: 'Not Found User_name with token',
+                    data: []
+                })
+            } else {
+
+                const passworddecode = await connection.execute(`
+                    SELECT PASSWORD 
+                    FROM BTW.USERS
+                    WHERE USERNAME = :USERNAME
+                `, {
+                    USERNAME: userData
+                }, {
+                    outFormat: oracledb.OBJECT
+                })
+
+                if (passworddecode.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 400,
+                        message: 'Not found Password',
+                        data: []
+                    })
+                } else {
+                    const passwordValue = passworddecode.rows[0].PASSWORD
+
+                    if (!passwordValue) {
+                        return res.status(200).send({
+                            status: 400,
+                            message: 'No password include (not found with record)',
+                            data: []
+                        })
+                    } else {
+                        const username = userData
+                        const password = passwordValue
+
+                        console.log(`UserName : ${username}`)
+                        console.log(`password : ${password}`)
+
+                        try {
+                            let queryStr = `
+                                    select a.userid ,a.username, (b.emp_name) as fname , (b.emp_lname) as lname, b.email, a.radmin , a.status, TO_CHAR(a.DATE_CHPWS, 'DD/MM/YYYY') AS EXPIRE_DATE
+                                    from btw.users a , BTW.EMP b
+                                    where a.username = :username
+                                    and a.password = :password
+                                    and a.userid = b.emp_id
+                                    and a.activate = 'T'
+                                    `
+
+
+                            const resultLogin = await connection.execute(queryStr,
+                                {
+                                    username: username,
+                                    password: password
+                                },
+                                {
+                                    outFormat: oracledb.OBJECT
+                                })
+
+                            if (resultLogin.rows.length == 0) {
+                                // logger.error(`user ${username} fail to login : Not found user with ID/PW login`);
+                                const noresultFormatJson = {
+                                    status: 201,
+                                    message: 'Not found user with ID/PW login (token)'
+                                }
+                                res.status(201).send(noresultFormatJson)
+                            } else {
+
+                                let resData = resultLogin.rows[0]
+
+                                // === log user login (04/09/2022) === 
+                                try {
+
+                                    // === check password expire date (19/10/2022) === 
+
+                                    // *** chage check expire date from field expire that plus auto from resetpassword to check with paremeter when login (P Thep Khor) (09/06/2023)
+
+                                    // === get expire time change from oracle X_CPS_INIT (25/10/2022) ===
+
+                                    const resultexpireduration = await connection.execute(`
+                                            SELECT DETAIL FROM BTW.X_CPS_INIT
+                                            WHERE HEADER = 'DAY_CHANGE_PWS'
+                                        `, {}, {
+                                        outFormat: oracledb.OBJECT
+                                    })
+
+                                    if (resultexpireduration.rows.length == 0) {
+                                        return res.status(200).send({
+                                            status: 400,
+                                            message: `ไม่พบการกำหนดค่าวันหมดอายุของระบบ, ไม่สามารถเข้าใช้งานได้`,
+                                            data: []
+                                        })
+                                    }
+
+                                    // === create expire duration ====
+
+                                    const expireduration = resultexpireduration.rows[0].DETAIL
+
+                                    console.log(`result expire duration : ${expireduration}`)
+
+                                    if (!expireduration) {
+                                        return res.status(200).send({
+                                            status: 400,
+                                            message: `ไม่พบการกำหนดค่า expire duration บนระบบ`,
+                                            data: []
+                                        })
+                                    }
+
+                                    const nowdate = moment().toDate()
+
+                                    // *** chage check expire date from field expire that plus auto from resetpassword to check with paremeter when login (P Thep Khor) (09/06/2023)\
+
+                                    // ***=== when 09/06/2023 chage field in sql DATE_CHPWS (in api is expire_date) that before is EXPIRE_DATE into keep date that change password (request fix by P Thep) ===***
+
+                                    // const expire_date = moment(resData.EXPIRE_DATE, 'DD/MM/YYYY').toDate()
+                                    const expire_date = moment(resData.EXPIRE_DATE, 'DD/MM/YYYY').add(90, 'days').toDate();
+
+
+                                    if (nowdate >= expire_date) {
+                                        return res.status(200).send({
+                                            status: 202,
+                                            message: `รหัสผ่านหมดอายุหรือยังไม่ได้ยืนยันตัวกรุณาเปลี่ยนรหัสผ่านใหม่`,
+                                            data: {
+                                                expire: 'Y'
+                                            }
+                                        })
+                                    }
+
+                                    console.log(`this is now (moment) : ${nowdate} , expire_date : ${expire_date}`)
+
+
+
+                                    const resultinsertloglogin = await connection.execute(`
+                                            INSERT INTO MPLS_LOGIN_LOG (
+                                                USERID
+                                            ) VALUES (:USERID)
+                                        `, {
+                                        USERID: resData.USERID
+                                    }, {
+                                        autoCommit: true
+                                    })
+
+                                    // *** update last login (08/06/2023) ***
+                                    const updatelastlogin = await connection.execute(`
+                                     UPDATE USERS  SET LAST_LOGIN = SYSDATE
+                                             WHERE USERNAME = :USERNAME
+                                 `, {
+                                        USERNAME: username
+                                    }, {
+                                        autoCommit: true
+                                    })
+
+                                    console.log(`success log login user : ${resultinsertloglogin.rowsAffected}`)
+                                    console.log(`success log last login : ${updatelastlogin.rowsAffected}`)
+                                } catch (e) {
+                                    console.log(`can't log login : ${e.message}`)
+                                }
+
+
+                                resData.expire = 'N'
+
+                                // === set full name (checker) === 
+                                resData.FULLNAME = `${resData.FNAME} ${resData.LNAME}`
+                                // === set ID (checker) ===
+                                resData.ID = resData.USERID
+                                // === set username ==== 
+                                resData.USERNAME = username
+                                resData.WITNESS_NAME = resData.FNAME
+                                resData.WITNESS_LNAME = resData.LNAME
+                                resData.backwardbar = 'N'
+
+                                const token = jwt.sign(
+                                    {
+                                        ID: resData.ID,
+                                        user_id: resData.USERNAME,
+                                        password: resData.PASSWORD,
+                                        fullname: resData.FULLNAME,
+                                        email: resData.EMAIL,
+                                        radmin: resData.RADMIN ? resData.RADMIN : '',
+                                        role: resData.ROLE,
+                                        // channal: resData.channal,
+                                        channal: 'collector',
+                                        seller_id: resData.SELLER_ID,
+                                        username: resData.USERNAME,
+                                        witness_name: resData.WITNESS_NAME,
+                                        witness_lname: resData.WITNESS_LNAME
+                                    },
+                                    process.env.JWT_KEY, {
+                                    expiresIn: "24h",
+                                }
+                                )
+
+                                const dialer_token = jwt.sign(
+                                    {
+                                        userId: resData.USERNAME
+                                    },
+                                    process.env.MOBILE_DIAL_KEY, {
+                                    expiresIn: "24h",
+                                }
+                                )
+                                let returnData = new Object
+                                returnData.token = token
+                                returnData.dialer_token = dialer_token
+                                returnData.data = resData
+                                returnData.status = 200,
+                                    returnData.message = 'success'
+
+                                // === tran all upperCase to lowerCase === 
+                                let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                                    result[key.toLowerCase()] = val;
+                                });
+                                
+                                res.status(200).json(returnDatalowerCase);
+                            }
+                        } catch (e) {
+                            return res.status(400).send({
+                                status: 400,
+                                message: `fail : ${e}`,
+                                data: []
+                            })
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            // return res.status(401).send("Invalid Token")
+            return res.status(401).send({
+                status: 401,
+                message: 'Token was expire, please login',
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 400,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
 
 
 
@@ -967,3 +1238,4 @@ module.exports.sendemailsmtp = sendemailsmtp
 module.exports.forgetpassword = forgetpassword
 module.exports.resetpassword = resetpassword
 module.exports.getcurrentUserFormToken = getcurrentUserFormToken
+module.exports.getsignjwtfromouter = getsignjwtfromouter
