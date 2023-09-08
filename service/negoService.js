@@ -2545,7 +2545,7 @@ async function getfollowuppaymentlist(req, res, next) {
         AND LAST_DAY(TO_DATE(SYSDATE,'DD/MM/YYYY')))
         AND CALL_TRACK_INFO.HP_NO = :applicationid
         ${queryconrcode}
-        AND CALL_TRACK_INFO.REC_DATE IS NOT NULL 
+        AND NEGO_INFO.NEG_R_CODE IS NOT NULL 
         `, {
             applicationid: applicationid
         }, {
@@ -2584,7 +2584,7 @@ async function getfollowuppaymentlist(req, res, next) {
                     AND LAST_DAY(TO_DATE(SYSDATE,'DD/MM/YYYY')))
                     AND CALL_TRACK_INFO.HP_NO = :applicationid 
                     ${queryconrcode}
-                    AND CALL_TRACK_INFO.REC_DATE IS NOT NULL
+                    AND NEGO_INFO.NEG_R_CODE IS NOT NULL
                     )
                     WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend
                 `, {
