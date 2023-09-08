@@ -169,7 +169,7 @@ async function createcalltrackdial(req, res, next) {
 
 
         // const { branch_code, hp_no, cust_id, phone_no, staff_id, con_r_code, user_name } = req.body
-        const { branch_code, hp_no, cust_id, phone_no, staff_id, con_r_code } = req.body
+        const { branch_code, hp_no, cust_id, phone_no, staff_id, con_r_code, latitude, longitude, errmsg } = req.body
         const token = req.user
         const user_name = token.user_id
         const currentDate = moment()
@@ -189,7 +189,10 @@ async function createcalltrackdial(req, res, next) {
                     STAFF_ID,
                     CON_R_CODE,
                     USER_NAME,
-                    REC_DAY,
+                    REC_DAY, 
+                    LATITUDE,
+                    LONGITUDE, 
+                    ERR_LATI_LONGI_DESC, 
                     CALL_KEYAPP_ID 
                 ) VALUES (
                     :branch_code,
@@ -201,7 +204,10 @@ async function createcalltrackdial(req, res, next) {
                     :con_r_code,
                     :user_name,
                     :rec_day,
-                    :call_keyapp_id
+                    :latitude,
+                    :longitude,
+                    :err_lati_longi_desc,
+                    :call_keyapp_id 
                 )
         `
             , {
@@ -214,6 +220,9 @@ async function createcalltrackdial(req, res, next) {
                 con_r_code: con_r_code,
                 user_name: user_name,
                 rec_day: (new Date(currentDate)) ?? null,
+                latitude: latitude,
+                longitude: longitude,
+                err_lati_longi_desc: errmsg ? errmsg : '',
                 call_keyapp_id: key
             }, {
             outFormat: oracledb.OBJECT,
@@ -279,8 +288,8 @@ async function gettokenmobiledial(req, res, next) {
         const token = jwt.sign(
             {
                 userId: user_id
-            }, 
-            
+            },
+
         )
 
     } catch (e) {

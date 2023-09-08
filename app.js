@@ -312,7 +312,7 @@ app.get('/getaddresscustlist', auth, negoService.getaddresscustlist)
 
 app.get('/getaddressncblist', auth, negoService.getaddressncblist)
 
-app.get('/getfollowuppaymentlist', auth, negoService.getfollowuppaymentlist)
+app.post('/getfollowuppaymentlist', auth, negoService.getfollowuppaymentlist)
 
 app.get('/getlalon', auth, negoService.getlalon)
 

@@ -956,6 +956,8 @@ async function getagentgroupdpd(req, res, next) {
                                 CT.HP_NO = NG.HP_NO
                                 AND TO_CHAR(CT.REC_DAY, 'DD/MM/YYYY HH24:MI:SS') = TO_CHAR(NG.REC_DATE, 'DD/MM/YYYY HH24:MI:SS')
                                 AND NG.NEG_R_CODE = NG_DESC.NEG_R_CODE
+                                AND NG.APPOINT_DATE IS NOT NULL
+                                AND trunc( NG.APPOINT_DATE,'MM') >= trunc(sysdate,'MM')
                             ORDER BY
                                 NG.REC_DATE DESC
                         )
@@ -980,7 +982,7 @@ async function getagentgroupdpd(req, res, next) {
 
         const sqlcount = `select count(LINE_NUMBER) as rowCount from (${sqlbase})`
 
-        console.log(`sqlstr: ${sqlbase}`)
+        // console.log(`sqlstr: ${sqlbase}`)
 
         const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
 
@@ -1166,6 +1168,8 @@ async function getagentgroupstage(req, res, next) {
                                 CT.HP_NO = NG.HP_NO
                                 AND TO_CHAR(CT.REC_DAY, 'DD/MM/YYYY HH24:MI:SS') = TO_CHAR(NG.REC_DATE, 'DD/MM/YYYY HH24:MI:SS')
                                 AND NG.NEG_R_CODE = NG_DESC.NEG_R_CODE
+                                AND NG.APPOINT_DATE IS NOT NULL
+                                AND trunc( NG.APPOINT_DATE,'MM') >= trunc(sysdate,'MM')
                             ORDER BY
                                 NG.REC_DATE DESC
                         )
@@ -2505,11 +2509,22 @@ async function getfollowuppaymentlist(req, res, next) {
     let connection;
 
     try {
-        const { pageno, applicationid } = req.query
+        const { pageno, applicationid, type } = req.body
 
         const indexstart = (pageno - 1) * 5 + 1
         const indexend = (pageno * 5)
         let rowCount;
+
+        let bindparams = {};
+        let queryconrcode = ''
+
+        if (type == 1) {
+            queryconrcode = ``
+        } else if (type == 2) {
+            queryconrcode = ` AND NEGO_INFO.NEG_R_CODE = 'M03' `
+        } else {
+            queryconrcode = ``
+        }
 
 
         connection = await oracledb.getConnection(
@@ -2529,6 +2544,8 @@ async function getfollowuppaymentlist(req, res, next) {
         BETWEEN TRUNC(ADD_MONTHS(TO_DATE(SYSDATE,'DD/MM/YYYY'),-2),'MM') 
         AND LAST_DAY(TO_DATE(SYSDATE,'DD/MM/YYYY')))
         AND CALL_TRACK_INFO.HP_NO = :applicationid
+        ${queryconrcode}
+        AND CALL_TRACK_INFO.REC_DATE IS NOT NULL 
         `, {
             applicationid: applicationid
         }, {
@@ -2551,22 +2568,23 @@ async function getfollowuppaymentlist(req, res, next) {
                 const resultFollowupList = await connection.execute(`
                 SELECT * FROM (
                     SELECT CALL_TRACK_INFO.HP_NO,CALL_TRACK_INFO.CUST_ID,CALL_TRACK_INFO.PHONE_NO
-                    ,CALL_TRACK_INFO.CON_R_CODE,CALL_TRACK_INFO.rec_day, CALL_TRACK_INFO.CALL_DATE,CALL_TRACK_INFO.REC_DATE, 
-                    CALL_TRACK_INFO.USER_NAME,NEGO_INFO.NEG_R_CODE,CALL_TRACK_INFO.STAFF_ID, NEGO_INFO.appoint_date, NEGO_INFO.message1, 
-                    NEGO_INFO.message2, NEGO_INFO.pay, em.emp_name, em.emp_lname, NEG_RESULT_P.NEG_R_DETAIL,
+                    ,CALL_TRACK_INFO.CON_R_CODE,CALL_TRACK_INFO.REC_DAY, CALL_TRACK_INFO.CALL_DATE,CALL_TRACK_INFO.REC_DATE, 
+                    CALL_TRACK_INFO.USER_NAME,NEGO_INFO.NEG_R_CODE,CALL_TRACK_INFO.STAFF_ID, NEGO_INFO.APPOINT_DATE, NEGO_INFO.message1, 
+                    NEGO_INFO.MESSAGE2, NEGO_INFO.PAY, EM.EMP_NAME, EM.EMP_LNAME, NEG_RESULT_P.NEG_R_DETAIL,
                     ROW_NUMBER() OVER (ORDER BY CALL_TRACK_INFO.REC_DAY DESC, NEGO_INFO.APPOINT_DATE DESC) LINE_NUMBER 
-                    FROM NEGO_INFO, CALL_TRACK_INFO,NEG_RESULT_P,emp em
-                    WHERE ( (CALL_TRACK_INFO.hp_no = NEGO_INFO.hp_no(+)) 
-                    and NEGO_INFO.staff_id = em.emp_id(+)
-                    AND (CALL_TRACK_INFO.cust_id = NEGO_INFO.cust_id(+)) 
+                    FROM NEGO_INFO, CALL_TRACK_INFO,NEG_RESULT_P,EMP EM
+                    WHERE ( (CALL_TRACK_INFO.HP_NO = NEGO_INFO.hp_no(+)) 
+                    AND NEGO_INFO.STAFF_ID = EM.EMP_ID(+)
+                    AND (CALL_TRACK_INFO.CUST_ID = NEGO_INFO.CUST_ID(+)) 
                     AND (CALL_TRACK_INFO.STAFF_ID = NEGO_INFO.STAFF_ID(+))
                     AND (NEGO_INFO.NEG_R_CODE = NEG_RESULT_P.NEG_R_CODE(+)) 
-                    AND (TO_CHAR(CALL_TRACK_INFO.rec_day,'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(NEGO_INFO.rec_date(+),'dd/mm/yyyy hh24:mi:ss')) 
+                    AND (TO_CHAR(CALL_TRACK_INFO.REC_DAY,'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(NEGO_INFO.REC_DATE(+),'dd/mm/yyyy hh24:mi:ss')) 
                     AND TO_DATE(CALL_TRACK_INFO.REC_DAY,'DD/MM/YYYY') 
                     BETWEEN TRUNC(ADD_MONTHS(TO_DATE(SYSDATE,'DD/MM/YYYY'),-2),'MM') 
                     AND LAST_DAY(TO_DATE(SYSDATE,'DD/MM/YYYY')))
-                    and CALL_TRACK_INFO.HP_NO = :applicationid 
-                    and CALL_TRACK_INFO.REC_DATE is not null
+                    AND CALL_TRACK_INFO.HP_NO = :applicationid 
+                    ${queryconrcode}
+                    AND CALL_TRACK_INFO.REC_DATE IS NOT NULL
                     )
                     WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend
                 `, {
@@ -2645,7 +2663,7 @@ async function insertnegolist(req, res, next) {
 
         const objectjson = req.body
         let { hp_no, cust_id, phone_no, staff_id, user_name, neg_r_code,
-            appoint_date, message1, message2, con_r_code, recall, dunning_letter, assign_fcr
+            appoint_date, message1, message2, con_r_code, latitude, longitude, errmsg, recall, dunning_letter, assign_fcr
         } = objectjson
 
         console.log(`params that send : hp_no : ${hp_no ? hp_no : '-'},  cust_id : ${cust_id ? cust_id : '-'},  phone_no : ${phone_no ? phone_no : '-'}, staff_id : ${staff_id ? staff_id : '-'},` +
@@ -2686,7 +2704,10 @@ async function insertnegolist(req, res, next) {
                 CON_R_CODE,
                 REC_DATE,
                 USER_NAME,
-                REC_DAY
+                REC_DAY, 
+                LATITUDE,
+                LONGITUDE, 
+                ERR_LATI_LONGI_DESC 
             ) VALUES (
                 :branch_code,
                 :hp_no,
@@ -2697,7 +2718,10 @@ async function insertnegolist(req, res, next) {
                 :con_r_code,
                 :rec_date,
                 :user_name,
-                :rec_day
+                :rec_day, 
+                :latitude,
+                :longitude, 
+                :err_lati_longi_desc 
             )
         `, {
                 branch_code: branch_code,
@@ -2709,7 +2733,10 @@ async function insertnegolist(req, res, next) {
                 con_r_code: con_r_code,
                 rec_date: currentTime,
                 user_name: user_name,
-                rec_day: (new Date(currentDate)) ?? null
+                rec_day: (new Date(currentDate)) ?? null,
+                latitude: latitude,
+                longitude: longitude,
+                err_lati_longi_desc: errmsg ? errmsg : ''
 
             }, {
                 autoCommit: true

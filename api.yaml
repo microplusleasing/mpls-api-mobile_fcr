@@ -707,26 +707,27 @@ paths:
           description: "return error"
 
   /getfollowuppaymentlist:
-    get:
+    post:
       tags:
         - "collection"
       security:
         - bearerAuth: []
       summary: "Get followup history record"
       description: ""
-      parameters:
-        - in: "query"
-          name: "pageno"
-          description: "This is pageno"
-          schema:
-            type: number
-            example: 1
-        - in: "query"
-          name: "applicationid"
-          description: "This is application id"
-          schema:
-            type: string
-            example: "110202200000005"
+      requestBody:
+        description: item of list to create
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pageno:
+                  type: number
+                  example: 1
+                applicationid:
+                  type: string
+                  example: '110202200000006'
       responses:
         200:
           description: "successful operation and not found"
