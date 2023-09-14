@@ -1647,7 +1647,7 @@ async function getmotocyclenego(req, res, next) {
                 X_PRODUCT_DETAIL.BRAND_CODE,
                 X_BRAND_P.BRAND_NAME,
                 X_PRODUCT_DETAIL.MODELCODE,
-                X_MODEL_P.MODEL,
+                X_MODEL_P.MODEL||'/'|| X_MODEL_P.DESCRIPTION||'/'|| X_MODEL_P.MODEL_GROUP as MODEL,
                 X_MODEL_P.CC,
                 X_PRODUCT_DETAIL.COLOR,
                 X_PRODUCT_DETAIL.ENGINE_NUMBER||X_PRODUCT_DETAIL.ENGINE_NO_RUNNING AS ENGINE_NUMBER,
@@ -1755,103 +1755,103 @@ async function getmotocyclenegohistory(req, res, next) {
         )
 
         const resultmotorcycle = await connection.execute(`
-                        SELECT AC_PROVE.hp_no AS  hp_no,
-                        title_p.title_id,
-                        CASE WHEN COLL_INFO_MONTHLY.priority > 0 THEN '(-_-!) ' END
-                        || ''
-                        || title_p.title_name
-                        AS tittle_name,
-                        CUST_INFO.name,
-                        CUST_INFO.sname,
-                        type_p.type_code,
-                        type_p.type_name,
-                        branch_p.branch_code,
-                        branch_p.branch_name,
-                        COLL_INFO_MONTHLY.month_end,
-                        COLL_INFO_MONTHLY.year_end,
-                        COLL_INFO_MONTHLY.bill_beg,
-                        COLL_INFO_MONTHLY.bill_sub_beg,
-                        COLL_INFO_MONTHLY.bill_curr,
-                        COLL_INFO_MONTHLY.bill_sub_curr,
-                        COLL_INFO_MONTHLY.collected_inst,
-                        COLL_INFO_MONTHLY.collected_amt,
-                        COLL_INFO_MONTHLY.collected_date,
-                        COLL_INFO_MONTHLY.by_bill,
-                        COLL_INFO_MONTHLY.by_dealer,
-                        AC_PROVE.monthly,
-                        COLL_INFO_MONTHLY.will_pay_amt,
-                        COLL_INFO_MONTHLY.will_pay_inst,
-                        AC_PROVE.first_due,
-                        COLL_INFO_MONTHLY.total_paid,
-                        AC_PROVE.PERIOD as term,
-                        COLL_INFO_MONTHLY.account_status,
-                        COLL_INFO_MONTHLY.stage_no,
-                        COLL_INFO_MONTHLY.safety_level,
-                        COLL_INFO_MONTHLY.no_of_overdue,
-                        COLL_INFO_MONTHLY.col_r_code,
-                        COLL_INFO_MONTHLY.no_of_sms,
-                        COLL_INFO_MONTHLY.no_of_contact,
-                        COLL_INFO_MONTHLY.no_of_appoint,
-                        COLL_INFO_MONTHLY.flag,
-                        status_call.flagname,
-                        x_cust_mapping.cust_no,
-                        COLL_INFO_MONTHLY.perc_pay, 
-                        COLL_INFO_MONTHLY.stapay,
-                        COLL_INFO_MONTHLY.hp_hold,
-                        COLL_INFO_MONTHLY.nego_id,
-                        COLL_INFO_MONTHLY.stapay1,
-                        COLL_INFO_MONTHLY.unp_mrr,
-                        COLL_INFO_MONTHLY.unp_100,
-                        COLL_INFO_MONTHLY.unp_200,
-                        x_cust_mapping_ext.bussiness_code,
-                        x_cust_mapping_ext.dl_code,
-                        BTW.GET_DEALER_NAME(x_cust_mapping_ext.dl_code) as dl_name,
-                        COLL_INFO_MONTHLY.ROLLBACK_CALL,
-                        X_DEALER_P.DL_BRANCH,
-                        X_CUST_MAPPING_EXT.APPLICATION_NUM,
-                        X_PRODUCT_DETAIL.BRAND_CODE,
-                        X_BRAND_P.BRAND_NAME,
-                        X_PRODUCT_DETAIL.MODELCODE,
-                        X_MODEL_P.MODEL,
-                        X_MODEL_P.CC,
-                        X_PRODUCT_DETAIL.COLOR,
-                        X_PRODUCT_DETAIL.ENGINE_NUMBER||X_PRODUCT_DETAIL.ENGINE_NO_RUNNING AS ENGINE_NUMBER,
-                        X_PRODUCT_DETAIL.CHASSIS_NUMBER||X_PRODUCT_DETAIL.CHASSIS_NO_RUNNING AS CHASSIS_NUMBER,
-                        AC_PROVE.REG_NO,
-                        AC_PROVE.REG_CITY, 
-                        BTW.GET_PROVINCE(AC_PROVE.REG_CITY) AS REG_CITY_NAME 
-                        FROM    AC_PROVE,
-                        x_cust_mapping_ext,
-                        x_cust_mapping,
-                        type_p,
-                        CUST_INFO,--
-                        title_p,
-                        X_PRODUCT_DETAIL,
-                        X_BRAND_P,
-                        X_MODEL_P,
-                        X_DEALER_P,
-                        BRANCH_P,
-                        coll_info_monthly_view COLL_INFO_MONTHLY,
-                        status_call
-                        WHERE   AC_PROVE.HP_NO = x_cust_mapping_ext.CONTRACT_NO
-                        AND    x_cust_mapping_ext.LOAN_RESULT='Y'
-                        AND    AC_PROVE.AC_DATE IS NOT NULL
-                        AND AC_PROVE.CANCELL = 'F'
-                        AND  x_cust_mapping_ext.APPLICATION_NUM = x_cust_mapping.APPLICATION_NUM
-                        AND x_cust_mapping.CUST_STATUS  = type_p.TYPE_CODE
-                        AND  x_cust_mapping.CUST_NO = CUST_INFO.CUST_NO
-                        AND CUST_INFO.FNAME=title_p.TITLE_ID
-                        AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_PRODUCT_DETAIL.APPLICATION_NUM
-                        AND  X_PRODUCT_DETAIL.PRODUCT_CODE  = X_MODEL_P.PRO_CODE
-                        AND  X_PRODUCT_DETAIL.BRAND_CODE  =  X_MODEL_P.BRAND_CODE
-                        AND  X_PRODUCT_DETAIL.MODELCODE =  X_MODEL_P.MODEL_CODE
-                        AND  X_PRODUCT_DETAIL.BRAND_CODE = X_BRAND_P.BRAND_CODE
-                        AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
-                        AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
-                        AND( AC_PROVE.HP_NO = COLL_INFO_MONTHLY.HP_NO(+)
-                        AND COLL_INFO_MONTHLY.flag = status_call.flag(+))
-                        AND AC_PROVE.HP_NO = :hp_no
-                        ORDER BY TO_CHAR (TO_DATE(AC_PROVE.FIRST_DUE,'DD/MM/YYYY'), 'DD') ASC, AC_PROVE.HP_NO ASC
+                SELECT AC_PROVE.hp_no AS  hp_no,
+                title_p.title_id,
+                CASE WHEN COLL_INFO_MONTHLY.priority > 0 THEN '(-_-!) ' END
+                || ''
+                || title_p.title_name
+                AS tittle_name,
+                CUST_INFO.name,
+                CUST_INFO.sname,
+                type_p.type_code,
+                type_p.type_name,
+                branch_p.branch_code,
+                branch_p.branch_name,
+                COLL_INFO_MONTHLY.month_end,
+                COLL_INFO_MONTHLY.year_end,
+                COLL_INFO_MONTHLY.bill_beg,
+                COLL_INFO_MONTHLY.bill_sub_beg,
+                COLL_INFO_MONTHLY.bill_curr,
+                COLL_INFO_MONTHLY.bill_sub_curr,
+                COLL_INFO_MONTHLY.collected_inst,
+                COLL_INFO_MONTHLY.collected_amt,
+                COLL_INFO_MONTHLY.collected_date,
+                COLL_INFO_MONTHLY.by_bill,
+                COLL_INFO_MONTHLY.by_dealer,
+                AC_PROVE.monthly,
+                COLL_INFO_MONTHLY.will_pay_amt,
+                COLL_INFO_MONTHLY.will_pay_inst,
+                AC_PROVE.first_due,
+                COLL_INFO_MONTHLY.total_paid,
+                AC_PROVE.PERIOD as term,
+                COLL_INFO_MONTHLY.account_status,
+                COLL_INFO_MONTHLY.stage_no,
+                COLL_INFO_MONTHLY.safety_level,
+                COLL_INFO_MONTHLY.no_of_overdue,
+                COLL_INFO_MONTHLY.col_r_code,
+                COLL_INFO_MONTHLY.no_of_sms,
+                COLL_INFO_MONTHLY.no_of_contact,
+                COLL_INFO_MONTHLY.no_of_appoint,
+                COLL_INFO_MONTHLY.flag,
+                status_call.flagname,
+                x_cust_mapping.cust_no,
+                COLL_INFO_MONTHLY.perc_pay, 
+                COLL_INFO_MONTHLY.stapay,
+                COLL_INFO_MONTHLY.hp_hold,
+                COLL_INFO_MONTHLY.nego_id,
+                COLL_INFO_MONTHLY.stapay1,
+                COLL_INFO_MONTHLY.unp_mrr,
+                COLL_INFO_MONTHLY.unp_100,
+                COLL_INFO_MONTHLY.unp_200,
+                x_cust_mapping_ext.bussiness_code,
+                x_cust_mapping_ext.dl_code,
+                BTW.GET_DEALER_NAME(x_cust_mapping_ext.dl_code) as dl_name,
+                COLL_INFO_MONTHLY.ROLLBACK_CALL,
+                X_DEALER_P.DL_BRANCH,
+                X_CUST_MAPPING_EXT.APPLICATION_NUM,
+                X_PRODUCT_DETAIL.BRAND_CODE,
+                X_BRAND_P.BRAND_NAME,
+                X_PRODUCT_DETAIL.MODELCODE,
+                X_MODEL_P.MODEL ||'/'|| X_MODEL_P.DESCRIPTION||'/'|| X_MODEL_P.MODEL_GROUP as MODEL,
+                X_MODEL_P.CC,
+                X_PRODUCT_DETAIL.COLOR,
+                X_PRODUCT_DETAIL.ENGINE_NUMBER||X_PRODUCT_DETAIL.ENGINE_NO_RUNNING AS ENGINE_NUMBER,
+                X_PRODUCT_DETAIL.CHASSIS_NUMBER||X_PRODUCT_DETAIL.CHASSIS_NO_RUNNING AS CHASSIS_NUMBER,
+                AC_PROVE.REG_NO,
+                AC_PROVE.REG_CITY, 
+                BTW.GET_PROVINCE(AC_PROVE.REG_CITY) AS REG_CITY_NAME 
+                FROM    AC_PROVE,
+                x_cust_mapping_ext,
+                x_cust_mapping,
+                type_p,
+                CUST_INFO,--
+                title_p,
+                X_PRODUCT_DETAIL,
+                X_BRAND_P,
+                X_MODEL_P,
+                X_DEALER_P,
+                BRANCH_P,
+                coll_info_monthly_view COLL_INFO_MONTHLY,
+                status_call
+                WHERE   AC_PROVE.HP_NO = x_cust_mapping_ext.CONTRACT_NO
+                AND    x_cust_mapping_ext.LOAN_RESULT='Y'
+                AND    AC_PROVE.AC_DATE IS NOT NULL
+                AND AC_PROVE.CANCELL = 'F'
+                AND  x_cust_mapping_ext.APPLICATION_NUM = x_cust_mapping.APPLICATION_NUM
+                AND x_cust_mapping.CUST_STATUS  = type_p.TYPE_CODE
+                AND  x_cust_mapping.CUST_NO = CUST_INFO.CUST_NO
+                AND CUST_INFO.FNAME=title_p.TITLE_ID
+                AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_PRODUCT_DETAIL.APPLICATION_NUM
+                AND  X_PRODUCT_DETAIL.PRODUCT_CODE  = X_MODEL_P.PRO_CODE
+                AND  X_PRODUCT_DETAIL.BRAND_CODE  =  X_MODEL_P.BRAND_CODE
+                AND  X_PRODUCT_DETAIL.MODELCODE =  X_MODEL_P.MODEL_CODE
+                AND  X_PRODUCT_DETAIL.BRAND_CODE = X_BRAND_P.BRAND_CODE
+                AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
+                AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
+                AND( AC_PROVE.HP_NO = COLL_INFO_MONTHLY.HP_NO(+)
+                AND COLL_INFO_MONTHLY.flag = status_call.flag(+))
+                AND AC_PROVE.HP_NO = :hp_no
+                ORDER BY TO_CHAR (TO_DATE(AC_PROVE.FIRST_DUE,'DD/MM/YYYY'), 'DD') ASC, AC_PROVE.HP_NO ASC
         `, {
             hp_no: hp_no
         }, {
