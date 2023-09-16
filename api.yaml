@@ -944,7 +944,7 @@ paths:
         - "collection"
       security:
         - bearerAuth: []
-      summary: "Get list of Holer name and id"
+      summary: "Gen token for oracle form"
       description: ""
       requestBody:
         content:
@@ -954,6 +954,55 @@ paths:
                 contractno:
                   type: string
                   example: "GGGGGGG" 
+            
+      responses:
+        200:
+          description: "successfu"
+        400:
+          description: "return error"
+
+  /getsitevisitcoverimagelist:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get cover image of site visit collection"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                keyid:
+                  type: string
+                  example: "92c300e5f1a540a7a7b7ae1252de0387" # for id 110202200000006
+            
+      responses:
+        200:
+          description: "successfu"
+        400:
+          description: "return error"
+  
+  /getsitevisitimagebyindex:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get cover image of site visit collection"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                keyid:
+                  type: string
+                  example: "92c300e5f1a540a7a7b7ae1252de0387" # for id 110202200000006
+                indeximage: 
+                  type: number
+                  example: 0
             
       responses:
         200:

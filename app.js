@@ -306,6 +306,10 @@ app.get('/getagentholdermaster', auth, negoService.getagentholdermaster)
 
 app.post('/gentokene01', auth, negoService.gentokene01)
 
+app.post('/getsitevisitcoverimagelist', auth, negoService.getsitevisitcoverimagelist)
+
+app.post('/getsitevisitimagebyindex', auth, negoService.getsitevisitimagebyindex)
+
 app.get('/gethistorypaymentlist', auth, negoService.gethistorypaymentlist)
 
 app.get('/getaddresscustlist', auth, negoService.getaddresscustlist)

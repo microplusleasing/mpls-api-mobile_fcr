@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 // const formidable = require('formidable');
 var multiparty = require('multiparty');
 // const { result } = require('lodash');
-// const fs = require('fs');
+const fs = require('fs');
 // var util = require('util');
 const _util = require('./_selfutil');
 const { result } = require('lodash');
@@ -16,6 +16,9 @@ const e = require('cors');
 var JsBarcode = require('jsbarcode');
 var QRCode = require('qrcode')
 var Canvas = require("canvas")
+// const path = require('path');
+
+// const imageUtilService = require('./_imageUtilService')
 
 // async function getcontractlist(req, res, next) {
 //     let connection;
@@ -2570,7 +2573,10 @@ async function getfollowuppaymentlist(req, res, next) {
                     SELECT CALL_TRACK_INFO.HP_NO,CALL_TRACK_INFO.CUST_ID,CALL_TRACK_INFO.PHONE_NO
                     ,CALL_TRACK_INFO.CON_R_CODE,CALL_TRACK_INFO.REC_DAY, CALL_TRACK_INFO.CALL_DATE,CALL_TRACK_INFO.REC_DATE, 
                     CALL_TRACK_INFO.USER_NAME,NEGO_INFO.NEG_R_CODE,CALL_TRACK_INFO.STAFF_ID, NEGO_INFO.APPOINT_DATE, NEGO_INFO.message1, 
-                    NEGO_INFO.MESSAGE2, NEGO_INFO.PAY, EM.EMP_NAME, EM.EMP_LNAME, NEG_RESULT_P.NEG_R_DETAIL,
+                    NEGO_INFO.MESSAGE2, NEGO_INFO.PAY, EM.EMP_NAME, EM.EMP_LNAME, NEG_RESULT_P.NEG_R_DETAIL, NEGO_INFO.CALL_KEYAPP_ID, 
+                    (SELECT COUNT(CALL_KEYAPP_ID)
+                    FROM BTW.SITE_VISIT_IMAGE
+                    WHERE SITE_VISIT_IMAGE.CALL_KEYAPP_ID = NEGO_INFO.CALL_KEYAPP_ID) AS IMAGE_COUNT, 
                     ROW_NUMBER() OVER (ORDER BY CALL_TRACK_INFO.REC_DAY DESC, NEGO_INFO.APPOINT_DATE DESC) LINE_NUMBER 
                     FROM NEGO_INFO, CALL_TRACK_INFO,NEG_RESULT_P,EMP EM
                     WHERE ( (CALL_TRACK_INFO.HP_NO = NEGO_INFO.hp_no(+)) 
@@ -2659,26 +2665,66 @@ async function insertnegolist(req, res, next) {
         const token = req.user
         const userid = token.ID
 
-        console.log(`trigger API insertnegolist From ${userid}, when ${moment().format('MMMM Do YYYY, h:mm:ss a')}`)
+        let fileData
+        let formData
+        // const form = formidable({ multiples: true })
+        const form = new multiparty.Form()
+        await new Promise(function (resolve, reject) {
+            form.parse(req, (err, fields, files) => {
+                if (err) {
+                    reject(err)
+                    return
+                }
+                formData = fields
+                fileData = files
+                resolve()
+            })
+            return
+        })
 
-        const objectjson = req.body
-        let { hp_no, cust_id, phone_no, staff_id, user_name, neg_r_code,
-            appoint_date, message1, message2, con_r_code, latitude, longitude, errmsg, recall, dunning_letter, assign_fcr
-        } = objectjson
+        const reqData = JSON.parse(formData.item)
 
-        console.log(`params that send : hp_no : ${hp_no ? hp_no : '-'},  cust_id : ${cust_id ? cust_id : '-'},  phone_no : ${phone_no ? phone_no : '-'}, staff_id : ${staff_id ? staff_id : '-'},` +
-            `user_name : ${user_name ? user_name : '-'}, neg_r_code : ${neg_r_code ? neg_r_code : '-'}, appoint_date : ${appoint_date ? appoint_date : '-'}, message1 : ${message1 ? message1 : '-'},` +
-            `message2 : ${message2 ? message2 : '-'}, con_r_code : ${con_r_code ? con_r_code : '-'},`)
+        console.log(`check length : ${fileData.images.length}`)
+        const imagesArray = fileData.images ? fileData.images : []
+        const coverImageArray = fileData.coverimages ? fileData.coverimages : []
 
-        // console.log(`this is all value form clietn : ${JSON.stringify(objectjson)}`)
+        // Generate a UUID
+        const uuid = uuidv4();
+        // Remove hyphens from the UUID
+        const key = uuid.replace(/-/g, '');
+
+
+        imagetobuffer = (file) => {
+            return fs.readFileSync(file.path);
+        }
+
+        debugger
+        let imageBindingData = []
+
+        if (imagesArray) {
+            if ((imagesArray.length !== 0) && (imagesArray.length == coverImageArray.length)) {
+                // ==== test build cover image ====
+
+                for (let i = 0; i < imagesArray.length; i++) {
+                    console.log(`cehck data in loop : ${JSON.stringify(imagesArray[i])}`)
+                    imageBindingData.push(
+                        {
+                            call_keyapp_id: key,
+                            image_index: i,
+                            image_type: imagesArray[i].headers['content-type'],
+                            image_file: imagetobuffer(imagesArray[i]),
+                            image_cover: imagetobuffer(coverImageArray[i])
+                        })
+                }
+            }
+        }
 
         // ==== build fix param =====
         let appoint_date_dtype;
         // console.log(`appoint_date : ${appoint_date}`)
-        if (appoint_date) {
+        if (reqData.appoint_date) {
             // appoint_date_dtype = moment(appoint_date, 'YYYY-MM-DD').format('LL')
-            appoint_date_dtype = moment(appoint_date, 'DD/MM/YYYY').format('LL')
-            console.log(`apd type : ${appoint_date_dtype}`)
+            appoint_date_dtype = moment(reqData.appoint_date, 'DD/MM/YYYY').format('LL')
         }
         const currentDate = moment()
         const branch_code = '10'
@@ -2707,7 +2753,8 @@ async function insertnegolist(req, res, next) {
                 REC_DAY, 
                 LATITUDE,
                 LONGITUDE, 
-                ERR_LATI_LONGI_DESC 
+                ERR_LATI_LONGI_DESC,
+                CALL_KEYAPP_ID 
             ) VALUES (
                 :branch_code,
                 :hp_no,
@@ -2721,22 +2768,24 @@ async function insertnegolist(req, res, next) {
                 :rec_day, 
                 :latitude,
                 :longitude, 
-                :err_lati_longi_desc 
+                :err_lati_longi_desc,
+                :call_keyapp_id 
             )
         `, {
                 branch_code: branch_code,
-                hp_no: hp_no,
-                cust_id: cust_id,
-                phone_no: phone_no,
+                hp_no: reqData.hp_no,
+                cust_id: reqData.cust_id,
+                phone_no: reqData.phone_no,
                 call_date: currentTime,
-                staff_id: staff_id,
-                con_r_code: con_r_code,
-                rec_date: currentTime,
-                user_name: user_name,
+                staff_id: reqData.staff_id,
+                con_r_code: reqData.con_r_code,
+                rec_date: reqData.currentTime,
+                user_name: reqData.user_name,
                 rec_day: (new Date(currentDate)) ?? null,
-                latitude: latitude,
-                longitude: longitude,
-                err_lati_longi_desc: errmsg ? errmsg : ''
+                latitude: reqData.latitude,
+                longitude: reqData.longitude,
+                err_lati_longi_desc: reqData.errmsg ? reqData.errmsg : '',
+                call_keyapp_id: key
 
             }, {
                 autoCommit: true
@@ -2788,7 +2837,8 @@ async function insertnegolist(req, res, next) {
                         CUST_ID, 
                         STATUS_RECALL, 
                         REQ_DUNNING_LETTER, 
-                        REQ_ASSIGN_FCR`
+                        REQ_ASSIGN_FCR, 
+                        CALL_KEYAPP_ID`
             let mainqerynego2 = ` ) VALUES (
                         :branch_code,
                         :hp_no,
@@ -2801,22 +2851,24 @@ async function insertnegolist(req, res, next) {
                         :cust_id,
                         :status_recall,
                         :req_dunning_letter,
-                        :req_assign_fcr 
+                        :req_assign_fcr,
+                        :call_keyapp_id 
                     `
 
             bindparamnego.branch_code = branch_code
-            bindparamnego.hp_no = hp_no,
-                bindparamnego.neg_r_code = neg_r_code,
+            bindparamnego.hp_no = reqData.hp_no,
+                bindparamnego.neg_r_code = reqData.neg_r_code,
                 bindparamnego.rec_date = (new Date(currentDate)) ?? null
-            bindparamnego.message1 = message1
-            bindparamnego.message2 = message2
-            bindparamnego.staff_id = staff_id
-            bindparamnego.user_name = user_name
-            bindparamnego.cust_id = cust_id
+            bindparamnego.message1 = reqData.message1
+            bindparamnego.message2 = reqData.message2
+            bindparamnego.staff_id = reqData.staff_id
+            bindparamnego.user_name = reqData.user_name
+            bindparamnego.cust_id = reqData.cust_id
             // *** add more 3 optional field (31/07/2023) ***
-            bindparamnego.status_recall = recall
-            bindparamnego.req_dunning_letter = dunning_letter
-            bindparamnego.req_assign_fcr = assign_fcr
+            bindparamnego.status_recall = reqData.recall
+            bindparamnego.req_dunning_letter = reqData.dunning_letter
+            bindparamnego.req_assign_fcr = reqData.assign_fcr
+            bindparamnego.call_keyapp_id = key
 
             if (appoint_date_dtype) {
                 appointmentquerynego1 = `, APPOINT_DATE `
@@ -2859,6 +2911,71 @@ async function insertnegolist(req, res, next) {
                 return res.status(200).send({
                     status: 400,
                     message: `สร้างประวัติการติดตามไม่สำเร็จ (nego record) , (rollback fail): ${e.message ? e.message : `No message`}`
+                })
+            }
+        }
+
+        // ==== insert image attach (12/09/2023) ====
+        try {
+            if (imageBindingData.length !== 0) {
+
+                const sql = `INSERT INTO BTW.SITE_VISIT_IMAGE 
+                (
+                    CALL_KEYAPP_ID, 
+                    IMAGE_INDEX, 
+                    IMAGE_TYPE,
+                    IMAGE_FILE, 
+                    IMAGE_COVER, 
+                    ACTIVE_STATUS
+                )
+                    VALUES 
+                (
+                    :call_keyapp_id, 
+                    :image_index, 
+                    :image_type, 
+                    :image_file, 
+                    :image_cover, 
+                    'Y' 
+                )`
+
+                const binds = imageBindingData;
+
+                const options = {
+                    bindDefs: {
+                        call_keyapp_id: { type: oracledb.STRING, maxSize: 50 },
+                        image_index: { type: oracledb.NUMBER },
+                        image_type: { type: oracledb.STRING, maxSize: 200 },
+                        image_file: { type: oracledb.BLOB, maxSize: 5000000 },
+                        image_cover: { type: oracledb.BLOB, maxSize: 5000000 },
+                    }
+                }
+
+                const resultInsertImageAttachSitevisit = await connection.executeMany(sql, binds, { options, autoCommit: true })
+                console.log(`success insert image attach Site visit : ${resultInsertImageAttachSitevisit.rowsAffected}`)
+            }
+        } catch (e) {
+            console.log(`error image attach : ${e}`)
+            try {
+                if (connection) {
+                    console.log(`trigger rollback (create image attach)`)
+                    await connection.rollback()
+                    console.log(`rollback success (create image attach)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `อัพโหลดไฟล์รูปแนบไม่สำเร็จ (image attach): ${e.message ? e.message : `No message`}`
+                    })
+                } else {
+                    console.log(`error image attach (no - connection) (create image attach)`)
+                    return res.status(200).send({
+                        status: 400,
+                        message: `อัพโหลดไฟล์รูปแนบไม่สำเร็จ (image attach): ${e.message ? e.message : `No message`}`
+                    })
+                }
+
+            } catch (e) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `อัพโหลดไฟล์รูปแนบไม่สำเร็จ (image attach) , (rollback fail): ${e.message ? e.message : `No message`}`
                 })
             }
         }
@@ -3736,7 +3853,164 @@ async function gentokene01(req, res, next) {
             status: 500,
             message: `Fail : ${e.message ? e.message : 'No err msg'}`,
         })
-    } 
+    }
+}
+
+async function getsitevisitcoverimagelist(req, res, next) {
+
+    let connection;
+
+    const { keyid } = req.body
+    try {
+
+        if (!keyid) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameter keyid`,
+                data: []
+            })
+        }
+
+        oracledb.fetchAsBuffer = [oracledb.BLOB];
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(`
+            SELECT IMAGE_INDEX , IMAGE_COVER 
+            FROM BTW.SITE_VISIT_IMAGE
+            WHERE CALL_KEYAPP_ID = :key_id 
+            ORDER BY IMAGE_INDEX ASC 
+        `
+            , {
+                key_id: keyid
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        // ==== check row image ====
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: `ไม่พบรายการรูปภาพลงตรวจสอบพืีนที่`,
+                data: []
+            })
+        } else {
+
+            // ==== return image file ====
+
+            const countimage = result.rows.length
+
+            let returndata = [];
+            for (let i = 0; i < countimage; i++) {
+                const imagefile = result.rows[i].IMAGE_COVER !== null ? true : false
+                if (imagefile) {
+                    const imagefile = result.rows[i].IMAGE_COVER
+                    const imgbuffer = Buffer.from(imagefile).toString('base64')
+                    returndata.push({ base64img: imgbuffer })
+                }
+            }
+
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: returndata
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function getsitevisitimagebyindex(req, res, next) {
+
+    let connection;
+
+    const { keyid, indeximage } = req.body
+    try {
+
+        if (!keyid) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameter keyid`,
+                data: []
+            })
+        }
+
+        oracledb.fetchAsBuffer = [oracledb.BLOB];
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(`
+            SELECT IMAGE_INDEX , IMAGE_FILE
+            FROM BTW.SITE_VISIT_IMAGE 
+            WHERE SITE_VISIT_IMAGE.CALL_KEYAPP_ID = :keyid 
+            AND SITE_VISIT_IMAGE.IMAGE_INDEX = :indeximage 
+            ORDER BY SITE_VISIT_IMAGE.IMAGE_INDEX ASC 
+        `, {
+            keyid: keyid,
+            indeximage: indeximage
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        // ==== check row image ====
+        if (result.rows.length !== 1) {
+            return res.status(200).send({
+                status: 400,
+                message: `ระบุรูปภาพลงตรวจสอบพื้นที่ไม่สำเร็จ`,
+                data: []
+            })
+        } else {
+
+            // ==== return image file ====
+
+            if (result.rows[0].IMAGE_FILE !== null) {
+
+            }
+            const imagefile = result.rows[0].IMAGE_FILE
+            const imgbuffer = Buffer.from(imagefile).toString('base64')
+
+
+
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: imgbuffer
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
 }
 
 // module.exports.getcontractlist = getcontractlist
@@ -3763,3 +4037,5 @@ module.exports.createaddressInfo = createaddressInfo
 module.exports.getholdermaster = getholdermaster
 module.exports.getagentholdermaster = getagentholdermaster
 module.exports.gentokene01 = gentokene01
+module.exports.getsitevisitcoverimagelist = getsitevisitcoverimagelist
+module.exports.getsitevisitimagebyindex = getsitevisitimagebyindex

@@ -4908,7 +4908,7 @@ async function MPLS_create_send_car_deliver_and_loyalty_consent(req, res, next) 
             }
 
             const resultCreateRefAttachDeliver = await connection.executeMany(sql, binds, options)
-            console.log(`sussecc create deliver attach record : ${resultCreateRefAttachDeliver.rowsAffected}`)
+            console.log(`success create deliver attach record : ${resultCreateRefAttachDeliver.rowsAffected}`)
 
             // === save loyalty consent value (19/08/2022) ========
 
