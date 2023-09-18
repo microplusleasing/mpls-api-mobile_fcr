@@ -3,6 +3,6 @@ module.exports = {
     {
         user: "MOBILEMPLS",
         password: 'oracle',
-        connectString: "ORCL-DEV"
+        connectString: "MPLORCL"
     }
 };
