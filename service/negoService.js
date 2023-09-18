@@ -1424,6 +1424,166 @@ async function getnegotiationbyid(req, res, next) {
     }
 }
 
+async function getnegotiationhistorybyid(req, res, next) {
+    let connection;
+    try {
+
+        // === get param from query ===
+
+        const { applicationid } = req.query
+
+        connection = await oracledb.getConnection(
+            config.database
+        )
+
+        const resultnego = await connection.execute(`                 
+                    SELECT AC_PROVE.hp_no AS  hp_no,
+                    title_p.title_id,
+                    CASE WHEN COLL_INFO_MONTHLY.priority > 0 THEN '(-_-!) ' END
+                    || ''
+                    || title_p.title_name
+                    AS tittle_name,
+                    CUST_INFO.name,
+                    CUST_INFO.sname,
+                    type_p.type_code,
+                    type_p.type_name,
+                    branch_p.branch_code,
+                    branch_p.branch_name,
+                    COLL_INFO_MONTHLY.month_end,
+                    COLL_INFO_MONTHLY.year_end,
+                    COLL_INFO_MONTHLY.bill_beg,
+                    COLL_INFO_MONTHLY.bill_sub_beg,
+                    COLL_INFO_MONTHLY.bill_curr,
+                    COLL_INFO_MONTHLY.bill_sub_curr,
+                    COLL_INFO_MONTHLY.collected_inst,
+                    COLL_INFO_MONTHLY.collected_amt,
+                    COLL_INFO_MONTHLY.collected_date,
+                    COLL_INFO_MONTHLY.by_bill,
+                    COLL_INFO_MONTHLY.by_dealer,
+                    AC_PROVE.monthly,
+                    COLL_INFO_MONTHLY.will_pay_amt,
+                    COLL_INFO_MONTHLY.will_pay_inst,
+                    AC_PROVE.first_due,
+                    COLL_INFO_MONTHLY.total_paid,
+                    AC_PROVE.PERIOD as term,
+                    COLL_INFO_MONTHLY.account_status,
+                    COLL_INFO_MONTHLY.stage_no,
+                    COLL_INFO_MONTHLY.safety_level,
+                    COLL_INFO_MONTHLY.no_of_overdue,
+                    COLL_INFO_MONTHLY.col_r_code,
+                    COLL_INFO_MONTHLY.no_of_sms,
+                    COLL_INFO_MONTHLY.no_of_contact,
+                    COLL_INFO_MONTHLY.no_of_appoint,
+                    COLL_INFO_MONTHLY.flag,
+                    status_call.flagname,
+                    x_cust_mapping.cust_no,
+                    COLL_INFO_MONTHLY.perc_pay, 
+                    COLL_INFO_MONTHLY.stapay,
+                    COLL_INFO_MONTHLY.hp_hold,
+                    COLL_INFO_MONTHLY.nego_id,
+                    COLL_INFO_MONTHLY.stapay1,
+                    COLL_INFO_MONTHLY.unp_mrr,
+                    COLL_INFO_MONTHLY.unp_100,
+                    COLL_INFO_MONTHLY.unp_200,
+                    x_cust_mapping_ext.bussiness_code,
+                    x_cust_mapping_ext.dl_code,
+                    COLL_INFO_MONTHLY.ROLLBACK_CALL,
+                    CUST_INFO.IDCARD_NUM,
+                    x_cust_mapping_ext.CREATE_CONTRACT_DATE,
+                    x_cust_mapping_ext.REF_PAY_NUM,
+                    cust_info.BIRTH_DATE
+                    FROM    AC_PROVE,
+                    x_cust_mapping_ext,
+                    x_cust_mapping,
+                    type_p,
+                    CUST_INFO,
+                    title_p,
+                    X_PRODUCT_DETAIL,
+                    X_BRAND_P,
+                    X_MODEL_P,
+                    X_DEALER_P,
+                    BRANCH_P,
+                    coll_info_monthly_view COLL_INFO_MONTHLY,
+                    status_call
+                    WHERE   AC_PROVE.HP_NO = x_cust_mapping_ext.CONTRACT_NO
+                    AND    x_cust_mapping_ext.LOAN_RESULT='Y'
+                    AND    AC_PROVE.AC_DATE IS NOT NULL
+                    AND CANCELL = 'F'
+                    AND  x_cust_mapping_ext.APPLICATION_NUM = x_cust_mapping.APPLICATION_NUM
+                    AND x_cust_mapping.CUST_STATUS  = type_p.TYPE_CODE
+                    AND  x_cust_mapping.CUST_NO = CUST_INFO.CUST_NO
+                    AND CUST_INFO.FNAME=title_p.TITLE_ID
+                    AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_PRODUCT_DETAIL.APPLICATION_NUM
+                    AND  X_PRODUCT_DETAIL.PRODUCT_CODE  = X_MODEL_P.PRO_CODE
+                    AND  X_PRODUCT_DETAIL.BRAND_CODE  =  X_MODEL_P.BRAND_CODE
+                    AND  X_PRODUCT_DETAIL.MODELCODE =  X_MODEL_P.MODEL_CODE
+                    AND  X_PRODUCT_DETAIL.BRAND_CODE = X_BRAND_P.BRAND_CODE
+                    AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
+                    AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
+                    AND( AC_PROVE.HP_NO = COLL_INFO_MONTHLY.HP_NO(+)
+                    AND COLL_INFO_MONTHLY.flag = status_call.flag(+))
+                    AND AC_PROVE.HP_NO = :applicationid
+                    ORDER BY TO_CHAR (TO_DATE(AC_PROVE.FIRST_DUE,'DD/MM/YYYY'), 'DD') ASC, AC_PROVE.HP_NO ASC
+        `, {
+            applicationid: applicationid
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+        // const resultnego = await connection.execute(`
+        // SELECT AP.HP_NO, AP.MONTHLY, AP.FIRST_DUE, AP.PERIOD, CI.NAME, CI.SNAME,
+        //     CIM.WILL_PAY_AMT, CIM.WILL_PAY_INST
+        //     FROM BTW.AC_PROVE AP
+        //     LEFT JOIN BTW.CUST_INFO CI
+        //     ON AP.CUST_NO_0 = CI.CUST_NO
+        //     LEFT JOIN COLL_INFO_MONTHLY CIM
+        //     ON AP.HP_NO = CIM.HP_NO
+        //     WHERE AP.HP_NO = :applicationid
+        // `, {
+        //     applicationid: applicationid
+        // }, {
+        //     outFormat: oracledb.OBJECT
+        // })
+
+        if (resultnego.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: `ไม่เจอรายการสัญญาที่เลือก`,
+                data: []
+            })
+        } else {
+            // ==== return success data ==== 
+
+            let resData = resultnego.rows
+
+            const paymentdate = _util.getnextmonth(resData[0].FIRST_DUE)
+            resData[0].paymentdate = paymentdate
+
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            res.status(200).json({
+                status: 200,
+                message: `Success`,
+                data: lowerResData
+            });
+        }
+
+    } catch (e) {
+        console.error(e)
+        return res.status(200).send({
+            status: 400,
+            message: `error with message : ${e.message}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close()
+            } catch (e) {
+                console.error(e)
+                return next(e)
+            }
+        }
+    }
+}
+
 async function getmotocyclenego(req, res, next) {
     let connection;
     try {
@@ -1494,7 +1654,7 @@ async function getmotocyclenego(req, res, next) {
                 X_PRODUCT_DETAIL.BRAND_CODE,
                 X_BRAND_P.BRAND_NAME,
                 X_PRODUCT_DETAIL.MODELCODE,
-                X_MODEL_P.MODEL,
+                X_MODEL_P.MODEL||'/'|| X_MODEL_P.DESCRIPTION||'/'|| X_MODEL_P.MODEL_GROUP as MODEL,
                 X_MODEL_P.CC,
                 X_PRODUCT_DETAIL.COLOR,
                 X_PRODUCT_DETAIL.ENGINE_NUMBER||X_PRODUCT_DETAIL.ENGINE_NO_RUNNING AS ENGINE_NUMBER,
@@ -1532,6 +1692,173 @@ async function getmotocyclenego(req, res, next) {
                 AND COLL_INFO_MONTHLY_VIEW.HP_NO = AC_PROVE.HP_NO
                 AND COLL_INFO_MONTHLY_VIEW.HP_NO = :hp_no
         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
+        `, {
+            hp_no: hp_no
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+        // const resultnego = await connection.execute(`
+        // SELECT AP.HP_NO, AP.MONTHLY, AP.FIRST_DUE, AP.PERIOD, CI.NAME, CI.SNAME,
+        //     CIM.WILL_PAY_AMT, CIM.WILL_PAY_INST
+        //     FROM BTW.AC_PROVE AP
+        //     LEFT JOIN BTW.CUST_INFO CI
+        //     ON AP.CUST_NO_0 = CI.CUST_NO
+        //     LEFT JOIN COLL_INFO_MONTHLY CIM
+        //     ON AP.HP_NO = CIM.HP_NO
+        //     WHERE AP.HP_NO = :applicationid
+        // `, {
+        //     applicationid: applicationid
+        // }, {
+        //     outFormat: oracledb.OBJECT
+        // })
+
+        if (resultmotorcycle.rows.length == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: `ไม่เจอรายการรุ่นรถตามเลขสัญญา`,
+                data: []
+            })
+        } else {
+            // ==== return success data ==== 
+
+            let resData = resultmotorcycle.rows
+
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            res.status(200).json({
+                status: 200,
+                message: `Success`,
+                data: lowerResData
+            });
+        }
+
+    } catch (e) {
+        console.error(e)
+        return res.status(400).send({
+            status: 400,
+            message: `error with message : ${e.message}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close()
+            } catch (e) {
+                console.error(e)
+                return next(e)
+            }
+        }
+    }
+}
+
+async function getmotocyclenegohistory(req, res, next) {
+    let connection;
+    try {
+
+        // === get param from query ===
+
+        const { hp_no } = req.query
+
+        connection = await oracledb.getConnection(
+            config.database
+        )
+
+        const resultmotorcycle = await connection.execute(`
+                SELECT AC_PROVE.hp_no AS  hp_no,
+                title_p.title_id,
+                CASE WHEN COLL_INFO_MONTHLY.priority > 0 THEN '(-_-!) ' END
+                || ''
+                || title_p.title_name
+                AS tittle_name,
+                CUST_INFO.name,
+                CUST_INFO.sname,
+                type_p.type_code,
+                type_p.type_name,
+                branch_p.branch_code,
+                branch_p.branch_name,
+                COLL_INFO_MONTHLY.month_end,
+                COLL_INFO_MONTHLY.year_end,
+                COLL_INFO_MONTHLY.bill_beg,
+                COLL_INFO_MONTHLY.bill_sub_beg,
+                COLL_INFO_MONTHLY.bill_curr,
+                COLL_INFO_MONTHLY.bill_sub_curr,
+                COLL_INFO_MONTHLY.collected_inst,
+                COLL_INFO_MONTHLY.collected_amt,
+                COLL_INFO_MONTHLY.collected_date,
+                COLL_INFO_MONTHLY.by_bill,
+                COLL_INFO_MONTHLY.by_dealer,
+                AC_PROVE.monthly,
+                COLL_INFO_MONTHLY.will_pay_amt,
+                COLL_INFO_MONTHLY.will_pay_inst,
+                AC_PROVE.first_due,
+                COLL_INFO_MONTHLY.total_paid,
+                AC_PROVE.PERIOD as term,
+                COLL_INFO_MONTHLY.account_status,
+                COLL_INFO_MONTHLY.stage_no,
+                COLL_INFO_MONTHLY.safety_level,
+                COLL_INFO_MONTHLY.no_of_overdue,
+                COLL_INFO_MONTHLY.col_r_code,
+                COLL_INFO_MONTHLY.no_of_sms,
+                COLL_INFO_MONTHLY.no_of_contact,
+                COLL_INFO_MONTHLY.no_of_appoint,
+                COLL_INFO_MONTHLY.flag,
+                status_call.flagname,
+                x_cust_mapping.cust_no,
+                COLL_INFO_MONTHLY.perc_pay, 
+                COLL_INFO_MONTHLY.stapay,
+                COLL_INFO_MONTHLY.hp_hold,
+                COLL_INFO_MONTHLY.nego_id,
+                COLL_INFO_MONTHLY.stapay1,
+                COLL_INFO_MONTHLY.unp_mrr,
+                COLL_INFO_MONTHLY.unp_100,
+                COLL_INFO_MONTHLY.unp_200,
+                x_cust_mapping_ext.bussiness_code,
+                x_cust_mapping_ext.dl_code,
+                BTW.GET_DEALER_NAME(x_cust_mapping_ext.dl_code) as dl_name,
+                COLL_INFO_MONTHLY.ROLLBACK_CALL,
+                X_DEALER_P.DL_BRANCH,
+                X_CUST_MAPPING_EXT.APPLICATION_NUM,
+                X_PRODUCT_DETAIL.BRAND_CODE,
+                X_BRAND_P.BRAND_NAME,
+                X_PRODUCT_DETAIL.MODELCODE,
+                X_MODEL_P.MODEL ||'/'|| X_MODEL_P.DESCRIPTION||'/'|| X_MODEL_P.MODEL_GROUP as MODEL,
+                X_MODEL_P.CC,
+                X_PRODUCT_DETAIL.COLOR,
+                X_PRODUCT_DETAIL.ENGINE_NUMBER||X_PRODUCT_DETAIL.ENGINE_NO_RUNNING AS ENGINE_NUMBER,
+                X_PRODUCT_DETAIL.CHASSIS_NUMBER||X_PRODUCT_DETAIL.CHASSIS_NO_RUNNING AS CHASSIS_NUMBER,
+                AC_PROVE.REG_NO,
+                AC_PROVE.REG_CITY, 
+                BTW.GET_PROVINCE(AC_PROVE.REG_CITY) AS REG_CITY_NAME 
+                FROM    AC_PROVE,
+                x_cust_mapping_ext,
+                x_cust_mapping,
+                type_p,
+                CUST_INFO,--
+                title_p,
+                X_PRODUCT_DETAIL,
+                X_BRAND_P,
+                X_MODEL_P,
+                X_DEALER_P,
+                BRANCH_P,
+                coll_info_monthly_view COLL_INFO_MONTHLY,
+                status_call
+                WHERE   AC_PROVE.HP_NO = x_cust_mapping_ext.CONTRACT_NO
+                AND    x_cust_mapping_ext.LOAN_RESULT='Y'
+                AND    AC_PROVE.AC_DATE IS NOT NULL
+                AND AC_PROVE.CANCELL = 'F'
+                AND  x_cust_mapping_ext.APPLICATION_NUM = x_cust_mapping.APPLICATION_NUM
+                AND x_cust_mapping.CUST_STATUS  = type_p.TYPE_CODE
+                AND  x_cust_mapping.CUST_NO = CUST_INFO.CUST_NO
+                AND CUST_INFO.FNAME=title_p.TITLE_ID
+                AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_PRODUCT_DETAIL.APPLICATION_NUM
+                AND  X_PRODUCT_DETAIL.PRODUCT_CODE  = X_MODEL_P.PRO_CODE
+                AND  X_PRODUCT_DETAIL.BRAND_CODE  =  X_MODEL_P.BRAND_CODE
+                AND  X_PRODUCT_DETAIL.MODELCODE =  X_MODEL_P.MODEL_CODE
+                AND  X_PRODUCT_DETAIL.BRAND_CODE = X_BRAND_P.BRAND_CODE
+                AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
+                AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
+                AND( AC_PROVE.HP_NO = COLL_INFO_MONTHLY.HP_NO(+)
+                AND COLL_INFO_MONTHLY.flag = status_call.flag(+))
+                AND AC_PROVE.HP_NO = :hp_no
+                ORDER BY TO_CHAR (TO_DATE(AC_PROVE.FIRST_DUE,'DD/MM/YYYY'), 'DD') ASC, AC_PROVE.HP_NO ASC
         `, {
             hp_no: hp_no
         }, {
@@ -4016,6 +4343,7 @@ async function getsitevisitimagebyindex(req, res, next) {
 // module.exports.getcontractlist = getcontractlist
 module.exports.getnegotiationlist = getnegotiationlist
 module.exports.getnegotiationbyid = getnegotiationbyid
+module.exports.getnegotiationhistorybyid = getnegotiationhistorybyid
 module.exports.gethistorypaymentlist = gethistorypaymentlist
 module.exports.getaddresscustlist = getaddresscustlist
 module.exports.getaddressncblist = getaddressncblist
@@ -4030,6 +4358,7 @@ module.exports.getphonenolistcust = getphonenolistcust
 module.exports.getlalon = getlalon
 module.exports.getaddressinfo = getaddressinfo
 module.exports.getmotocyclenego = getmotocyclenego
+module.exports.getmotocyclenegohistory = getmotocyclenegohistory
 module.exports.genqrcodenego = genqrcodenego
 module.exports.updatenegolalon = updatenegolalon
 module.exports.createaddressInfo = createaddressInfo

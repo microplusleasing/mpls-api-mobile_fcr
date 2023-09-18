@@ -68,6 +68,8 @@ app.post('/loginuser', loginUserservice.loginUser) // === avalible ===
 
 app.post('/getcurrentUserFormToken', loginUserservice.getcurrentUserFormToken) // === avalible (Token form oracle support) === 
 
+app.post('/getsignjwtfromouter', loginUserservice.getsignjwtfromouter) // === avalible (Token form jwt angular support) === 
+
 // app.get('/getquotationlist', auth, quotationservice.getquotationlist)
 
 app.post('/createquotation', auth, quotationservice.createquotation)
@@ -298,7 +300,11 @@ app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
 
+app.get('/getnegotiationhistorybyid', auth, negoService.getnegotiationhistorybyid)
+
 app.get('/getmotocyclenego', auth, negoService.getmotocyclenego)
+
+app.get('/getmotocyclenegohistory', auth, negoService.getmotocyclenegohistory)
 
 app.get('/getholdermaster', auth, negoService.getholdermaster)
 
