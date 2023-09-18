@@ -592,6 +592,43 @@ paths:
           description: "successful get data"
         400:
           description: "error"
+  
+  /getagentsitevisit:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get data from collection (agent)
+      description: load data from "Database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  example: 1
+                name:
+                  type: string
+                  example: ""
+                surname:
+                  type: string
+                  example: ""
+                hp_no: 
+                  type: string
+                  example: ''
+                branch:
+                  type: string
+                  example: '30'
+                staffid:
+                  type: string
+                  example: "654004"
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
 
   /getnegotiationlist:
     get:
@@ -917,6 +954,20 @@ paths:
       security:
         - bearerAuth: []
       summary: "Get list of Holer name and id"
+      description: ""
+      responses:
+        200:
+          description: "successfu"
+        400:
+          description: "return error"
+
+  /getstaffsitevisitparameter:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get list of staff site visit name and id"
       description: ""
       responses:
         200:

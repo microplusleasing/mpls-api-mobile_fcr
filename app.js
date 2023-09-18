@@ -296,6 +296,8 @@ app.post('/getagentgroupdpd', auth, negoService.getagentgroupdpd)
 
 app.post('/getagentgroupstage', auth, negoService.getagentgroupstage)
 
+app.post('/getagentsitevisit', auth, negoService.getagentsitevisit)
+
 app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
@@ -307,6 +309,8 @@ app.get('/getmotocyclenego', auth, negoService.getmotocyclenego)
 app.get('/getmotocyclenegohistory', auth, negoService.getmotocyclenegohistory)
 
 app.get('/getholdermaster', auth, negoService.getholdermaster)
+
+app.get('/getstaffsitevisitparameter', auth, negoService.getstaffsitevisitparameter)
 
 app.get('/getagentholdermaster', auth, negoService.getagentholdermaster)
 
@@ -426,12 +430,12 @@ app.post('/insertnegotocalltrack', auth, callMobileService.insertnegotocalltrack
 // process.env.PORT
 // process.env.API_PORT
 
-app.listen(process.env.API_PORT, () => {
-  // console.log(ip.address());
-  console.log(`UP & running on port ${process.env.API_PORT}`)
-})
-
-// app.listen(process.env.PORT, () => {
+// app.listen(process.env.API_PORT, () => {
 //   // console.log(ip.address());
-//   console.log(`UP & running on port ${process.env.PORT}`)
+//   console.log(`UP & running on port ${process.env.API_PORT}`)
 // })
+
+app.listen(process.env.PORT, () => {
+  // console.log(ip.address());
+  console.log(`UP & running on port ${process.env.PORT}`)
+})

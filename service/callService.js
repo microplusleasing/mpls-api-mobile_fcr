@@ -3,6 +3,8 @@ const config = require('./connectdb')
 const moment = require('moment');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken')
+var multiparty = require('multiparty');
+const fs = require('fs');
 
 async function callMobileDial(req, res, next) {
 
@@ -399,15 +401,42 @@ async function insertnegotocalltrack(req, res, next) {
     let connection;
     try {
 
-        let { hp_no, cust_id, staff_id, neg_r_code, appoint_date, message1, message2, recall, dunning_letter, assign_fcr } = req.body
-        let appoint_date_dtype;
-        if (appoint_date) {
-            appoint_date_dtype = moment(appoint_date, 'DD/MM/YYYY').format('LL')
-        }
+        // let { hp_no, cust_id, staff_id, neg_r_code, appoint_date, message1, message2, recall, dunning_letter, assign_fcr } = req.body
+        // let appoint_date_dtype;
+        // if (appoint_date) {
+        //     appoint_date_dtype = moment(appoint_date, 'DD/MM/YYYY').format('LL')
+        // }
+
+
         const branch_code = 10
         const token = req.user
         const userid = token.ID // *** no 10 incluse ***
         const user_name = token.user_id // *** 10 incluse ***
+
+
+        let fileData
+        let formData
+        // const form = formidable({ multiples: true })
+        const form = new multiparty.Form()
+        await new Promise(function (resolve, reject) {
+            form.parse(req, (err, fields, files) => {
+                if (err) {
+                    reject(err)
+                    return
+                }
+                formData = fields
+                fileData = files
+                resolve()
+            })
+            return
+        })
+
+        const reqData = JSON.parse(formData.item)
+        let appoint_date_dtype;
+        if (reqData.appoint_date) {
+            appoint_date_dtype = moment(reqData.appoint_date, 'DD/MM/YYYY').format('LL')
+        }
+
         connection = await oracledb.getConnection(config.database)
         // *** check call_track_info record is waiting ****
         const result_check_wait = await connection.execute(`
@@ -466,7 +495,7 @@ async function insertnegotocalltrack(req, res, next) {
                     )
                     WHERE ROWNUM = 1 
                 `, {
-                    HP_NO: hp_no,
+                    HP_NO: reqData.hp_no,
                     USER_NAME: user_name,
                     CON_R_CODE: 'CON'
                 }, {
@@ -540,6 +569,103 @@ async function insertnegotocalltrack(req, res, next) {
                                     })
                                 }
                             }
+
+                            // image upload for type neg_r_code == 'M03'
+                            // for neg_r_code = 'M03'
+                            const imagesArray = fileData.images ? fileData.images : []
+                            const coverImageArray = fileData.coverimages ? fileData.coverimages : []
+
+                            // get uuid from call_keyapp_id
+                            const uuid = call_keyapp_id
+
+                            imagetobuffer = (file) => {
+                                return fs.readFileSync(file.path);
+                            }
+
+                            let imageBindingData = []
+
+                            if (imagesArray) {
+                                if ((imagesArray.length !== 0) && (imagesArray.length == coverImageArray.length)) {
+                                    // ==== test build cover image ====
+
+                                    for (let i = 0; i < imagesArray.length; i++) {
+                                        console.log(`cehck data in loop : ${JSON.stringify(imagesArray[i])}`)
+                                        imageBindingData.push(
+                                            {
+                                                call_keyapp_id: uuid,
+                                                image_index: i,
+                                                image_type: imagesArray[i].headers['content-type'],
+                                                image_file: imagetobuffer(imagesArray[i]),
+                                                image_cover: imagetobuffer(coverImageArray[i])
+                                            })
+                                    }
+                                }
+                            }
+
+                            // ==== insert image attach (12/09/2023) ====
+                            try {
+                                if (imageBindingData.length !== 0) {
+
+                                    const sql = `INSERT INTO BTW.SITE_VISIT_IMAGE 
+                                                (
+                                                    CALL_KEYAPP_ID, 
+                                                    IMAGE_INDEX, 
+                                                    IMAGE_TYPE,
+                                                    IMAGE_FILE, 
+                                                    IMAGE_COVER, 
+                                                    ACTIVE_STATUS
+                                                )
+                                                    VALUES 
+                                                (
+                                                    :call_keyapp_id, 
+                                                    :image_index, 
+                                                    :image_type, 
+                                                    :image_file, 
+                                                    :image_cover, 
+                                                    'Y' 
+                                                )`
+
+                                    const binds = imageBindingData;
+
+                                    const options = {
+                                        bindDefs: {
+                                            call_keyapp_id: { type: oracledb.STRING, maxSize: 50 },
+                                            image_index: { type: oracledb.NUMBER },
+                                            image_type: { type: oracledb.STRING, maxSize: 200 },
+                                            image_file: { type: oracledb.BLOB, maxSize: 5000000 },
+                                            image_cover: { type: oracledb.BLOB, maxSize: 5000000 },
+                                        }
+                                    }
+
+                                    const resultInsertImageAttachSitevisit = await connection.executeMany(sql, binds, { options, autoCommit: true })
+                                    console.log(`success insert image attach Site visit : ${resultInsertImageAttachSitevisit.rowsAffected}`)
+                                }
+                            } catch (e) {
+                                console.log(`error image attach : ${e}`)
+                                try {
+                                    if (connection) {
+                                        console.log(`trigger rollback (create image attach)`)
+                                        await connection.rollback()
+                                        console.log(`rollback success (create image attach)`)
+                                        return res.status(200).send({
+                                            status: 400,
+                                            message: `อัพโหลดไฟล์รูปแนบไม่สำเร็จ (image attach): ${e.message ? e.message : `No message`}`
+                                        })
+                                    } else {
+                                        console.log(`error image attach (no - connection) (create image attach)`)
+                                        return res.status(200).send({
+                                            status: 400,
+                                            message: `อัพโหลดไฟล์รูปแนบไม่สำเร็จ (image attach): ${e.message ? e.message : `No message`}`
+                                        })
+                                    }
+
+                                } catch (e) {
+                                    return res.status(200).send({
+                                        status: 400,
+                                        message: `อัพโหลดไฟล์รูปแนบไม่สำเร็จ (image attach) , (rollback fail): ${e.message ? e.message : `No message`}`
+                                    })
+                                }
+                            }
                         }
 
                         // *** create nego info to call track info ***
@@ -580,18 +706,18 @@ async function insertnegotocalltrack(req, res, next) {
                                     `
 
                             bindparamnego.branch_code = branch_code
-                            bindparamnego.hp_no = hp_no,
-                                bindparamnego.neg_r_code = neg_r_code,
+                            bindparamnego.hp_no = reqData.hp_no,
+                                bindparamnego.neg_r_code = reqData.neg_r_code,
                                 bindparamnego.rec_date = (new Date(rec_day)) ?? null
-                            bindparamnego.message1 = message1
-                            bindparamnego.message2 = message2
+                            bindparamnego.message1 = reqData.message1
+                            bindparamnego.message2 = reqData.message2
                             bindparamnego.staff_id = userid
                             bindparamnego.user_name = user_name
-                            bindparamnego.cust_id = cust_id
+                            bindparamnego.cust_id = reqData.cust_id
                             // *** add more 3 optional field (31/07/2023) ***
-                            bindparamnego.status_recall = recall
-                            bindparamnego.req_dunning_letter = dunning_letter
-                            bindparamnego.req_assign_fcr = assign_fcr
+                            bindparamnego.status_recall = reqData.recall
+                            bindparamnego.req_dunning_letter = reqData.dunning_letter
+                            bindparamnego.req_assign_fcr = reqData.assign_fcr
                             bindparamnego.call_keyapp_id = call_keyapp_id
 
                             if (appoint_date_dtype) {

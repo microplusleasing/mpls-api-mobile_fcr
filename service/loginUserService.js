@@ -187,7 +187,7 @@ async function loginUser(req, res, next) {
                 }
                 )
 
-                console.log(`token : ${token}`)
+                // console.log(`token : ${token}`)
 
                 const dialer_token = jwt.sign(
                     {

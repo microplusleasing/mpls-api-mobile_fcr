@@ -3025,7 +3025,6 @@ async function insertnegolist(req, res, next) {
             return fs.readFileSync(file.path);
         }
 
-        debugger
         let imageBindingData = []
 
         if (imagesArray) {
@@ -4132,6 +4131,275 @@ async function getagentholdermaster(req, res, next) {
     }
 }
 
+async function getagentsitevisit(req, res, next) {
+
+    let connection;
+    try {
+
+        const { pageno, name, surname, hp_no, branch, staffid, sort_type, sort_field } = req.body
+
+
+        // if (!(pageno && due && holder)) {
+        if (!(pageno)) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters`,
+                data: []
+            })
+        }
+        const indexstart = (pageno - 1) * 10 + 1
+        const indexend = (pageno * 10)
+        let rowCount;
+
+        let bindparams = {};
+        let queryname = ''
+        let querysurname = ''
+        let queryhpno = ''
+        let querybranch = ''
+        let querystaffid = ''
+        let querysort = ''
+
+
+
+        if (name) {
+            queryname = ` AND CI.NAME = :name `
+            bindparams.name = name
+        }
+
+        if (surname) {
+            querysurname = ` AND CI.SNAME = :surname `
+            bindparams.surname = surname
+        }
+
+        if (hp_no) {
+            queryhpno = ` AND AP.HP_NO = :hp_no `
+            bindparams.hp_no = hp_no
+        }
+
+        if (branch) {
+
+            if (branch !== 0 && branch !== '0') {
+                querybranch = ` AND PV.PROV_CODE = :branch `
+                bindparams.branch = branch
+            }
+        }
+
+        if (staffid) {
+            querystaffid = ` AND NI.STAFF_ID = :staffid `
+            bindparams.staffid = staffid
+        }
+
+        if (sort_type && sort_field) {
+            querysort = ` ORDER BY ${sort_field} ${sort_type} `
+        } else {
+            querysort = ` `
+        }
+
+        connection = await oracledb.getConnection(config.database)
+        const sqlbase =
+            `SELECT ROWNUM AS LINE_NUMBER , T.* 
+            FROM (
+                    SELECT DISTINCT 
+                            HP_NO,TITLE_NAME,
+                            NAME,
+                            SNAME,
+                            BILL,
+                            BILL_SUB,
+                            BRANCH_NAME,
+                            BRANCH_CODE,
+                            STAFF_ID,
+                            STAFF_NAME
+                             
+                    FROM( 
+                            SELECT
+                            AP.HP_NO,
+                            TP.TITLE_NAME,
+                            CI.NAME,
+                            CI.SNAME,
+                            AP.BILL,
+                            AP.BILL_SUB,
+                            BTW.GET_BRANCH_SL_BY_HP_NO(AP.HP_NO) AS BRANCH_NAME,
+                            PV.PROV_CODE AS BRANCH_CODE
+                            ,NI.STAFF_ID
+                            ,BTW.GET_EMP_NAME( NI.STAFF_ID)  AS STAFF_NAME
+                            FROM 
+                            BTW.NEGO_INFO NI,
+                            BTW.CALL_TRACK_INFO CTI,
+                            BTW.AC_PROVE AP,
+                            BTW.CUST_INFO CI,
+                            BTW.TITLE_P TP,
+                            BTW.PROVINCE_P PV,
+                            BTW.EMP EM
+                            WHERE AP.HP_NO = CTI.HP_NO
+                            AND AP.CUST_NO_0 = CI.CUST_NO
+                            AND CI.FNAME = TP.TITLE_ID
+                            AND  CTI.HP_NO = NI.HP_NO 
+                            AND (TO_CHAR(CTI.REC_DAY,'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(NI.REC_DATE(+),'dd/mm/yyyy hh24:mi:ss')) 
+                            AND NI.STAFF_ID = EM.EMP_ID(+)
+                            AND NI.NEG_R_CODE = 'M03'
+                            ${queryname}${querysurname}${queryhpno}${querybranch}${querystaffid} 
+                            AND BTW.GET_BRANCH_SL_BY_HP_NO(AP.HP_NO) = PV.PROV_NAME
+                            ORDER BY CTI.REC_DAY DESC
+                      ) 
+                      ${querysort}   
+                 ) T `
+
+        const sqlcount = `select count(LINE_NUMBER) as rowCount from (${sqlbase})`
+
+        // console.log(`sqlstr: ${sqlcount}`)
+
+        const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
+
+        if (resultCount.rows.length == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: 'NO RECORD FOUND',
+                data: []
+            })
+        } else {
+
+            try {
+                rowCount = resultCount.rows[0].ROWCOUNT
+                bindparams.indexstart = indexstart
+                bindparams.indexend = indexend
+                const finishsql = `SELECT * FROM(${sqlbase}) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `
+
+                const result = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
+
+                if (result.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 200,
+                        message: 'No negotaiation agent record',
+                        data: []
+                    })
+                } else {
+
+                    let resData = result.rows
+
+                    const lowerResData = tolowerService.arrayobjtolower(resData)
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    returnData.status = 200
+                    returnData.message = 'success'
+                    returnData.CurrentPage = Number(pageno)
+                    returnData.pageSize = 10
+                    returnData.rowCount = rowCount
+                    returnData.pageCount = Math.ceil(rowCount / 10);
+
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+
+                    // res.status(200).json(results.rows[0]);
+                    res.status(200).json(returnDatalowerCase);
+                }
+            } catch (e) {
+                console.error(e)
+                return res.status(200).send({
+                    status: 400,
+                    mesasage: `error during get list data of colletion : ${e.message}`,
+                    data: []
+                })
+            }
+
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function getstaffsitevisitparameter(req, res, next) {
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const staff_list = await connection.execute(`
+        SELECT DISTINCT STAFF_ID,STAFF_NAME
+         
+        FROM(
+                SELECT 
+                NI.STAFF_ID,
+                BTW.GET_EMP_NAME( NI.STAFF_ID)  AS STAFF_NAME
+                FROM 
+                BTW.NEGO_INFO NI,
+                BTW.CALL_TRACK_INFO CTI,
+                BTW.AC_PROVE AP,
+                BTW.CUST_INFO CI,
+                BTW.TITLE_P TP,
+                BTW.PROVINCE_P PV,
+                BTW.EMP EM
+                WHERE AP.HP_NO = CTI.HP_NO
+                 AND AP.CUST_NO_0 = CI.CUST_NO
+                 AND CI.FNAME = TP.TITLE_ID
+                and  CTI.HP_NO = NI.HP_NO 
+                AND (TO_CHAR(CTI.REC_DAY,'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(NI.REC_DATE(+),'dd/mm/yyyy hh24:mi:ss')) 
+                AND NI.STAFF_ID = EM.EMP_ID(+)
+                AND NI.NEG_R_CODE = 'M03'
+                AND BTW.GET_BRANCH_SL_BY_HP_NO(AP.HP_NO) = PV.PROV_NAME
+          )
+          ORDER BY STAFF_ID ASC `
+            , {
+
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (staff_list.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No staff data',
+                data: []
+            })
+        } else {
+            const resData = staff_list.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 
 async function gentokene01(req, res, next) {
 
@@ -4368,3 +4636,5 @@ module.exports.getagentholdermaster = getagentholdermaster
 module.exports.gentokene01 = gentokene01
 module.exports.getsitevisitcoverimagelist = getsitevisitcoverimagelist
 module.exports.getsitevisitimagebyindex = getsitevisitimagebyindex
+module.exports.getagentsitevisit = getagentsitevisit
+module.exports.getstaffsitevisitparameter = getstaffsitevisitparameter
