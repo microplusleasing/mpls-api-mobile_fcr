@@ -592,6 +592,43 @@ paths:
           description: "successful get data"
         400:
           description: "error"
+  
+  /getagentsitevisit:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get data from collection (agent)
+      description: load data from "Database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  example: 1
+                name:
+                  type: string
+                  example: ""
+                surname:
+                  type: string
+                  example: ""
+                hp_no: 
+                  type: string
+                  example: ''
+                branch:
+                  type: string
+                  example: '30'
+                staffid:
+                  type: string
+                  example: "654004"
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
 
   /getnegotiationlist:
     get:
@@ -707,26 +744,27 @@ paths:
           description: "return error"
 
   /getfollowuppaymentlist:
-    get:
+    post:
       tags:
         - "collection"
       security:
         - bearerAuth: []
       summary: "Get followup history record"
       description: ""
-      parameters:
-        - in: "query"
-          name: "pageno"
-          description: "This is pageno"
-          schema:
-            type: number
-            example: 1
-        - in: "query"
-          name: "applicationid"
-          description: "This is application id"
-          schema:
-            type: string
-            example: "110202200000005"
+      requestBody:
+        description: item of list to create
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pageno:
+                  type: number
+                  example: 1
+                applicationid:
+                  type: string
+                  example: '110202200000006'
       responses:
         200:
           description: "successful operation and not found"
@@ -923,6 +961,20 @@ paths:
         400:
           description: "return error"
 
+  /getstaffsitevisitparameter:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get list of staff site visit name and id"
+      description: ""
+      responses:
+        200:
+          description: "successfu"
+        400:
+          description: "return error"
+
   /getagentholdermaster:
     get:
       tags:
@@ -943,7 +995,7 @@ paths:
         - "collection"
       security:
         - bearerAuth: []
-      summary: "Get list of Holer name and id"
+      summary: "Gen token for oracle form"
       description: ""
       requestBody:
         content:
@@ -953,6 +1005,55 @@ paths:
                 contractno:
                   type: string
                   example: "GGGGGGG" 
+            
+      responses:
+        200:
+          description: "successfu"
+        400:
+          description: "return error"
+
+  /getsitevisitcoverimagelist:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get cover image of site visit collection"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                keyid:
+                  type: string
+                  example: "92c300e5f1a540a7a7b7ae1252de0387" # for id 110202200000006
+            
+      responses:
+        200:
+          description: "successfu"
+        400:
+          description: "return error"
+  
+  /getsitevisitimagebyindex:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get cover image of site visit collection"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                keyid:
+                  type: string
+                  example: "92c300e5f1a540a7a7b7ae1252de0387" # for id 110202200000006
+                indeximage: 
+                  type: number
+                  example: 0
             
       responses:
         200:
