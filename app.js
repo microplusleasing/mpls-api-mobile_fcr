@@ -298,6 +298,8 @@ app.post('/getagentgroupstage', auth, negoService.getagentgroupstage)
 
 app.post('/getagentsitevisit', auth, negoService.getagentsitevisit)
 
+app.post('/getagentassigntofcr', auth, negoService.getagentassigntofcr)
+
 app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
@@ -311,6 +313,8 @@ app.get('/getmotocyclenegohistory', auth, negoService.getmotocyclenegohistory)
 app.get('/getholdermaster', auth, negoService.getholdermaster)
 
 app.get('/getstaffsitevisitparameter', auth, negoService.getstaffsitevisitparameter)
+
+app.get('/getagentassigntofcragentparameter', auth, negoService.getagentassigntofcragentparameter)
 
 app.get('/getagentholdermaster', auth, negoService.getagentholdermaster)
 

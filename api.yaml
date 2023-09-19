@@ -630,6 +630,40 @@ paths:
         400:
           description: "error"
 
+  /getagentassigntofcr:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get data from collection (agent)
+      description: load data from "Database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  example: 1
+                hp_no: 
+                  type: string
+                  example: ''
+                branch:
+                  type: string
+                  example: ''
+                rec_date:
+                  type: string
+                  example: ""
+                holder:
+                  type: string
+                  example: ""
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
   /getnegotiationlist:
     get:
       tags:
@@ -968,6 +1002,20 @@ paths:
       security:
         - bearerAuth: []
       summary: "Get list of staff site visit name and id"
+      description: ""
+      responses:
+        200:
+          description: "successfu"
+        400:
+          description: "return error"
+
+  /getagentassigntofcragentparameter:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get list of agent for assing fcr name and id"
       description: ""
       responses:
         200:

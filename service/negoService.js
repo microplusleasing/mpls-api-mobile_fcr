@@ -4219,9 +4219,9 @@ async function getagentsitevisit(req, res, next) {
                             AP.BILL,
                             AP.BILL_SUB,
                             BTW.GET_BRANCH_SL_BY_HP_NO(AP.HP_NO) AS BRANCH_NAME,
-                            PV.PROV_CODE AS BRANCH_CODE
-                            ,NI.STAFF_ID
-                            ,BTW.GET_EMP_NAME( NI.STAFF_ID)  AS STAFF_NAME
+                            PV.PROV_CODE AS BRANCH_CODE, 
+                            NI.STAFF_ID, 
+                            BTW.GET_EMP_NAME( NI.STAFF_ID)  AS STAFF_NAME
                             FROM 
                             BTW.NEGO_INFO NI,
                             BTW.CALL_TRACK_INFO CTI,
@@ -4243,6 +4243,256 @@ async function getagentsitevisit(req, res, next) {
                       ) 
                       ${querysort}   
                  ) T `
+
+        const sqlcount = `select count(LINE_NUMBER) as rowCount from (${sqlbase})`
+
+        // console.log(`sqlstr: ${sqlcount}`)
+
+        const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
+
+        if (resultCount.rows.length == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: 'NO RECORD FOUND',
+                data: []
+            })
+        } else {
+
+            try {
+                rowCount = resultCount.rows[0].ROWCOUNT
+                bindparams.indexstart = indexstart
+                bindparams.indexend = indexend
+                const finishsql = `SELECT * FROM(${sqlbase}) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `
+
+                const result = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
+
+                if (result.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 200,
+                        message: 'No negotaiation agent record',
+                        data: []
+                    })
+                } else {
+
+                    let resData = result.rows
+
+                    const lowerResData = tolowerService.arrayobjtolower(resData)
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    returnData.status = 200
+                    returnData.message = 'success'
+                    returnData.CurrentPage = Number(pageno)
+                    returnData.pageSize = 10
+                    returnData.rowCount = rowCount
+                    returnData.pageCount = Math.ceil(rowCount / 10);
+
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+
+                    // res.status(200).json(results.rows[0]);
+                    res.status(200).json(returnDatalowerCase);
+                }
+            } catch (e) {
+                console.error(e)
+                return res.status(200).send({
+                    status: 400,
+                    mesasage: `error during get list data of colletion : ${e.message}`,
+                    data: []
+                })
+            }
+
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function getagentassigntofcr(req, res, next) {
+
+    let connection;
+    try {
+
+        const { pageno,  hp_no, branch, rec_date, agent, sort_type, sort_field } = req.body
+
+
+        // if (!(pageno && due && holder)) {
+        if (!(pageno)) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters`,
+                data: []
+            })
+        }
+        const indexstart = (pageno - 1) * 10 + 1
+        const indexend = (pageno * 10)
+        let rowCount;
+
+        let bindparams = {};
+        let queryhpno = ''
+        let querybranch = ''
+        let queryrecdate = ''
+        let queryagent = ''
+        let querysort = ''
+
+
+
+
+        if (hp_no) {
+            queryhpno = ` AND AP.HP_NO = :hp_no `
+            bindparams.hp_no = hp_no
+        }
+
+        if (branch) {
+
+            if (branch !== 0 && branch !== '0') {
+                querybranch = ` AND PV.PROV_CODE = :branch `
+                bindparams.branch = branch
+            }
+        }
+
+        if (rec_date) {
+            /* ... do something ...*/
+        }
+
+        if (agent) {
+            queryagent = ` AND NI.STAFF_ID = :agent `
+            bindparams.agent = agent
+        }
+
+        if (sort_type && sort_field) {
+            querysort = ` ORDER BY ${sort_field} ${sort_type} `
+        } else {
+            querysort = ` `
+        }
+
+        connection = await oracledb.getConnection(config.database)
+        const sqlbase =
+            `
+            SELECT
+                ROWNUM AS LINE_NUMBER,
+                BF.*
+            FROM
+                (
+                    SELECT
+                        *
+                    FROM
+                        (
+                            SELECT
+                                T.*
+                            FROM
+                                (
+                                    SELECT
+                                        HP_NO,
+                                        BRANCH_NAME,
+                                        BRANCH_CODE,
+                                        AGENT_ID,
+                                        AGENT_NAME,
+                                        REC_DAY,
+                                        HP_HOLD,
+                                        HP_HOLD_NAME,
+                                        STAPAY1,
+                                        CUST_TITLE_NAME,
+                                        CUST_NAME,
+                                        CUST_SURNAME,
+                                        BILL,
+                                        BILL_SUB,
+                                        ROW_NUMBER() OVER (
+                                            PARTITION BY HP_NO
+                                            ORDER BY
+                                                REC_DAY DESC
+                                        ) AS rn
+                                    FROM
+                                        (
+                                            SELECT
+                                                ROWNUM AS LINE_NUMBER,
+                                                T.*
+                                            FROM
+                                                (
+                                                    SELECT
+                                                        DISTINCT HP_NO,
+                                                        BRANCH_NAME,
+                                                        BRANCH_CODE,
+                                                        AGENT_ID,
+                                                        AGENT_NAME,
+                                                        REC_DAY,
+                                                        HP_HOLD,
+                                                        HP_HOLD_NAME,
+                                                        STAPAY1,
+                                                        CUST_TITLE_NAME,
+                                                        CUST_NAME,
+                                                        CUST_SURNAME,
+                                                        BILL,
+                                                        BILL_SUB
+                                                    FROM
+            (
+                                                            SELECT
+                                                                CM.HP_NO,
+                                                                BTW.GET_BRANCH_SL_BY_HP_NO(AP.HP_NO) AS BRANCH_NAME,
+                                                                PV.PROV_CODE AS BRANCH_CODE, 
+                                                                NI.STAFF_ID AS AGENT_ID, 
+                                                                BTW.GET_EMP_NAME( NI.STAFF_ID)  AS AGENT_NAME ,
+                                                                TP.TITLE_NAME AS CUST_TITLE_NAME,
+                                                                CI.NAME AS CUST_NAME,
+                                                                CI.SNAME AS CUST_SURNAME,
+                                                                CTI.REC_DAY,
+                                                                CM.STAPAY1,
+                                                                CM.HP_HOLD,
+                                                                BTW.GET_EMP_NAME(CM.HP_HOLD) AS HP_HOLD_NAME,
+                                                                AP.BILL,
+                                                                AP.BILL_SUB
+                                                            FROM
+                                                                BTW.COLL_INFO_MONTHLY CM,
+                                                                BTW.NEGO_INFO NI,
+                                                                BTW.CALL_TRACK_INFO CTI,
+                                                                BTW.AC_PROVE AP,
+                                                                BTW.CUST_INFO CI,
+                                                                BTW.TITLE_P TP,
+                                                                BTW.PROVINCE_P PV
+                                                            WHERE
+                                                                CM.HP_NO = CTI.HP_NO
+                                                                AND AP.HP_NO = CTI.HP_NO
+                                                                AND AP.CUST_NO_0 = CI.CUST_NO
+                                                                AND CI.FNAME = TP.TITLE_ID
+                                                                AND CTI.HP_NO = NI.HP_NO
+                                                                AND (
+                                                                    TO_CHAR(CTI.REC_DAY, 'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(NI.REC_DATE(+), 'dd/mm/yyyy hh24:mi:ss')
+                                                                )
+                                                                AND CM.month_end = TO_CHAR (SYSDATE, 'MM')
+                                                                AND CM.year_end = TO_CHAR (SYSDATE, 'YYYY')
+                                                                AND NI.REQ_ASSIGN_FCR = 'Y'
+                                                                AND BTW.GET_BRANCH_SL_BY_HP_NO(AP.HP_NO) = PV.PROV_NAME 
+                                                                ${queryhpno}${querybranch}${queryrecdate}${queryagent} 
+                                                            ORDER BY
+                                                                CTI.REC_DAY DESC
+                                                        )   
+                                                ) T
+                                        )
+                                ) T
+                            WHERE
+                                rn = 1
+                                ${querysort} 
+                        )
+                ) BF
+            `
 
         const sqlcount = `select count(LINE_NUMBER) as rowCount from (${sqlbase})`
 
@@ -4371,6 +4621,64 @@ async function getstaffsitevisitparameter(req, res, next) {
             })
         } else {
             const resData = staff_list.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function getagentassigntofcragentparameter(req, res, next) {
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const agent_list = await connection.execute(`
+        SELECT 
+                EM.EMP_ID AS AGENT_ID,
+                BTW.GET_EMP_NAME( EM.EMP_ID)  AS AGENT_NAME
+                FROM 
+
+                BTW.EMP EM
+                WHERE EM.EMP_DEP = 'C6' 
+                ORDER BY EMP_ID ASC `
+            , {
+
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (agent_list.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No agent data',
+                data: []
+            })
+        } else {
+            const resData = agent_list.rows
             const lowerResData = tolowerService.arrayobjtolower(resData)
             return res.status(200).send({
                 status: 200,
@@ -4620,6 +4928,8 @@ module.exports.getviewcontractlist = getviewcontractlist
 module.exports.getagentcollinfomonthly = getagentcollinfomonthly
 module.exports.getagentgroupdpd = getagentgroupdpd
 module.exports.getagentgroupstage = getagentgroupstage
+module.exports.getagentsitevisit = getagentsitevisit
+module.exports.getagentassigntofcr = getagentassigntofcr
 module.exports.insertnegolist = insertnegolist
 module.exports.getphonenolist = getphonenolist
 module.exports.getphonenolistcust = getphonenolistcust
@@ -4636,5 +4946,5 @@ module.exports.getagentholdermaster = getagentholdermaster
 module.exports.gentokene01 = gentokene01
 module.exports.getsitevisitcoverimagelist = getsitevisitcoverimagelist
 module.exports.getsitevisitimagebyindex = getsitevisitimagebyindex
-module.exports.getagentsitevisit = getagentsitevisit
 module.exports.getstaffsitevisitparameter = getstaffsitevisitparameter
+module.exports.getagentassigntofcragentparameter = getagentassigntofcragentparameter
