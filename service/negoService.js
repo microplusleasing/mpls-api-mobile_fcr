@@ -572,7 +572,6 @@ async function getviewcontractlist(req, res, next) {
                                         AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                         AND coll_info_monthly_view.hp_no = cti.hp_no(+)
                                         AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null 
-                                        AND COLL_INFO_MONTHLY_VIEW.STAPAY1 is null 
                                         AND COLL_INFO_MONTHLY_VIEW.HP_NO =  COLL_INFO_DPD.HP_NO (+)  
                                         AND COLL_INFO_MONTHLY_VIEW.MONTH_END = COLL_INFO_DPD.MONTH_END (+)  
                                         AND COLL_INFO_MONTHLY_VIEW.YEAR_END = COLL_INFO_DPD.YEAR_END (+)  
@@ -2901,6 +2900,8 @@ async function getfollowuppaymentlist(req, res, next) {
                     ,CALL_TRACK_INFO.CON_R_CODE,CALL_TRACK_INFO.REC_DAY, CALL_TRACK_INFO.CALL_DATE,CALL_TRACK_INFO.REC_DATE, 
                     CALL_TRACK_INFO.USER_NAME,NEGO_INFO.NEG_R_CODE,CALL_TRACK_INFO.STAFF_ID, NEGO_INFO.APPOINT_DATE, NEGO_INFO.message1, 
                     NEGO_INFO.MESSAGE2, NEGO_INFO.PAY, EM.EMP_NAME, EM.EMP_LNAME, NEG_RESULT_P.NEG_R_DETAIL, NEGO_INFO.CALL_KEYAPP_ID, 
+                    CALL_TRACK_INFO.LATITUDE, 
+                    CALL_TRACK_INFO.LONGITUDE, 
                     (SELECT COUNT(CALL_KEYAPP_ID)
                     FROM BTW.SITE_VISIT_IMAGE
                     WHERE SITE_VISIT_IMAGE.CALL_KEYAPP_ID = NEGO_INFO.CALL_KEYAPP_ID) AS IMAGE_COUNT, 
@@ -3011,9 +3012,13 @@ async function insertnegolist(req, res, next) {
 
         const reqData = JSON.parse(formData.item)
 
-        console.log(`check length : ${fileData.images.length}`)
-        const imagesArray = fileData.images ? fileData.images : []
-        const coverImageArray = fileData.coverimages ? fileData.coverimages : []
+        let imagesArray = [];
+        let coverImageArray = [];
+        if (fileData && fileData.images) {
+            console.log(`check length : ${fileData.images.length}`)
+            imagesArray = fileData.images ? fileData.images : []
+            coverImageArray = fileData.coverimages ? fileData.coverimages : []
+        }
 
         // Generate a UUID
         const uuid = uuidv4();
@@ -3105,7 +3110,7 @@ async function insertnegolist(req, res, next) {
                 call_date: currentTime,
                 staff_id: reqData.staff_id,
                 con_r_code: reqData.con_r_code,
-                rec_date: reqData.currentTime,
+                rec_date: currentTime,
                 user_name: reqData.user_name,
                 rec_day: (new Date(currentDate)) ?? null,
                 latitude: reqData.latitude,
@@ -4331,7 +4336,7 @@ async function getagentassigntofcr(req, res, next) {
     let connection;
     try {
 
-        const { pageno,  hp_no, branch, rec_date, agent, sort_type, sort_field } = req.body
+        const { pageno, hp_no, branch, rec_date, agent, sort_type, sort_field } = req.body
 
 
         // if (!(pageno && due && holder)) {
@@ -4370,7 +4375,10 @@ async function getagentassigntofcr(req, res, next) {
         }
 
         if (rec_date) {
+            const rec_date_format = moment(new Date(rec_date)).format("DD/MM/YYYY")
             /* ... do something ...*/
+            queryrecdate = ` AND TRUNC(BTW.BUDDHIST_TO_CHRIS_F(to_date(CTI.REC_DAY, 'dd/mm/yyyy'))) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(to_date(:rec_date_format, 'dd/mm/yyyy'))) `
+            bindparams.rec_date_format = rec_date_format
         }
 
         if (agent) {
@@ -4650,6 +4658,62 @@ async function getstaffsitevisitparameter(req, res, next) {
     }
 }
 
+async function getagentparameter(req, res, next) {
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const agent_list = await connection.execute(`
+        SELECT 
+                EM.EMP_ID AS AGENT_ID,
+                BTW.GET_EMP_NAME( EM.EMP_ID)  AS AGENT_NAME
+                FROM 
+                BTW.EMP EM
+                ORDER BY EMP_ID ASC `
+            , {
+
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (agent_list.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No agent data',
+                data: []
+            })
+        } else {
+            const resData = agent_list.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 async function getagentassigntofcragentparameter(req, res, next) {
 
     let connection;
@@ -4661,7 +4725,6 @@ async function getagentassigntofcragentparameter(req, res, next) {
                 EM.EMP_ID AS AGENT_ID,
                 BTW.GET_EMP_NAME( EM.EMP_ID)  AS AGENT_NAME
                 FROM 
-
                 BTW.EMP EM
                 WHERE EM.EMP_DEP = 'C6' 
                 ORDER BY EMP_ID ASC `
@@ -4916,6 +4979,133 @@ async function getsitevisitimagebyindex(req, res, next) {
     }
 }
 
+async function updateagentassignfcr(req, res, next) {
+
+    let connection;
+    try {
+
+        /* ... get variable from body  ...*/
+        const { hp_no, agent_id } = req.body
+
+        /*... check variable ...*/
+        if (!hp_no || !agent_id) {
+            return res.status(400).send({
+                status: 500,
+                message: !hp_no ? `No hp_no parameter` : `No agent_id parameter`,
+                data: []
+            });
+        }
+
+        /* ... declear connection ...*/
+        connection = await oracledb.getConnection(config.database)
+        /*... (1st steps) check coll_info_monthly ...*/
+
+        const chkupdate = await connection.execute(`
+            SELECT HP_NO
+            FROM BTW.COLL_INFO_MONTHLY
+            WHERE HP_NO = :hp_no 
+            AND MONTH_END = TO_CHAR (SYSDATE, 'MM')
+            AND YEAR_END = TO_CHAR (SYSDATE, 'YYYY') 
+        `, {
+            hp_no: hp_no
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        /* ... (2nd steps) check result of record 
+        Must have 1 row only ...*/
+        const rowcount = chkupdate.rows.length
+        if (rowcount !== 1) {
+            if (rowcount == 0) {
+                return res.status(200).send({
+                    status: 500,
+                    message: `Not found record to assign HP No.`,
+                    data: []
+                })
+            } else {
+                return res.status(200).send({
+                    status: 500,
+                    message: `Can't Identify record`,
+                    data: []
+                })
+            }
+        }
+
+        /* .... (3rd) update coll_info_monthly ....*/
+        try {
+
+            const updateassign = await connection.execute(`
+                    UPDATE BTW.COLL_INFO_MONTHLY 
+                        SET HP_HOLD = :agent_id
+                    WHERE HP_NO = :hp_no
+                    AND MONTH_END = TO_CHAR (SYSDATE, 'MM')
+                    AND YEAR_END = TO_CHAR (SYSDATE, 'YYYY') 
+            `, {
+                agent_id: agent_id,
+                hp_no: hp_no
+            }, {
+                outFormat: oracledb.OBJECT
+            })
+
+            /*... (4) check update row (must be 1 ) ...*/
+            if (updateassign.rowsAffected !== 1) {
+                return res.status(200).send({
+                    status: 500,
+                    message: `assing agent ล้มเหลว ไม่พบผลลัพธ์`,
+                    data: []
+                })
+            }
+
+            /* ... (5) commit and return success ...*/
+
+            const commitall = await connection.commit();
+
+            try {
+                commitall
+            } catch (e) {
+                return res.send(200).send({
+                    status: 500,
+                    message: `Error (commit stage): ${e.message ? e.message : 'No message'}`,
+                    data: []
+                })
+            }
+
+            /*... finish ...*/
+            return res.status(200).send({
+                status: 200,
+                message: `assing agent for fcr success !!`,
+                data: []
+            })
+
+        } catch (e) {
+            console.error(e);
+            return res.status(200).send({
+                status: 500,
+                message: `Fail (update coll_info_monthly) : ${e.message ? e.message : 'No err msg'}`,
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 500,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 // module.exports.getcontractlist = getcontractlist
 module.exports.getnegotiationlist = getnegotiationlist
 module.exports.getnegotiationbyid = getnegotiationbyid
@@ -4947,4 +5137,7 @@ module.exports.gentokene01 = gentokene01
 module.exports.getsitevisitcoverimagelist = getsitevisitcoverimagelist
 module.exports.getsitevisitimagebyindex = getsitevisitimagebyindex
 module.exports.getstaffsitevisitparameter = getstaffsitevisitparameter
+module.exports.getagentparameter = getagentparameter
 module.exports.getagentassigntofcragentparameter = getagentassigntofcragentparameter
+module.exports.updateagentassignfcr = updateagentassignfcr
+
