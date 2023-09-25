@@ -2864,7 +2864,7 @@ async function getfollowuppaymentlist(req, res, next) {
         SELECT COUNT (CALL_TRACK_INFO.HP_NO) AS COUNT
         FROM NEGO_INFO, CALL_TRACK_INFO,NEG_RESULT_P,emp em
         WHERE ( (CALL_TRACK_INFO.hp_no = NEGO_INFO.hp_no(+)) 
-        and NEGO_INFO.staff_id = em.emp_id(+)
+        AND NEGO_INFO.staff_id = em.emp_id(+)
         AND (CALL_TRACK_INFO.cust_id = NEGO_INFO.cust_id(+)) 
         AND (CALL_TRACK_INFO.STAFF_ID = NEGO_INFO.STAFF_ID(+))
          AND (NEGO_INFO.NEG_R_CODE = NEG_RESULT_P.NEG_R_CODE(+)) 
@@ -4376,9 +4376,14 @@ async function getagentassigntofcr(req, res, next) {
 
         if (rec_date) {
             const rec_date_format = moment(new Date(rec_date)).format("DD/MM/YYYY")
+            // console.log(`rec date : ${rec_date_format}`)
             /* ... do something ...*/
-            queryrecdate = ` AND TRUNC(BTW.BUDDHIST_TO_CHRIS_F(to_date(CTI.REC_DAY, 'dd/mm/yyyy'))) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(to_date(:rec_date_format, 'dd/mm/yyyy'))) `
+            queryrecdate = `  AND TRUNC(BTW.BUDDHIST_TO_CHRIS_F(CTI.REC_DAY)) = TRUNC(BTW.BUDDHIST_TO_CHRIS_F(to_date(:rec_date_format, 'dd/mm/yyyy'))) `
             bindparams.rec_date_format = rec_date_format
+            // queryrecdate = ` AND  TRUNC(BTW.BUDDHIST_TO_CHRIS_F(to_date(CTI.REC_DAY, 'dd/mm/yyyy'))) = :rec_date `
+            // bindparams.rec_date = rec_date
+        } else {
+            queryrecdate = ` AND  TO_CHAR(NI.REC_DATE,'yyyymm') = TO_CHAR(SYSDATE, 'yyyymm') `
         }
 
         if (agent) {
@@ -4487,7 +4492,7 @@ async function getagentassigntofcr(req, res, next) {
                                                                 AND CM.month_end = TO_CHAR (SYSDATE, 'MM')
                                                                 AND CM.year_end = TO_CHAR (SYSDATE, 'YYYY')
                                                                 AND NI.REQ_ASSIGN_FCR = 'Y'
-                                                                AND BTW.GET_BRANCH_SL_BY_HP_NO(AP.HP_NO) = PV.PROV_NAME 
+                                                                AND BTW.GET_BRANCH_SL_BY_HP_NO(AP.HP_NO) = PV.PROV_NAME
                                                                 ${queryhpno}${querybranch}${queryrecdate}${queryagent} 
                                                             ORDER BY
                                                                 CTI.REC_DAY DESC
@@ -4502,11 +4507,13 @@ async function getagentassigntofcr(req, res, next) {
                 ) BF
             `
 
-        const sqlcount = `select count(LINE_NUMBER) as rowCount from (${sqlbase})`
+        const sqlcount = ` SELECT COUNT ( LINE_NUMBER ) AS ROWCOUNT FROM (${sqlbase}) `
 
         // console.log(`sqlstr: ${sqlcount}`)
 
         const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
+
+        // console.log(`result count : ${JSON.stringify(resultCount.rows)}`)
 
         if (resultCount.rows.length == 0) {
             return res.status(200).send({
@@ -4520,19 +4527,19 @@ async function getagentassigntofcr(req, res, next) {
                 rowCount = resultCount.rows[0].ROWCOUNT
                 bindparams.indexstart = indexstart
                 bindparams.indexend = indexend
-                const finishsql = `SELECT * FROM(${sqlbase}) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `
+                const finishsql = ` SELECT * FROM( ${sqlbase} ) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `
 
-                const result = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
+                const resultSelect = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
 
-                if (result.rows.length == 0) {
+                if (resultSelect.rows.length == 0) {
                     return res.status(200).send({
                         status: 200,
-                        message: 'No negotaiation agent record',
+                        message: 'No agent assign record ',
                         data: []
                     })
                 } else {
 
-                    let resData = result.rows
+                    let resData = resultSelect.rows
 
                     const lowerResData = tolowerService.arrayobjtolower(resData)
                     let returnData = new Object
