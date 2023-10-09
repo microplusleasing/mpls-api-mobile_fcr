@@ -690,6 +690,44 @@ paths:
         400:
           description: "error"
 
+  /getaddrtypemaster:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get address type masterdata
+      description: get address type masterdata
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                hp_no:
+                  type: string
+                  example: '110202200000006'
+
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /getresultsitevisitmaster:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get result site visit masterdata
+      description: get result site visit masterdata
+
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
   /getnegotiationlist:
     get:
       tags:

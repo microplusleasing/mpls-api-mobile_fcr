@@ -302,6 +302,10 @@ app.post('/getagentassigntofcr', auth, negoService.getagentassigntofcr)
 
 app.post('/updateagentassignfcr', auth, negoService.updateagentassignfcr)
 
+app.post('/getaddrtypemaster', auth, negoService.getaddrtypemaster)
+
+app.get('/getresultsitevisitmaster', auth, negoService.getresultsitevisitmaster)
+
 app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)

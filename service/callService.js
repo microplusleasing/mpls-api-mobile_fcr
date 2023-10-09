@@ -688,6 +688,8 @@ async function insertnegotocalltrack(req, res, next) {
                                         STATUS_RECALL, 
                                         REQ_DUNNING_LETTER, 
                                         REQ_ASSIGN_FCR, 
+                                        LOCATION_SITEVISIT_ADDR_TYPE, 
+                                        RESULT_SITEVISIT_CODE, 
                                         CALL_KEYAPP_ID`
                             let mainqerynego2 = ` ) VALUES (
                                         :branch_code,
@@ -702,13 +704,15 @@ async function insertnegotocalltrack(req, res, next) {
                                         :status_recall,
                                         :req_dunning_letter,
                                         :req_assign_fcr, 
+                                        :location_sitevisit_addr_type, 
+                                        :result_sitevisit_code, 
                                         :call_keyapp_id
                                     `
 
                             bindparamnego.branch_code = branch_code
                             bindparamnego.hp_no = reqData.hp_no,
-                                bindparamnego.neg_r_code = reqData.neg_r_code,
-                                bindparamnego.rec_date = (new Date(rec_day)) ?? null
+                            bindparamnego.neg_r_code = reqData.neg_r_code,
+                            bindparamnego.rec_date = (new Date(rec_day)) ?? null
                             bindparamnego.message1 = reqData.message1
                             bindparamnego.message2 = reqData.message2
                             bindparamnego.staff_id = userid
@@ -717,7 +721,9 @@ async function insertnegotocalltrack(req, res, next) {
                             // *** add more 3 optional field (31/07/2023) ***
                             bindparamnego.status_recall = reqData.recall
                             bindparamnego.req_dunning_letter = reqData.dunning_letter
-                            bindparamnego.req_assign_fcr = reqData.assign_fcr
+                            bindparamnego.req_assign_fcr = reqData.assign_fcr 
+                            bindparamnego.location_sitevisit_addr_type = reqData.location_sitevisit_addr_type 
+                            bindparamnego.result_sitevisit_code = reqData.result_sitevisit_code 
                             bindparamnego.call_keyapp_id = call_keyapp_id
 
                             if (appoint_date_dtype) {

@@ -2729,119 +2729,6 @@ async function getphonenolistcust(req, res, next) {
 
 }
 
-// async function getfollowuppaymentlist(req, res, next) {
-//     let connection;
-
-//     try {
-//         const { pageno, applicationid } = req.query
-
-//         const indexstart = (pageno - 1) * 5 + 1
-//         const indexend = (pageno * 5)
-//         let rowCount;
-
-
-//         connection = await oracledb.getConnection(
-//             config.database
-//         )
-
-//         const resultCountfollow = await connection.execute(`
-//         select count(hp_no) as count
-//             from btw.nego_info
-//             where hp_no = :applicationid
-//         `, {
-//             applicationid: applicationid
-//         }, {
-//             outFormat: oracledb.OBJECT
-//         })
-
-
-
-//         if (resultCountfollow.rows[0].COUNT == 0) {
-//             return res.status(400).send({
-//                 status: 400,
-//                 message: 'ไม่พบรายการติดตามที่อยู่ภายใต้สัญญา',
-//                 data: []
-//             })
-//         } else {
-//             try {
-
-//                 rowCount = resultCountfollow.rows[0].COUNT
-
-//                 const resultFollowupList = await connection.execute(`
-//                 SELECT * FROM (
-//                     select ni.hp_no, ni.rec_date, ni.appoint_date, ni.message1, 
-//                     ni.message2, ni.pay, ni.staff_id, em.emp_name, em.emp_lname,
-//                     ROW_NUMBER() OVER (ORDER BY HP_NO ASC) LINE_NUMBER 
-//                     from btw.nego_info ni, btw.emp em
-//                     where ni.hp_no = :applicationid
-//                     and ni.staff_id = em.emp_id(+)
-//                     order by rec_date desc
-//                     )    
-//                     WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend
-//                 `, {
-//                     applicationid: applicationid,
-//                     indexstart: indexstart,
-//                     indexend: indexend
-//                 }, {
-//                     outFormat: oracledb.OBJECT
-//                 })
-
-//                 if (resultFollowupList.rows.length == 0) {
-//                     return res.status(404).send({
-//                         status: 404,
-//                         message: `ไม่พบรายการที่อยู่ตามเลขที่สัญญา`,
-//                         data: []
-//                     })
-//                 } else {
-//                     // === resturn success data via http ===
-//                     const resData = resultFollowupList.rows
-//                     const lowerResData = tolowerService.arrayobjtolower(resData)
-//                     let returnData = new Object
-//                     returnData.data = lowerResData
-//                     returnData.status = 200
-//                     returnData.message = 'success'
-//                     returnData.CurrentPage = Number(pageno)
-//                     returnData.pageSize = 5
-//                     returnData.rowCount = rowCount
-//                     returnData.pageCount = Math.ceil(rowCount / 5);
-
-//                     // === tran all upperCase to lowerCase === 
-//                     let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
-//                         result[key.toLowerCase()] = val;
-//                     });
-
-//                     // res.status(200).json(results.rows[0]);
-//                     res.status(200).json(returnDatalowerCase);
-//                 }
-
-//             } catch (e) {
-//                 console.error(e)
-//                 return res.status(400).send({
-//                     status: 400,
-//                     message: `เกิดข้อผิดพลาดในการหาประวัติการติดตามตามเลขสัญญา : ${e.message}`
-//                 })
-//             }
-//         }
-
-//     } catch (e) {
-//         console.error(e)
-//         return res.status(400).send({
-//             status: 400,
-//             message: `ไม่สามารถหาประวัติการติดตามที่ผูกกับสัญญาได้ (Count not found) : ${e.message}`
-//         })
-//     } finally {
-//         if (connection) {
-//             try {
-//                 await connection.close()
-//             } catch (e) {
-//                 console.error(e)
-//                 return next(e)
-//             }
-//         }
-//     }
-
-// }
-
 async function getfollowuppaymentlist(req, res, next) {
     let connection;
 
@@ -2903,31 +2790,41 @@ async function getfollowuppaymentlist(req, res, next) {
                 rowCount = resultCountfollow.rows[0].COUNT
 
                 const resultFollowupList = await connection.execute(`
-                SELECT * FROM (
-                    SELECT CALL_TRACK_INFO.HP_NO,CALL_TRACK_INFO.CUST_ID,CALL_TRACK_INFO.PHONE_NO
-                    ,CALL_TRACK_INFO.CON_R_CODE,CALL_TRACK_INFO.REC_DAY, CALL_TRACK_INFO.CALL_DATE,CALL_TRACK_INFO.REC_DATE, 
-                    CALL_TRACK_INFO.USER_NAME,NEGO_INFO.NEG_R_CODE,CALL_TRACK_INFO.STAFF_ID, NEGO_INFO.APPOINT_DATE, NEGO_INFO.message1, 
-                    NEGO_INFO.MESSAGE2, NEGO_INFO.PAY, EM.EMP_NAME, EM.EMP_LNAME, NEG_RESULT_P.NEG_R_DETAIL, NEGO_INFO.CALL_KEYAPP_ID, 
-                    CALL_TRACK_INFO.LATITUDE, 
-                    CALL_TRACK_INFO.LONGITUDE, 
-                    (SELECT COUNT(CALL_KEYAPP_ID)
-                    FROM BTW.SITE_VISIT_IMAGE
-                    WHERE SITE_VISIT_IMAGE.CALL_KEYAPP_ID = NEGO_INFO.CALL_KEYAPP_ID) AS IMAGE_COUNT, 
-                    ROW_NUMBER() OVER (ORDER BY CALL_TRACK_INFO.REC_DAY DESC, NEGO_INFO.APPOINT_DATE DESC) LINE_NUMBER 
-                    FROM NEGO_INFO, CALL_TRACK_INFO,NEG_RESULT_P,EMP EM
-                    WHERE ( (CALL_TRACK_INFO.HP_NO = NEGO_INFO.hp_no(+)) 
-                    AND NEGO_INFO.STAFF_ID = EM.EMP_ID(+)
-                    AND (CALL_TRACK_INFO.CUST_ID = NEGO_INFO.CUST_ID(+)) 
-                    AND (CALL_TRACK_INFO.STAFF_ID = NEGO_INFO.STAFF_ID(+))
-                    AND (NEGO_INFO.NEG_R_CODE = NEG_RESULT_P.NEG_R_CODE(+)) 
-                    AND (TO_CHAR(CALL_TRACK_INFO.REC_DAY,'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(NEGO_INFO.REC_DATE(+),'dd/mm/yyyy hh24:mi:ss')) 
-                    AND TO_DATE(CALL_TRACK_INFO.REC_DAY,'DD/MM/YYYY') 
-                    BETWEEN TRUNC(ADD_MONTHS(TO_DATE(SYSDATE,'DD/MM/YYYY'),-2),'MM') 
-                    AND LAST_DAY(TO_DATE(SYSDATE,'DD/MM/YYYY')))
-                    AND CALL_TRACK_INFO.HP_NO = :applicationid 
-                    ${queryconrcode}
-                    AND NEGO_INFO.NEG_R_CODE IS NOT NULL
-                    )
+                    SELECT * FROM 
+                    (
+                        SELECT CALL_TRACK_INFO.HP_NO,CALL_TRACK_INFO.CUST_ID,CALL_TRACK_INFO.PHONE_NO, 
+                                CALL_TRACK_INFO.CON_R_CODE,CALL_TRACK_INFO.REC_DAY, CALL_TRACK_INFO.CALL_DATE,CALL_TRACK_INFO.REC_DATE, 
+                                CALL_TRACK_INFO.USER_NAME,NEGO_INFO.NEG_R_CODE,CALL_TRACK_INFO.STAFF_ID, NEGO_INFO.APPOINT_DATE, NEGO_INFO.message1, 
+                                NEGO_INFO.MESSAGE2, NEGO_INFO.PAY, EM.EMP_NAME, EM.EMP_LNAME, NEG_RESULT_P.NEG_R_DETAIL, NEGO_INFO.CALL_KEYAPP_ID, 
+                                CALL_TRACK_INFO.LATITUDE, CALL_TRACK_INFO.LONGITUDE, BTW.RESULT_SITEVISIT_P.DETAIL AS RESULT_SITE_VISIT, 
+                                BTW.ADDRESS_TYPE_P.ADDR_TYPE_NAME, 
+                                (
+                                    SELECT COUNT(CALL_KEYAPP_ID)
+                                    FROM BTW.SITE_VISIT_IMAGE
+                                    WHERE SITE_VISIT_IMAGE.CALL_KEYAPP_ID = NEGO_INFO.CALL_KEYAPP_ID
+                                ) AS IMAGE_COUNT, 
+                                ROW_NUMBER() OVER (ORDER BY CALL_TRACK_INFO.REC_DAY DESC, NEGO_INFO.APPOINT_DATE DESC) LINE_NUMBER 
+                        FROM    NEGO_INFO, 
+                                CALL_TRACK_INFO, 
+                                NEG_RESULT_P, 
+                                BTW.RESULT_SITEVISIT_P, 
+                                BTW.ADDRESS_TYPE_P, 
+                                EMP EM
+                        WHERE ( (CALL_TRACK_INFO.HP_NO = NEGO_INFO.hp_no(+)) 
+                                AND NEGO_INFO.STAFF_ID = EM.EMP_ID(+)
+                                AND (CALL_TRACK_INFO.CUST_ID = NEGO_INFO.CUST_ID(+)) 
+                                AND (CALL_TRACK_INFO.STAFF_ID = NEGO_INFO.STAFF_ID(+))
+                                AND (NEGO_INFO.NEG_R_CODE = NEG_RESULT_P.NEG_R_CODE(+)) 
+                                AND (TO_CHAR(CALL_TRACK_INFO.REC_DAY,'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(NEGO_INFO.REC_DATE(+),'dd/mm/yyyy hh24:mi:ss')) 
+                                AND TO_DATE(CALL_TRACK_INFO.REC_DAY,'DD/MM/YYYY') 
+                                BETWEEN TRUNC(ADD_MONTHS(TO_DATE(SYSDATE,'DD/MM/YYYY'),-2),'MM') 
+                                AND LAST_DAY(TO_DATE(SYSDATE,'DD/MM/YYYY'))) 
+                                AND NEGO_INFO.RESULT_SITEVISIT_CODE = RESULT_SITEVISIT_P.CODE (+)
+                                AND NEGO_INFO.LOCATION_SITEVISIT_ADDR_TYPE = ADDRESS_TYPE_P.ADDR_TYPE_CODE (+)
+                                AND CALL_TRACK_INFO.HP_NO = :applicationid
+                                ${queryconrcode}
+                                AND NEGO_INFO.NEG_R_CODE IS NOT NULL
+                        )
                     WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend
                 `, {
                     applicationid: applicationid,
@@ -3177,6 +3074,8 @@ async function insertnegolist(req, res, next) {
                         STATUS_RECALL, 
                         REQ_DUNNING_LETTER, 
                         REQ_ASSIGN_FCR, 
+                        LOCATION_SITEVISIT_ADDR_TYPE, 
+                        RESULT_SITEVISIT_CODE, 
                         CALL_KEYAPP_ID`
             let mainqerynego2 = ` ) VALUES (
                         :branch_code,
@@ -3190,7 +3089,9 @@ async function insertnegolist(req, res, next) {
                         :cust_id,
                         :status_recall,
                         :req_dunning_letter,
-                        :req_assign_fcr,
+                        :req_assign_fcr, 
+                        :location_sitevisit_addr_type, 
+                        :result_sitevisit_code, 
                         :call_keyapp_id 
                     `
 
@@ -3206,7 +3107,9 @@ async function insertnegolist(req, res, next) {
             // *** add more 3 optional field (31/07/2023) ***
             bindparamnego.status_recall = reqData.recall
             bindparamnego.req_dunning_letter = reqData.dunning_letter
-            bindparamnego.req_assign_fcr = reqData.assign_fcr
+            bindparamnego.req_assign_fcr = reqData.assign_fcr 
+            bindparamnego.location_sitevisit_addr_type = reqData.location_sitevisit_addr_type 
+            bindparamnego.result_sitevisit_code = reqData.result_sitevisit_code 
             bindparamnego.call_keyapp_id = key
 
             if (appoint_date_dtype) {
@@ -5121,6 +5024,126 @@ async function updateagentassignfcr(req, res, next) {
     }
 }
 
+async function getaddrtypemaster(req, res, next) {
+
+    let connection;
+    try {
+
+        const reqData = req.body
+
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(`
+                -- SELECT * FROM BTW.ADDRESS_TYPE_P
+                SELECT 
+                    AM.ADDR_TYPE_CODE,ATP.ADDR_TYPE_NAME
+                FROM    BTW.AC_PROVE AP,
+                        BTW.ADDRESS_MAP AM, 
+                        BTW.ADDRESS_INFO AI, 
+                        BTW.ADDRESS_TYPE_P ATP, 
+                        BTW.CUST_INFO CI, 
+                        BTW.PROVINCE_P PP
+                WHERE   AP.CUST_NO_0 = CI.CUST_NO
+                        AND AM.ADDR_NO = AI.ADDR_NO
+                        AND AM.ADDR_STATUS_CODE = 'CN'
+                        AND AM.ADDR_TYPE_CODE = ATP.ADDR_TYPE_CODE
+                        AND AI.PROV_CODE = PP.PROV_CODE(+)
+                        AND AM.CUST_ID = CI.CUST_NO
+                        AND AP.HP_NO = :hp_no
+                ORDER BY  ATP.ID ASC
+            `
+            , {
+                hp_no: reqData.hp_no
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 500,
+                message: 'No data',
+                data: []
+            })
+        } else {
+            const resData = result.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 500,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function getresultsitevisitmaster(req, res, next) {
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(`
+                SELECT * FROM BTW.RESULT_SITEVISIT_P 
+        `
+            , {}, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No data',
+                data: []
+            })
+        } else {
+            const resData = result.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 // module.exports.getcontractlist = getcontractlist
 module.exports.getnegotiationlist = getnegotiationlist
 module.exports.getnegotiationbyid = getnegotiationbyid
@@ -5155,4 +5178,6 @@ module.exports.getstaffsitevisitparameter = getstaffsitevisitparameter
 module.exports.getagentparameter = getagentparameter
 module.exports.getagentassigntofcragentparameter = getagentassigntofcragentparameter
 module.exports.updateagentassignfcr = updateagentassignfcr
+module.exports.getaddrtypemaster = getaddrtypemaster
+module.exports.getresultsitevisitmaster = getresultsitevisitmaster
 
