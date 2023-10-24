@@ -33,6 +33,7 @@ const dipchipService = require('./service/dipchipService')
 const btwService = require('./service/btwService')
 const imageUtilService = require('./service/_imageUtilService')
 const welcomeCallService = require('./service/welcomeCallService')
+const agnetService = require(`./service/agentmenuService`)
 const bodyParser = require("body-parser")
 const swaggerJSDoc = YAML.load("./api.yaml")
 const test2 = require('./service/test2')
@@ -298,6 +299,14 @@ app.post('/getagentgroupstage', auth, negoService.getagentgroupstage)
 
 app.post('/getagentsitevisit', auth, negoService.getagentsitevisit)
 
+app.post('/getagentassigntofcr', auth, negoService.getagentassigntofcr)
+
+app.post('/updateagentassignfcr', auth, negoService.updateagentassignfcr)
+
+app.post('/getaddrtypemaster', auth, negoService.getaddrtypemaster)
+
+app.get('/getresultsitevisitmaster', auth, negoService.getresultsitevisitmaster)
+
 app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
@@ -311,6 +320,10 @@ app.get('/getmotocyclenegohistory', auth, negoService.getmotocyclenegohistory)
 app.get('/getholdermaster', auth, negoService.getholdermaster)
 
 app.get('/getstaffsitevisitparameter', auth, negoService.getstaffsitevisitparameter)
+
+app.get('/getagentparameter', auth, negoService.getagentparameter)
+
+app.get('/getagentassigntofcragentparameter', auth, negoService.getagentassigntofcragentparameter)
 
 app.get('/getagentholdermaster', auth, negoService.getagentholdermaster)
 
@@ -349,6 +362,8 @@ app.get('/getbranch', auth, masterService.getbranch)
 app.get('/getcarcheckstatus', auth, masterService.getcarcheckstatus)
 
 app.get('/getDPD', auth, masterService.getDPD)
+
+app.get('/gettermremain', auth, masterService.gettermremain)
 
 app.get('/getStageno', auth, masterService.getStageno)
 
@@ -424,6 +439,11 @@ app.post('/createcalltrackdial', auth, callMobileService.createcalltrackdial)
 app.post('/updatefailcalldial', auth, callMobileService.updatefailcalldial)
 
 app.post('/insertnegotocalltrack', auth, callMobileService.insertnegotocalltrack)
+
+/* ... agnet menu list ....*/
+app.post(`/getagentwaitingpaymentlist`, auth, agnetService.getagentwaitingpaymentlist)
+
+app.post(`/getagentlastduelist`, auth, agnetService.getagentlastduelist)
 
 // app.get('/genqr', barcodeService.genqr)
 // switch on lissten port s

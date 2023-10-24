@@ -630,6 +630,104 @@ paths:
         400:
           description: "error"
 
+  /getagentassigntofcr:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get data from collection (agent)
+      description: load data from "Database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  example: 1
+                hp_no: 
+                  type: string
+                  example: ''
+                branch:
+                  type: string
+                  example: ''
+                rec_date:
+                  type: string
+                  example: ""
+                holder:
+                  type: string
+                  example: ""
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /updateagentassignfcr:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: update data assign to fcr (coll_info_monthly)
+      description: update row in "Database"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                hp_no:
+                  type: string
+                  example: '110202200000006'
+                agent_id: 
+                  type: string
+                  example: '654004'
+
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /getaddrtypemaster:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get address type masterdata
+      description: get address type masterdata
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                hp_no:
+                  type: string
+                  example: '110202200000006'
+
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /getresultsitevisitmaster:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get result site visit masterdata
+      description: get result site visit masterdata
+
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
   /getnegotiationlist:
     get:
       tags:
@@ -968,6 +1066,34 @@ paths:
       security:
         - bearerAuth: []
       summary: "Get list of staff site visit name and id"
+      description: ""
+      responses:
+        200:
+          description: "successfu"
+        400:
+          description: "return error"
+
+  /getagentparameter:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get list of agent name and id"
+      description: ""
+      responses:
+        200:
+          description: "successfu"
+        400:
+          description: "return error"
+
+  /getagentassigntofcragentparameter:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get list of agent for assing fcr name and id"
       description: ""
       responses:
         200:
@@ -2506,6 +2632,18 @@ paths:
         "200":
           description: "success"
 
+  /gettermremain:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Return term remain left 
+      responses:
+        "200":
+          description: "success"
+
   /getStageno:
     get:
       tags:
@@ -3694,6 +3832,84 @@ paths:
                   type: string
                   description: 'key1'
                   example: "1"
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /getagentwaitingpaymentlist:
+    post:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: "get agent list data for waiting payment"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  description: 'Page no of data'
+                  example: 1
+                hp_no:
+                  type: string
+                  description: 'hp_no'
+                  example: ''
+                branch:
+                  type: string
+                  description: 'branch'
+                  example: ''
+                paid_status:
+                  type: number
+                  description: '(1: ยังไม่ได้ชำระ , 2: ชำระเงินแล้ว)'
+                  example: ''
+                sort_type:
+                  type: string
+                  description: 'sort_type'
+                  example: ''
+                sort_field:
+                  type: string
+                  description: 'sort_field'
+                  example: ''
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /getagentlastduelist:
+    post:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: "get agent list data for waiting payment"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  description: 'Page no of data'
+                  example: 1
+                term_remain:
+                  type: number
+                  description: 'จำนวนเดือนที่เหลือในการชำระค่างวด'
+                  example: 47
+                sort_type:
+                  type: string
+                  description: 'sort_type'
+                  example: ''
+                sort_field:
+                  type: string
+                  description: 'sort_field'
+                  example: ''
       responses:
         200:
           description: "successful operation"
