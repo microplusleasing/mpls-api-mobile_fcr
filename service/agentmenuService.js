@@ -292,7 +292,7 @@ async function getagentlastduelist(req, res, next) {
         if (sort_type && sort_field) {
             querysort = ` ORDER BY ${sort_field} ${sort_type} `
         } else {
-            querysort = ` `
+            querysort = `ORDER BY TERM_REMAIN ASC `
         }
 
         connection = await oracledb.getConnection(config.database)
@@ -321,6 +321,7 @@ async function getagentlastduelist(req, res, next) {
                                         branch_code,
                                         branch_name,
                                         NVL(IS_PAID40,'N') AS IS_PAID40,
+                                        TERM_REMAIN,
                                         ROW_NUMBER() OVER (
                                             PARTITION BY HP_NO
                                             ORDER BY
@@ -342,6 +343,7 @@ async function getagentlastduelist(req, res, next) {
                                                                     reg_status,
                                                                     branch_code,
                                                                     branch_name,
+                                                                    TERM_REMAIN,
                                                                    NVL(IS_PAID40,'N') AS IS_PAID40
                                                     FROM
             (
@@ -370,7 +372,7 @@ async function getagentlastduelist(req, res, next) {
                                                                 SELECT HP_NO,
                                                                     DECODE((SELECT DISTINCT HP_NO FROM COLL_RECIEPT WHERE PAY_CODE = '40' AND NVL(CANCELL, 'F') = 'F' AND HP_NO = A.HP_NO), NULL, 'N', 'Y') IS_PAID40
                                                                 FROM AC_PROVE A
-                                                                WHERE AC_STATUS IN ('C', 'E')
+                                                                WHERE NVL(AC_STATUS, 'XXX') NOT IN ('E','C')
                                                             ) PS,
                                                             (
                                                                 SELECT * 
@@ -402,7 +404,8 @@ async function getagentlastduelist(req, res, next) {
                                                             AND X_CUST_MAPPING_EXT.SL_CODE = X_DEALER_P.DL_CODE(+)
                                                             AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
                                                             AND AC_PROVE.HP_NO = PS.HP_NO(+)
-                                                            AND AC_PROVE.HP_NO = TR.HP_NO(+)
+                                                            AND AC_PROVE.HP_NO = TR.HP_NO(+) 
+                                                            AND NVL(AC_STATUS, 'XXX') NOT IN ('E','C') 
                                                             ${querytermremain}  
                                                             AND AC_PROVE.HP_NO = NEGO_INFO.HP_NO
                                                             AND TO_CHAR(CALL_TRACK_INFO.REC_DAY, 'DD/MM/YYYY HH24:MI:SS') = TO_CHAR(NEGO_INFO.REC_DATE(+), 'DD/MM/YYYY HH24:MI:SS') 
