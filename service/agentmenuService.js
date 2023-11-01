@@ -77,7 +77,6 @@ async function getagentwaitingpaymentlist(req, res, next) {
                                 (
                                     SELECT
                                         hp_no,
-                                        title_name,
                                         name,
                                         sname,
                                         first_due,
@@ -99,7 +98,6 @@ async function getagentwaitingpaymentlist(req, res, next) {
                                                 (
                                                     SELECT
                                                         DISTINCT    hp_no,
-                                                                    title_name,
                                                                     name,
                                                                     sname,
                                                                     first_due,
@@ -110,10 +108,8 @@ async function getagentwaitingpaymentlist(req, res, next) {
                                                     FROM
             (
                                                         SELECT AC_PROVE.hp_no AS  hp_no,
-
-                                                                title_p.title_name,
-                                                                CUST_INFO.name,
-                                                                CUST_INFO.sname,
+                                                                EMP.EMP_NAME AS NAME, 
+                                                                EMP.EMP_LNAME AS SNAME, 
                                                                 AC_PROVE.FIRST_DUE,
                                                                 M_RBC_BOOK_CONTROL.STATUS AS REG_STATUS, 
                                                                 branch_p.branch_code,
@@ -123,7 +119,6 @@ async function getagentwaitingpaymentlist(req, res, next) {
                                                                 x_cust_mapping_ext,
                                                                 x_cust_mapping,
                                                                 type_p,
-                                                                CUST_INFO,
                                                                 title_p,
                                                                 X_PRODUCT_DETAIL,
                                                                 X_BRAND_P,
@@ -137,6 +132,7 @@ async function getagentwaitingpaymentlist(req, res, next) {
                                                                     WHERE AC_STATUS IN ('C','E')
                                                                 ) PS,
                                                                 NEGO_INFO,
+                                                                EMP,
                                                                 CALL_TRACK_INFO, 
                                                                 BTW.M_RBC_BOOK_CONTROL 
                                                         WHERE   AC_PROVE.HP_NO = x_cust_mapping_ext.CONTRACT_NO
@@ -145,8 +141,7 @@ async function getagentwaitingpaymentlist(req, res, next) {
                                                         AND CANCELL = 'F'
                                                         AND  x_cust_mapping_ext.APPLICATION_NUM = x_cust_mapping.APPLICATION_NUM
                                                         AND x_cust_mapping.CUST_STATUS  = type_p.TYPE_CODE
-                                                        AND  x_cust_mapping.CUST_NO = CUST_INFO.CUST_NO
-                                                        AND CUST_INFO.FNAME=title_p.TITLE_ID
+--                                                        AND  x_cust_mapping.CUST_NO = CUST_INFO.CUST_NO
                                                         AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_PRODUCT_DETAIL.APPLICATION_NUM
                                                         AND  X_PRODUCT_DETAIL.PRODUCT_CODE  = X_MODEL_P.PRO_CODE
                                                         AND  X_PRODUCT_DETAIL.BRAND_CODE  =  X_MODEL_P.BRAND_CODE
@@ -158,6 +153,7 @@ async function getagentwaitingpaymentlist(req, res, next) {
                                                         AND AC_PROVE.HP_NO = M_RBC_BOOK_CONTROL.CONTRACT_NO(+)
                                                         AND AC_PROVE.AC_STATUS IN ('E', 'C')
                                                         AND AC_PROVE.HP_NO = NEGO_INFO.HP_NO
+                                                        AND NEGO_INFO.STAFF_ID = EMP.EMP_ID
                                                         AND TO_CHAR(CALL_TRACK_INFO.REC_DAY, 'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(NEGO_INFO.REC_DATE(+), 'dd/mm/yyyy hh24:mi:ss')
                                                         AND NEGO_INFO.NEG_R_CODE = 'M04'
                                                         ${queryhpno}${querybranch}${querypaidstatus} 
@@ -313,7 +309,6 @@ async function getagentlastduelist(req, res, next) {
                                 (
                                     SELECT
                                         hp_no,
-                                        title_name,
                                         name,
                                         sname,
                                         last_due,
@@ -349,8 +344,8 @@ async function getagentlastduelist(req, res, next) {
             (
                                                         SELECT AC_PROVE.HP_NO AS HP_NO, 
                                                             TITLE_P.TITLE_NAME,
-                                                            CUST_INFO.NAME,
-                                                            CUST_INFO.SNAME,
+                                                            EMP.EMP_NAME AS NAME,
+                                                            EMP.EMP_LNAME AS SNAME,
                                                             AC_PROVE.LAST_DUE,
                                                             M_RBC_BOOK_CONTROL.STATUS AS REG_STATUS,
                                                             BRANCH_P.BRANCH_CODE,
@@ -386,6 +381,7 @@ async function getagentlastduelist(req, res, next) {
                                                                 WHERE TERM_REMAIN IS NOT NULL
                                                             ) TR,
                                                             NEGO_INFO,
+                                                            EMP, 
                                                             CALL_TRACK_INFO,
                                                             BTW.M_RBC_BOOK_CONTROL  
                                                         WHERE AC_PROVE.HP_NO = X_CUST_MAPPING_EXT.CONTRACT_NO
@@ -408,6 +404,7 @@ async function getagentlastduelist(req, res, next) {
                                                             AND NVL(AC_STATUS, 'XXX') NOT IN ('E','C') 
                                                             ${querytermremain}  
                                                             AND AC_PROVE.HP_NO = NEGO_INFO.HP_NO
+                                                            AND NEGO_INFO.STAFF_ID = EMP.EMP_ID
                                                             AND TO_CHAR(CALL_TRACK_INFO.REC_DAY, 'DD/MM/YYYY HH24:MI:SS') = TO_CHAR(NEGO_INFO.REC_DATE(+), 'DD/MM/YYYY HH24:MI:SS') 
                                                             AND AC_PROVE.HP_NO = M_RBC_BOOK_CONTROL.CONTRACT_NO(+)
                                                             AND NEGO_INFO.NEG_R_CODE = 'M04'
