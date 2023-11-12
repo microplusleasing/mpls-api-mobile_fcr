@@ -1146,7 +1146,8 @@ async function getagentgroupstage(req, res, next) {
                     CM.COLLECTED_AMT, 
                     (CM.WILL_PAY_AMT - CM.COLLECTED_AMT) AS BALANCE_AMT,
                     TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) AS DUE,
-                    CM.FIRST_DUE,  
+                    CM.FIRST_DUE,
+                    TO_DATE(TO_CHAR(CM.first_due,'DD')||'/'||TO_CHAR(sysdate,'MM')||'/'||TO_CHAR(sysdate,'YYYY'),'dd/mm/yyyy') AS DUEDATE, 
                     BTW.GET_BRANCH_SL_BY_HP_NO(CM.HP_NO) As branch_name_hp_no,
                     (        SELECT  PV.PROV_CODE
                         FROM X_CUST_MAPPING_EXT CME,X_CUST_MAPPING CM,X_DEALER_P DL,PROVINCE_P PV
@@ -1191,8 +1192,10 @@ async function getagentgroupstage(req, res, next) {
                 WHERE   CM.HP_NO =  dpd_mth.HP_NO
                         AND CM.month_end = dpd_mth.MONTH_END
                         AND CM.year_end = dpd_mth.YEAR_END
-                        AND CM.month_end = TO_CHAR (SYSDATE, 'MM')
-                        AND CM.year_end = TO_CHAR (SYSDATE, 'YYYY')
+                        -- AND CM.month_end = TO_CHAR (SYSDATE, 'MM')
+                        -- AND CM.year_end = TO_CHAR (SYSDATE, 'YYYY')
+                        AND CM.month_end = BTW.GET_COLL_MONTH(SYSDATE) 
+                        AND CM.year_end = BTW.GET_COLL_YEAR_END(SYSDATE) 
                         AND CM.STAPAY1 IS NULL 
                         ${querystage}
                       ${querydue}${queryholder}
