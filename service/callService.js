@@ -76,8 +76,6 @@ async function checkcallrecent(req, res, next) {
             })
         } else {
             const check_recent_dial = result.rows[0].WAITING_DIAL
-            // console.log(`this is : ${check_recent_dial}`)
-            console.log(`checkrecentdail : ${check_recent_dial}`)
             if (check_recent_dial == 0) {
                 return res.status(200).send({
                     status: 200,

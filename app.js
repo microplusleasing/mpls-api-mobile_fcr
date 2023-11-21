@@ -307,6 +307,10 @@ app.post('/getaddrtypemaster', auth, negoService.getaddrtypemaster)
 
 app.get('/getresultsitevisitmaster', auth, negoService.getresultsitevisitmaster)
 
+app.post('/gettaxdetailbycontractno', auth, negoService.gettaxdetailbycontractno)
+
+app.post('/sendsmstaxconfirm', auth, smsService.sendsmstaxconfirm)
+
 app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)

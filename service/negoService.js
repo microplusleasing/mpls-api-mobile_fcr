@@ -3111,9 +3111,9 @@ async function insertnegolist(req, res, next) {
             // *** add more 3 optional field (31/07/2023) ***
             bindparamnego.status_recall = reqData.recall
             bindparamnego.req_dunning_letter = reqData.dunning_letter
-            bindparamnego.req_assign_fcr = reqData.assign_fcr 
-            bindparamnego.location_sitevisit_addr_type = reqData.location_sitevisit_addr_type 
-            bindparamnego.result_sitevisit_code = reqData.result_sitevisit_code 
+            bindparamnego.req_assign_fcr = reqData.assign_fcr
+            bindparamnego.location_sitevisit_addr_type = reqData.location_sitevisit_addr_type
+            bindparamnego.result_sitevisit_code = reqData.result_sitevisit_code
             bindparamnego.call_keyapp_id = key
 
             if (appoint_date_dtype) {
@@ -5148,6 +5148,93 @@ async function getresultsitevisitmaster(req, res, next) {
     }
 }
 
+async function gettaxdetailbycontractno(req, res, next) {
+
+    let connection;
+    try {
+
+        const reqData = req.body
+
+        if (reqData.hp_no == '' || reqData.hp_no == null) {
+            return res.status(200).send({
+                status: 500,
+                message: `No Param detect (hp_no)`,
+                data: []
+            })
+        }
+
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(
+            `
+            SELECT 
+                VAT.CONTRACT_NO AS VAT_CONTRACT_NO,
+                VAT.PROCESS_DATETIME AS VAT_PROCESS_DATETIME, 
+                VAT.BALANCE AS VAT_BALANCE,
+                VAT.PHONE_SMS AS VAT_PHONE_SMS, 
+                NEG.NEG_R_CODE,
+                VAT.SMS_MESSAGE AS VAT_SMS_MESSAGE
+            FROM 
+                BTW.M_VEHICLE_ACT_TEMP VAT
+            LEFT JOIN (
+                SELECT NEG_R_CODE
+                FROM (
+                    SELECT NEG_R_CODE
+                    FROM BTW.NEGO_INFO 
+                    WHERE 
+                        NEG_R_CODE = 'M06'
+                        AND NEGO_INFO.HP_NO = :hp_no
+                        AND TO_CHAR(NEGO_INFO.REC_DATE, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY')
+                    ORDER BY REC_DATE DESC
+                ) 
+                WHERE ROWNUM = 1
+            ) NEG ON 1=1
+            WHERE 
+            VAT.CONTRACT_NO = :hp_no 
+            AND TO_CHAR(VAT.PROCESS_DATETIME, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY')
+            `
+            , {
+                hp_no: reqData.hp_no
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No data',
+                data: []
+            })
+        } else {
+            const resData = result.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 // module.exports.getcontractlist = getcontractlist
 module.exports.getnegotiationlist = getnegotiationlist
 module.exports.getnegotiationbyid = getnegotiationbyid
@@ -5184,4 +5271,5 @@ module.exports.getagentassigntofcragentparameter = getagentassigntofcragentparam
 module.exports.updateagentassignfcr = updateagentassignfcr
 module.exports.getaddrtypemaster = getaddrtypemaster
 module.exports.getresultsitevisitmaster = getresultsitevisitmaster
+module.exports.gettaxdetailbycontractno = gettaxdetailbycontractno
 

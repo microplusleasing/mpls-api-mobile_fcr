@@ -584,7 +584,7 @@ paths:
                 holder:
                   type: string
                   example: "654089"
-                stage: 
+                stage:
                   type: string
                   example: 1
       responses:
@@ -592,7 +592,7 @@ paths:
           description: "successful get data"
         400:
           description: "error"
-  
+
   /getagentsitevisit:
     post:
       tags:
@@ -615,12 +615,12 @@ paths:
                 surname:
                   type: string
                   example: ""
-                hp_no: 
+                hp_no:
                   type: string
-                  example: ''
+                  example: ""
                 branch:
                   type: string
-                  example: '30'
+                  example: "30"
                 staffid:
                   type: string
                   example: "654004"
@@ -646,12 +646,12 @@ paths:
                 pageno:
                   type: number
                   example: 1
-                hp_no: 
+                hp_no:
                   type: string
-                  example: ''
+                  example: ""
                 branch:
                   type: string
-                  example: ''
+                  example: ""
                 rec_date:
                   type: string
                   example: ""
@@ -679,10 +679,10 @@ paths:
               properties:
                 hp_no:
                   type: string
-                  example: '110202200000006'
-                agent_id: 
+                  example: "110202200000006"
+                agent_id:
                   type: string
-                  example: '654004'
+                  example: "654004"
 
       responses:
         200:
@@ -705,7 +705,7 @@ paths:
               properties:
                 hp_no:
                   type: string
-                  example: '110202200000006'
+                  example: "110202200000006"
 
       responses:
         200:
@@ -727,6 +727,53 @@ paths:
           description: "successful get data"
         400:
           description: "error"
+
+  /gettaxdetailbycontractno:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: เรียกตารางดูข้อมูล ภาษี พรบ จาก contract_no (hp_no)
+      description: เรียกตารางดูข้อมูล ภาษี พรบ จาก contract_no (hp_no)
+      requestBody:
+        description: item of list to create
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                hp_no:
+                  type: string
+                  example: "110202200006703"
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /sendsmstaxconfirm:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Resend sms Tax Act"
+      description: "Resend sms Tax Act"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                phone_no:
+                  type: string
+                message:
+                  type: string
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
 
   /getnegotiationlist:
     get:
@@ -862,7 +909,7 @@ paths:
                   example: 1
                 applicationid:
                   type: string
-                  example: '110202200000006'
+                  example: "110202200000006"
       responses:
         200:
           description: "successful operation and not found"
@@ -1130,8 +1177,8 @@ paths:
               properties:
                 contractno:
                   type: string
-                  example: "GGGGGGG" 
-            
+                  example: "GGGGGGG"
+
       responses:
         200:
           description: "successfu"
@@ -1154,13 +1201,13 @@ paths:
                 keyid:
                   type: string
                   example: "92c300e5f1a540a7a7b7ae1252de0387" # for id 110202200000006
-            
+
       responses:
         200:
           description: "successfu"
         400:
           description: "return error"
-  
+
   /getsitevisitimagebyindex:
     post:
       tags:
@@ -1177,10 +1224,10 @@ paths:
                 keyid:
                   type: string
                   example: "92c300e5f1a540a7a7b7ae1252de0387" # for id 110202200000006
-                indeximage: 
+                indeximage:
                   type: number
                   example: 0
-            
+
       responses:
         200:
           description: "successfu"
@@ -2639,7 +2686,7 @@ paths:
       security:
         - bearerAuth: []
       summary: This return a single Object
-      description: Return term remain left 
+      description: Return term remain left
       responses:
         "200":
           description: "success"
@@ -3735,7 +3782,7 @@ paths:
                   example: "key1"
                 phone_no:
                   type: string
-                  description: 'phone Number'
+                  description: "phone Number"
                   example: "0999999999"
       responses:
         200:
@@ -3760,7 +3807,7 @@ paths:
               properties:
                 branch_code:
                   type: string
-                  description: 'branch_code'
+                  description: "branch_code"
                   example: "10"
                 con_r_code:
                   type: string
@@ -3807,7 +3854,7 @@ paths:
               properties:
                 uuid:
                   type: string
-                  description: 'branch_code'
+                  description: "branch_code"
                   example: "5b44e6534a9f4dc0b7cdae00afffa930"
       responses:
         200:
@@ -3830,7 +3877,7 @@ paths:
               properties:
                 key1:
                   type: string
-                  description: 'key1'
+                  description: "key1"
                   example: "1"
       responses:
         200:
@@ -3853,28 +3900,28 @@ paths:
               properties:
                 pageno:
                   type: number
-                  description: 'Page no of data'
+                  description: "Page no of data"
                   example: 1
                 hp_no:
                   type: string
-                  description: 'hp_no'
-                  example: ''
+                  description: "hp_no"
+                  example: ""
                 branch:
                   type: string
-                  description: 'branch'
-                  example: ''
+                  description: "branch"
+                  example: ""
                 paid_status:
                   type: number
-                  description: '(1: ยังไม่ได้ชำระ , 2: ชำระเงินแล้ว)'
-                  example: ''
+                  description: "(1: ยังไม่ได้ชำระ , 2: ชำระเงินแล้ว)"
+                  example: ""
                 sort_type:
                   type: string
-                  description: 'sort_type'
-                  example: ''
+                  description: "sort_type"
+                  example: ""
                 sort_field:
                   type: string
-                  description: 'sort_field'
-                  example: ''
+                  description: "sort_field"
+                  example: ""
       responses:
         200:
           description: "successful operation"
@@ -3896,20 +3943,20 @@ paths:
               properties:
                 pageno:
                   type: number
-                  description: 'Page no of data'
+                  description: "Page no of data"
                   example: 1
                 term_remain:
                   type: number
-                  description: 'จำนวนเดือนที่เหลือในการชำระค่างวด'
+                  description: "จำนวนเดือนที่เหลือในการชำระค่างวด"
                   example: 47
                 sort_type:
                   type: string
-                  description: 'sort_type'
-                  example: ''
+                  description: "sort_type"
+                  example: ""
                 sort_field:
                   type: string
-                  description: 'sort_field'
-                  example: ''
+                  description: "sort_field"
+                  example: ""
       responses:
         200:
           description: "successful operation"
