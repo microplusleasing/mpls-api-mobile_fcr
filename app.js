@@ -34,6 +34,7 @@ const btwService = require('./service/btwService')
 const imageUtilService = require('./service/_imageUtilService')
 const welcomeCallService = require('./service/welcomeCallService')
 const agnetService = require(`./service/agentmenuService`)
+const tdrService = require(`./service/tdrService`)
 const bodyParser = require("body-parser")
 const swaggerJSDoc = YAML.load("./api.yaml")
 const test2 = require('./service/test2')
@@ -448,6 +449,19 @@ app.post('/insertnegotocalltrack', auth, callMobileService.insertnegotocalltrack
 app.post(`/getagentwaitingpaymentlist`, auth, agnetService.getagentwaitingpaymentlist)
 
 app.post(`/getagentlastduelist`, auth, agnetService.getagentlastduelist)
+
+/* ... tdr Service ... */
+app.post(`/tdrcalculate`, auth, tdrService.tdrcalculate)
+
+app.post(`/tdrdetailbycontractno`, auth, tdrService.tdrdetailbycontractno)
+
+app.post(`/ratetdr`, auth, tdrService.ratetdr)
+
+app.post(`/insurancetdr`, auth, tdrService.insurancetdr)
+
+app.post(`/termtdr`, auth, tdrService.termtdr)
+
+app.post(`/paymentvaluetdr`, auth, tdrService.paymentvaluetdr)
 
 // app.get('/genqr', barcodeService.genqr)
 // switch on lissten port s
