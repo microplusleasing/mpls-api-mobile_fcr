@@ -132,6 +132,8 @@ app.get('/MPLS_gen_application_no', auth, qeconsentService.MPLS_gen_application_
 
 app.get('/MPLS_getservertime', auth, qeconsentService.MPLS_getservertime)
 
+app.get('/MPLS_getservertimeoracle', auth, qeconsentService.MPLS_getservertimeoracle)
+
 app.get('/MPLS_getbrand', auth, masterService.MPLS_getbrand)
 
 app.get('/MPLS_getmodel', auth, masterService.MPLS_getmodel)
