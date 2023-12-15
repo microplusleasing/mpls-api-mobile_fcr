@@ -87,16 +87,18 @@ async function tdrdetailbycontractno(req, res, next) {
         connection = await oracledb.getConnection(config.database)
         const result = await connection.execute(
             `
-                SELECT AC.HP_NO , AC.BRAND_CODE, XBP.BRAND_NAME, AC.MODEL_CODE, XMP.MODEL AS MODEL_NAME, AC.COLOR, AC.CASI_NO AS CHASSIC_NO, AC.ENGI_NO AS ENGINE_NO, 
+                SELECT AC.HP_NO, TP.TITLE_NAME, CI.NAME, CI.SNAME, AC.BRAND_CODE, XBP.BRAND_NAME, AC.MODEL_CODE, XMP.MODEL AS MODEL_NAME, AC.COLOR, AC.CASI_NO AS CHASSIC_NO, AC.ENGI_NO AS ENGINE_NO, 
                 XPD.MOTOR_NUMBER, AC.PRODUC AS PRODUCT_CODE, XCME.SL_CODE, XMP.PRICE AS FACTORY_PRICE, XMP.MODEL_YEAR,
                 BTW.GET_SIZE_MODEL(AC.PRODUC , AC.BRAND_CODE, AC.MODEL_CODE, XCME.SL_CODE, '004', XMP.PRICE, trunc(sysdate), XMP.MODEL_YEAR) AS SIZE_MODEL, 
                 BTW.PKG_MONTH_END.GET_OUTSTAND_BALANCE('N', :contract_no, TO_CHAR(SYSDATE,'DD/MM/YYYY'),NULL,'BTW.') AS BEFORE_RE_TDR
-                FROM AC_PROVE AC, X_BRAND_P XBP,  X_MODEL_P XMP, X_PRODUCT_DETAIL XPD, X_CUST_MAPPING_EXT XCME
+                FROM BTW.AC_PROVE AC, BTW.X_BRAND_P XBP, BTW.X_MODEL_P XMP, BTW.X_PRODUCT_DETAIL XPD, BTW.X_CUST_MAPPING_EXT XCME, BTW.CUST_INFO CI, BTW.TITLE_P TP
                 WHERE AC.HP_NO = :contract_no
                 AND AC.BRAND_CODE = XBP.BRAND_CODE
                 AND AC.MODEL_CODE = XMP.MODEL_CODE
                 AND AC.HP_NO = XCME.CONTRACT_NO
                 AND XCME.APPLICATION_NUM = XPD.APPLICATION_NUM
+                AND AC.CUST_NO_0 = CI.CUST_NO
+                AND CI.FNAME = TP.TITLE_ID
             `, {
             contract_no: reqData.contract_no
         }, {
@@ -405,9 +407,73 @@ async function termtdr(req, res, next) {
     }
 }
 
+async function coveragetotallosstdr(req, res, next) {
+    let connection;
+    const reqData = req.body
+
+    if (!(reqData.insurance_code && reqData.factory_price && reqData.bussi_code && reqData.brand_code && reqData.model_code && reqData.dl_code)) {
+        return res.satus(400).send({
+            status: 5000,
+            message: `mission parameter (insurance_code : ${reqData.insurance_code ? reqData.insurance_code : '-'}, factory_price : ${reqData.factory_price ? reqData.factory_price : '-'}, bussi_code : ${reqData.bussi_code ? reqData.bussi_code : '-'}, brand_code : ${reqData.brand_code ? reqData.brand_code : '-'}, model_code : ${reqData.model_code ? reqData.model_code : '-'}, dl_code : ${reqData.dl_code ? reqData.dl_code : '-'})`,
+            data: []
+        })
+    }
+    try {
+        oracledb.fetchAsString = [oracledb.NUMBER];
+        connection = await oracledb.getConnection(
+            config.database
+        )
+        const results = await connection.execute(
+            `
+                SELECT TO_NUMBER(BTW.GET_COVERAGE_COMPARE_MAX_LTV(:INSURANCE_CODE,TRUNC((:FACTORY_PRICE*BTW.GET_VALUE_NUM_MARKET_SETTING('004',:BUSSI_CODE,'01',:BRAND_CODE,:MODEL_CODE,:DL_CODE,SYSDATE))/100))) AS COVERAGE_TOTAL_LOSS FROM DUAL
+            `,
+            {
+                INSURANCE_CODE: reqData.insurance_code,
+                FACTORY_PRICE: reqData.factory_price,
+                BUSSI_CODE: reqData.bussi_code,
+                BRAND_CODE: reqData.brand_code,
+                MODEL_CODE: reqData.model_code,
+                DL_CODE: reqData.dl_code
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+        if (results.rows.length == 0) {
+            return res.status(200).send({
+                status: 500,
+                message: 'Not Found Coverage TotalLoss value',
+                data: []
+            })
+        } else {
+            const resData = results.rows[0]
+            let lowerResData = tolowerService.objtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return next(e)
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return next(e);
+            }
+        }
+    }
+}
+
+
+
 module.exports.tdrcalculate = tdrcalculate
 module.exports.tdrdetailbycontractno = tdrdetailbycontractno
 module.exports.ratetdr = ratetdr
 module.exports.insurancetdr = insurancetdr
 module.exports.paymentvaluetdr = paymentvaluetdr
 module.exports.termtdr = termtdr
+module.exports.coveragetotallosstdr = coveragetotallosstdr

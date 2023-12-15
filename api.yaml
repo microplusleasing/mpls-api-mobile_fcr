@@ -4155,6 +4155,49 @@ paths:
         500:
           description: "Error Connect API"
 
+  /coveragetotallosstdr:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get coverrage totalloss tdr value"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                insurance_code:
+                  type: string
+                  description: "Insurance code"
+                  example: "10004"
+                factory_price:
+                  type: number
+                  description: "Factory Price"
+                  example: 123743
+                bussi_code:
+                  type: string
+                  description: "Bussiness Code"
+                  example: "004"
+                brand_code:
+                  type: string
+                  description: "Brand Code"
+                  example: "01"
+                model_code:
+                  type: string
+                  description: "Model Code"
+                  example: "01"
+                dl_code:
+                  type: string
+                  description: "Dealer Code"
+                  example: "20220002"
+      responses:
+        200:
+          description: "successful operation"
+        500:
+          description: "Error Connect API"
+
 components:
   requestBodies:
     MPLS_econsentverify:

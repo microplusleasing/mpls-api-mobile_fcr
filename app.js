@@ -459,9 +459,12 @@ app.post(`/ratetdr`, auth, tdrService.ratetdr)
 
 app.post(`/insurancetdr`, auth, tdrService.insurancetdr)
 
+app.post(`/paymentvaluetdr`, auth, tdrService.paymentvaluetdr)
+
 app.post(`/termtdr`, auth, tdrService.termtdr)
 
-app.post(`/paymentvaluetdr`, auth, tdrService.paymentvaluetdr)
+app.post(`/coveragetotallosstdr`, auth, tdrService.coveragetotallosstdr)
+
 
 // app.get('/genqr', barcodeService.genqr)
 // switch on lissten port s
