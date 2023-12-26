@@ -63,171 +63,145 @@ async function getagentwaitingpaymentlist(req, res, next) {
         const sqlbase =
             `
             SELECT
-                ROWNUM AS LINE_NUMBER,
-                BF.hp_no,
-                BF.name,
-                BF.sname,
-                BF.reg_status,
-                BF.branch_code,
-                BF.branch_name,
-                BF.IS_PAID40,
-                BF.STAFF_ID,
-                BF.REC_DATE,
-                BTW.GET_EMP_NAME(STAFF_ID) AS STAFF_NAME,
-                BF.RN
-            FROM
-                (
-                    SELECT
-                        CH1.hp_no,
-                        CH1.name,
-                        CH1.sname,
-                        CH1.reg_status,
-                        CH1.branch_code,
-                        CH1.branch_name,
-                        CH1.IS_PAID40,
-                        CH1.RN,
-                        NEG2.STAFF_ID,
-                        NEG2.REC_DATE
-                    FROM
-                        (
-                            SELECT
-                                T3.hp_no,
-                                T3.name,
-                                T3.sname,
-                                T3.first_due,
-                                T3.reg_status,
-                                T3.branch_code,
-                                T3.branch_name,
-                                T3.IS_PAID40,
-                                T3.RN
-                            FROM
-                                (
-                                    SELECT
-                                        hp_no,
-                                        name,
-                                        sname,
-                                        first_due,
-                                        reg_status,
-                                        branch_code,
-                                        branch_name,
-                                        NVL(IS_PAID40, 'N') AS IS_PAID40,
-                                        ROW_NUMBER() OVER (
-                                            PARTITION BY HP_NO
-                                            ORDER BY first_due DESC
-                                        ) AS RN
-                                    FROM
-                                        (
-                                            SELECT
-                                                ROWNUM AS LINE_NUMBER,
-                                                T2.*
-                                            FROM
-                                                (
-                                                    SELECT
-                                                        ROWNUM AS LINE_NUMBER,
-                                                        T.*
-                                                    FROM
-                                                        (
-                                                            SELECT
-                                                                DISTINCT hp_no,
-                                                                name,
-                                                                sname,
-                                                                first_due,
-                                                                reg_status,
-                                                                branch_code,
-                                                                branch_name,
-                                                                NVL(IS_PAID40, 'N') AS IS_PAID40
-                                                            FROM
-                                                                (
-                                                                    SELECT
-                                                                        AC_PROVE.hp_no AS hp_no,
-                                                                        EMP.EMP_NAME AS NAME,
-                                                                        EMP.EMP_LNAME AS SNAME,
-                                                                        AC_PROVE.FIRST_DUE,
-                                                                        M_RBC_BOOK_CONTROL.STATUS AS REG_STATUS,
-                                                                        branch_p.branch_code,
-                                                                        branch_p.branch_name,
-                                                                        NVL(PS.IS_PAID40, 'N') AS IS_PAID40
-                                                                    FROM
-                                                                        AC_PROVE,
-                                                                        x_cust_mapping_ext,
-                                                                        x_cust_mapping,
-                                                                        type_p,
-                                                                        title_p,
-                                                                        X_PRODUCT_DETAIL,
-                                                                        X_BRAND_P,
-                                                                        X_MODEL_P,
-                                                                        X_DEALER_P,
-                                                                        BRANCH_P,
-                                                                        (
-                                                                            SELECT
-                                                                                hp_no,
-                                                                                DECODE(
-                                                                                    (
-                                                                                        SELECT DISTINCT HP_NO
-                                                                                        FROM COLL_RECIEPT
-                                                                                        WHERE PAY_CODE = '40'
-                                                                                        AND NVL(CANCELL, 'F') = 'F'
-                                                                                        AND HP_NO = A.HP_NO
-                                                                                    ),
-                                                                                    NULL,
-                                                                                    'N',
-                                                                                    'Y'
-                                                                                ) IS_PAID40
-                                                                            FROM
-                                                                                AC_PROVE A
-                                                                            WHERE
-                                                                                AC_STATUS IN ('C', 'E')
-                                                                        ) PS,
-                                                                        NEGO_INFO,
-                                                                        EMP,
-                                                                        CALL_TRACK_INFO,
-                                                                        BTW.M_RBC_BOOK_CONTROL
-                                                                    WHERE
-                                                                        AC_PROVE.HP_NO = x_cust_mapping_ext.CONTRACT_NO
-                                                                        AND x_cust_mapping_ext.LOAN_RESULT = 'Y'
-                                                                        AND AC_PROVE.AC_DATE IS NOT NULL
-                                                                        AND CANCELL = 'F'
-                                                                        AND x_cust_mapping_ext.APPLICATION_NUM = x_cust_mapping.APPLICATION_NUM
-                                                                        AND x_cust_mapping.CUST_STATUS = type_p.TYPE_CODE
-                                                                        AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_PRODUCT_DETAIL.APPLICATION_NUM
-                                                                        AND X_PRODUCT_DETAIL.PRODUCT_CODE = X_MODEL_P.PRO_CODE
-                                                                        AND X_PRODUCT_DETAIL.BRAND_CODE = X_MODEL_P.BRAND_CODE
-                                                                        AND X_PRODUCT_DETAIL.MODELCODE = X_MODEL_P.MODEL_CODE
-                                                                        AND X_PRODUCT_DETAIL.BRAND_CODE = X_BRAND_P.BRAND_CODE
-                                                                        AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
-                                                                        AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
-                                                                        AND AC_PROVE.HP_NO = PS.HP_NO(+)
-                                                                        AND AC_PROVE.HP_NO = M_RBC_BOOK_CONTROL.CONTRACT_NO(+)
-                                                                        AND AC_PROVE.AC_STATUS IN ('E', 'C')
-                                                                        AND AC_PROVE.HP_NO = NEGO_INFO.HP_NO
-                                                                        AND NEGO_INFO.STAFF_ID = EMP.EMP_ID
-                                                                        AND TO_CHAR(CALL_TRACK_INFO.REC_DAY, 'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(NEGO_INFO.REC_DATE(+), 'dd/mm/yyyy hh24:mi:ss')
-                                                                        ${queryhpno}${querybranch}${querypaidstatus}
-                                                                    ORDER BY TO_CHAR(TO_DATE(AC_PROVE.FIRST_DUE, 'DD/MM/YYYY'), 'DD') ASC, AC_PROVE.HP_NO ASC
-                                                                )
-                                                        ) T
-
-                                                ) T2
-                                        )
-                                ) T3
-                            WHERE RN = 1
-                            ${querysort}
-                        ) CH1,
-                        (
-                            SELECT HP_NO, STAFF_ID, REC_DATE
-                            FROM (
+            ROWNUM AS LINE_NUMBER,
+            BF.hp_no,
+            BF.reg_status,
+            BF.branch_code,
+            BF.branch_name,
+            BF.IS_PAID40,
+            BF.STAFF_ID,
+            BF.REC_DATE,
+            BTW.GET_EMP_NAME(STAFF_ID) AS STAFF_NAME,
+            BF.RN
+        FROM
+            (
+                SELECT
+                    CH1.hp_no,
+                    CH1.reg_status,
+                    CH1.branch_code,
+                    CH1.branch_name,
+                    CH1.IS_PAID40,
+                    CH1.RN,
+                    NEG2.STAFF_ID,
+                    NEG2.REC_DATE
+                FROM
+                    (
+                        SELECT
+                            T3.hp_no,
+                            T3.first_due,
+                            T3.reg_status,
+                            T3.branch_code,
+                            T3.branch_name,
+                            T3.IS_PAID40,
+                            T3.RN
+                        FROM
+                            (
                                 SELECT
-                                    HP_NO,
-                                    STAFF_ID,
-                                    REC_DATE,
-                                    ROW_NUMBER() OVER (PARTITION BY HP_NO ORDER BY REC_DATE DESC) AS RNI
-                                FROM NEGO_INFO NEG
-                                WHERE NEG.NEG_R_CODE = 'M04'
-                            ) NEG1
-                            WHERE RNI = 1
-                        ) NEG2
-                    WHERE CH1.HP_NO = NEG2.HP_NO (+)
-                ) BF
+                                    hp_no,
+                                    first_due,
+                                    reg_status,
+                                    branch_code,
+                                    branch_name,
+                                    NVL(IS_PAID40, 'N') AS IS_PAID40,
+                                    ROW_NUMBER() OVER (
+                                        PARTITION BY HP_NO
+                                        ORDER BY first_due DESC
+                                    ) AS RN
+                                FROM
+                                    (
+                                        SELECT
+                                            ROWNUM AS LINE_NUMBER,
+                                            T2.*
+                                        FROM
+                                            (
+                                                SELECT
+                                                    ROWNUM AS LINE_NUMBER,
+                                                    T.*
+                                                FROM
+                                                    (
+                                                        SELECT
+                                                            AC_PROVE.hp_no AS hp_no,
+                                                            AC_PROVE.FIRST_DUE,
+                                                            M_RBC_BOOK_CONTROL.STATUS AS REG_STATUS,
+                                                            branch_p.branch_code,
+                                                            branch_p.branch_name,
+                                                            NVL(PS.IS_PAID40, 'N') AS IS_PAID40
+                                                        FROM
+                                                            AC_PROVE,
+                                                            x_cust_mapping_ext,
+                                                            x_cust_mapping,
+                                                            type_p,
+                                                            X_PRODUCT_DETAIL,
+                                                            X_BRAND_P,
+                                                            X_MODEL_P,
+                                                            X_DEALER_P,
+                                                            BRANCH_P,
+                                                            (
+                                                                SELECT
+                                                                    hp_no,
+                                                                    DECODE(
+                                                                        (
+                                                                            SELECT DISTINCT HP_NO
+                                                                            FROM COLL_RECIEPT
+                                                                            WHERE PAY_CODE = '40'
+                                                                            AND NVL(CANCELL, 'F') = 'F'
+                                                                            AND HP_NO = A.HP_NO
+                                                                        ),
+                                                                        NULL,
+                                                                        'N',
+                                                                        'Y'
+                                                                    ) IS_PAID40
+                                                                FROM
+                                                                    AC_PROVE A
+                                                                WHERE
+                                                                    AC_STATUS IN ('C', 'E')
+                                                            ) PS,
+                                                          --  NEGO_INFO,
+                                                         --   EMP,
+                                                           -- CALL_TRACK_INFO,
+                                                            BTW.M_RBC_BOOK_CONTROL
+                                                        WHERE
+                                                            AC_PROVE.HP_NO = x_cust_mapping_ext.CONTRACT_NO
+                                                            AND x_cust_mapping_ext.LOAN_RESULT = 'Y'
+                                                            AND AC_PROVE.AC_DATE IS NOT NULL
+                                                            AND CANCELL = 'F'
+                                                            AND x_cust_mapping_ext.APPLICATION_NUM = x_cust_mapping.APPLICATION_NUM
+                                                            AND x_cust_mapping.CUST_STATUS = type_p.TYPE_CODE
+                                                            AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_PRODUCT_DETAIL.APPLICATION_NUM
+                                                            AND X_PRODUCT_DETAIL.PRODUCT_CODE = X_MODEL_P.PRO_CODE
+                                                            AND X_PRODUCT_DETAIL.BRAND_CODE = X_MODEL_P.BRAND_CODE
+                                                            AND X_PRODUCT_DETAIL.MODELCODE = X_MODEL_P.MODEL_CODE
+                                                            AND X_PRODUCT_DETAIL.BRAND_CODE = X_BRAND_P.BRAND_CODE
+                                                            AND x_cust_mapping_ext.sl_code = X_DEALER_P.DL_CODE(+)
+                                                            AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
+                                                            AND AC_PROVE.HP_NO = PS.HP_NO(+)
+                                                            AND AC_PROVE.HP_NO = M_RBC_BOOK_CONTROL.CONTRACT_NO(+)
+                                                            AND AC_PROVE.AC_STATUS IN ('E', 'C')
+                                                            ${queryhpno}${querybranch}${querypaidstatus}
+                                                        ORDER BY TO_CHAR(TO_DATE(AC_PROVE.FIRST_DUE, 'DD/MM/YYYY'), 'DD') ASC, AC_PROVE.HP_NO ASC                                                         
+                                                    ) T
+
+                                            ) T2
+                                    )
+                            ) T3
+                        WHERE RN = 1
+                        ${querysort}
+                    ) CH1,
+                    (
+                        SELECT HP_NO, STAFF_ID, REC_DATE
+                        FROM (
+                            SELECT
+                                HP_NO,
+                                STAFF_ID,
+                                REC_DATE,
+                                ROW_NUMBER() OVER (PARTITION BY HP_NO ORDER BY REC_DATE DESC) AS RNI
+                            FROM NEGO_INFO NEG
+                            WHERE NEG.NEG_R_CODE = 'M04'
+                        ) NEG1
+                        WHERE RNI = 1
+                    ) NEG2
+                WHERE CH1.HP_NO = NEG2.HP_NO (+)
+            ) BF
             `
 
         const sqlcount = ` SELECT COUNT ( LINE_NUMBER ) AS ROWCOUNT FROM (${sqlbase}) `
@@ -358,8 +332,6 @@ async function getagentlastduelist(req, res, next) {
             SELECT
                 ROWNUM AS LINE_NUMBER,
                 BF.hp_no,
-                BF.name,
-                BF.sname,
                 BF.last_due,
                 BF.reg_status,
                 BF.branch_code,
@@ -374,8 +346,6 @@ async function getagentlastduelist(req, res, next) {
                 (
                     SELECT
                         CH1.hp_no,
-                        CH1.name,
-                        CH1.sname,
                         CH1.last_due,
                         CH1.reg_status,
                         CH1.branch_code,
@@ -388,22 +358,18 @@ async function getagentlastduelist(req, res, next) {
                     FROM
                         (
                             SELECT
-                                T3.hp_no,
-                                T3.name,
-                                T3.sname,
-                                T3.last_due,
-                                T3.reg_status,
-                                T3.branch_code,
-                                T3.branch_name,
-                                T3.IS_PAID40,
-                                T3.TERM_REMAIN,
-                                T3.RN
+                                T2.hp_no,
+                                T2.last_due,
+                                T2.reg_status,
+                                T2.branch_code,
+                                T2.branch_name,
+                                T2.IS_PAID40,
+                                T2.TERM_REMAIN,
+                                T2.RN
                             FROM
                                 (
                                     SELECT
                                         hp_no,
-                                        name,
-                                        sname,
                                         last_due,
                                         reg_status,
                                         branch_code,
@@ -419,94 +385,68 @@ async function getagentlastduelist(req, res, next) {
                                         (
                                             SELECT
                                                 ROWNUM AS LINE_NUMBER,
-                                                T2.*
+                                                T.*
                                             FROM
                                                 (
-                                                    SELECT
-                                                        DISTINCT    hp_no,
-                                                                    title_name,
-                                                                    name,
-                                                                    sname,
-                                                                    last_due,
-                                                                    reg_status,
-                                                                    branch_code,
-                                                                    branch_name,
-                                                                    TERM_REMAIN,
-                                                                NVL(IS_PAID40,'N') AS IS_PAID40
-                                                    FROM
-                                                    (
-                                                        SELECT AC_PROVE.HP_NO AS HP_NO,
-                                                            TITLE_P.TITLE_NAME,
-                                                            EMP.EMP_NAME AS NAME,
-                                                            EMP.EMP_LNAME AS SNAME,
-                                                            AC_PROVE.LAST_DUE,
-                                                            M_RBC_BOOK_CONTROL.STATUS AS REG_STATUS,
-                                                            BRANCH_P.BRANCH_CODE,
-                                                            BRANCH_P.BRANCH_NAME,
-                                                            NVL(PS.IS_PAID40, 'N') AS IS_PAID40,
-                                                            TR.TERM_REMAIN
-                                                        FROM AC_PROVE,
-                                                            X_CUST_MAPPING_EXT,
-                                                            X_CUST_MAPPING,
-                                                            TYPE_P,
-                                                            CUST_INFO,
-                                                            TITLE_P,
-                                                            X_PRODUCT_DETAIL,
-                                                            X_BRAND_P,
-                                                            X_MODEL_P,
-                                                            X_DEALER_P,
-                                                            BRANCH_P,
+                                                    SELECT 
+                                                        AC_PROVE.HP_NO AS HP_NO,
+                                                        AC_PROVE.LAST_DUE,
+                                                        M_RBC_BOOK_CONTROL.STATUS AS REG_STATUS,
+                                                        BRANCH_P.BRANCH_CODE,
+                                                        BRANCH_P.BRANCH_NAME,
+                                                        NVL(PS.IS_PAID40, 'N') AS IS_PAID40,
+                                                        TR.TERM_REMAIN
+                                                    FROM AC_PROVE,
+                                                        X_CUST_MAPPING_EXT,
+                                                        X_CUST_MAPPING,
+                                                        TYPE_P,
+                                                        X_PRODUCT_DETAIL,
+                                                        X_BRAND_P,
+                                                        X_MODEL_P,
+                                                        X_DEALER_P,
+                                                        BRANCH_P,
+                                                        (
+                                                            SELECT
+                                                                HP_NO,
+                                                                DECODE((SELECT DISTINCT HP_NO FROM COLL_RECIEPT WHERE PAY_CODE = '40' AND NVL(CANCELL, 'F') = 'F' AND HP_NO = A.HP_NO), NULL, 'N', 'Y') IS_PAID40
+                                                            FROM AC_PROVE A
+                                                            WHERE NVL(AC_STATUS, 'XXX') NOT IN ('E','C')
+                                                        ) PS,
+                                                        (
+                                                            SELECT *
+                                                            FROM
                                                             (
                                                                 SELECT
                                                                     HP_NO,
-                                                                    DECODE((SELECT DISTINCT HP_NO FROM COLL_RECIEPT WHERE PAY_CODE = '40' AND NVL(CANCELL, 'F') = 'F' AND HP_NO = A.HP_NO), NULL, 'N', 'Y') IS_PAID40
+                                                                    TO_NUMBER(A.PERIOD) - TRUNC(BTW.PKG_MONTH_END.GET_TERM_PAID(A.HP_NO, TO_CHAR(SYSDATE, 'DD/MM/YYYY'), NULL, 'BTW.')) TERM_REMAIN
                                                                 FROM AC_PROVE A
                                                                 WHERE NVL(AC_STATUS, 'XXX') NOT IN ('E','C')
-                                                            ) PS,
-                                                            (
-                                                                SELECT *
-                                                                FROM
-                                                                (
-                                                                    SELECT
-                                                                        HP_NO,
-                                                                        TO_NUMBER(A.PERIOD) - TRUNC(BTW.PKG_MONTH_END.GET_TERM_PAID(A.HP_NO, TO_CHAR(SYSDATE, 'DD/MM/YYYY'), NULL, 'BTW.')) TERM_REMAIN
-                                                                    FROM AC_PROVE A
-                                                                    WHERE NVL(AC_STATUS, 'XXX') NOT IN ('E','C')
-                                                                )
-                                                                WHERE TERM_REMAIN IS NOT NULL
-                                                            ) TR,
-                                                            NEGO_INFO,
-                                                            EMP,
-                                                            CALL_TRACK_INFO,
-                                                            BTW.M_RBC_BOOK_CONTROL
-                                                        WHERE AC_PROVE.HP_NO = X_CUST_MAPPING_EXT.CONTRACT_NO
-                                                            AND X_CUST_MAPPING_EXT.LOAN_RESULT = 'Y'
-                                                            AND AC_PROVE.AC_DATE IS NOT NULL
-                                                            AND CANCELL = 'F'
-                                                            AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_CUST_MAPPING.APPLICATION_NUM
-                                                            AND X_CUST_MAPPING.CUST_STATUS = TYPE_P.TYPE_CODE
-                                                            AND X_CUST_MAPPING.CUST_NO = CUST_INFO.CUST_NO
-                                                            AND CUST_INFO.FNAME = TITLE_P.TITLE_ID
-                                                            AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_PRODUCT_DETAIL.APPLICATION_NUM
-                                                            AND X_PRODUCT_DETAIL.PRODUCT_CODE = X_MODEL_P.PRO_CODE
-                                                            AND X_PRODUCT_DETAIL.BRAND_CODE = X_MODEL_P.BRAND_CODE
-                                                            AND X_PRODUCT_DETAIL.MODELCODE = X_MODEL_P.MODEL_CODE
-                                                            AND X_PRODUCT_DETAIL.BRAND_CODE = X_BRAND_P.BRAND_CODE
-                                                            AND X_CUST_MAPPING_EXT.SL_CODE = X_DEALER_P.DL_CODE(+)
-                                                            AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
-                                                            AND AC_PROVE.HP_NO = PS.HP_NO(+)
-                                                            AND AC_PROVE.HP_NO = TR.HP_NO(+)
-                                                            AND NVL(AC_STATUS, 'XXX') NOT IN ('E','C')
-                                                            ${querytermremain}  
-                                                            AND AC_PROVE.HP_NO = NEGO_INFO.HP_NO
-                                                            AND NEGO_INFO.STAFF_ID = EMP.EMP_ID
-                                                            AND TO_CHAR(CALL_TRACK_INFO.REC_DAY, 'DD/MM/YYYY HH24:MI:SS') = TO_CHAR(NEGO_INFO.REC_DATE(+), 'DD/MM/YYYY HH24:MI:SS')
-                                                            AND AC_PROVE.HP_NO = M_RBC_BOOK_CONTROL.CONTRACT_NO(+)
-                                                        ORDER BY TO_CHAR(TO_DATE(AC_PROVE.FIRST_DUE, 'DD/MM/YYYY'), 'DD') ASC, AC_PROVE.HP_NO ASC
-                                                        )    T
-                                                ) T2
+                                                            )
+                                                            WHERE TERM_REMAIN IS NOT NULL
+                                                        ) TR,
+                                                        BTW.M_RBC_BOOK_CONTROL
+                                                    WHERE AC_PROVE.HP_NO = X_CUST_MAPPING_EXT.CONTRACT_NO
+                                                        AND X_CUST_MAPPING_EXT.LOAN_RESULT = 'Y'
+                                                        AND AC_PROVE.AC_DATE IS NOT NULL
+                                                        AND CANCELL = 'F'
+                                                        AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_CUST_MAPPING.APPLICATION_NUM
+                                                        AND X_CUST_MAPPING.CUST_STATUS = TYPE_P.TYPE_CODE
+                                                        AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_PRODUCT_DETAIL.APPLICATION_NUM
+                                                        AND X_PRODUCT_DETAIL.PRODUCT_CODE = X_MODEL_P.PRO_CODE
+                                                        AND X_PRODUCT_DETAIL.BRAND_CODE = X_MODEL_P.BRAND_CODE
+                                                        AND X_PRODUCT_DETAIL.MODELCODE = X_MODEL_P.MODEL_CODE
+                                                        AND X_PRODUCT_DETAIL.BRAND_CODE = X_BRAND_P.BRAND_CODE
+                                                        AND X_CUST_MAPPING_EXT.SL_CODE = X_DEALER_P.DL_CODE(+)
+                                                        AND X_DEALER_P.DL_BRANCH = BRANCH_P.BRANCH_CODE(+)
+                                                        AND AC_PROVE.HP_NO = PS.HP_NO(+)
+                                                        AND AC_PROVE.HP_NO = TR.HP_NO(+)
+                                                        AND NVL(AC_STATUS, 'XXX') NOT IN ('E','C')
+                                                        AND AC_PROVE.HP_NO = M_RBC_BOOK_CONTROL.CONTRACT_NO(+)
+                                                        ${querytermremain}  
+                                                    ORDER BY TO_CHAR(TO_DATE(AC_PROVE.FIRST_DUE, 'DD/MM/YYYY'), 'DD') ASC, AC_PROVE.HP_NO ASC
+                                                )    T
                                         )
-                                ) T3
+                                ) T2
                             WHERE
                             RN = 1
                             ${querysort}
