@@ -3634,6 +3634,21 @@ paths:
         "500":
           description: "Error with message"
 
+  /MPLS_getservertimeoracle:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Get Server current time (oracle)
+
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "Error with message"
+
   /MPLS_is_check_face_valid:
     get:
       tags:
@@ -3961,6 +3976,241 @@ paths:
         200:
           description: "successful operation"
         400:
+          description: "Error Connect API"
+
+  /tdrcalculate:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: "get calculate tdr from contract_no"
+      description: "get calculate tdr from contract_no"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contract_no:
+                  type: string
+                  description: "Contract Number"
+                  example: "110202200000026"
+                summary_tdr:
+                  type: number
+                  description: "variable for recieve BIND_OUT value from procedure"
+                  example: ""
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /tdrdetailbycontractno:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: "get detail relate data from contract_no"
+      description: "get detail relate data from contract_no"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contract_no:
+                  type: string
+                  description: "Contract Number"
+                  example: "110202200000026"
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /ratetdr:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get rate range from data from contract_no"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                size_model:
+                  type: string
+                  description: "Size of model"
+                  example: "03"
+                pro_code:
+                  type: string
+                  description: "Product Code"
+                  example: "01"
+                bussiness_code:
+                  type: string
+                  description: "Bussiness Code"
+                  example: "004"
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /insurancetdr:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get Insurance range from data from contract_no"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                bussiness_code:
+                  type: string
+                  description: "Bussiness Code"
+                  example: "004"
+                factory_price:
+                  type: number
+                  description: "Factory Price"
+                  example: 92555
+                brand_code:
+                  type: string
+                  description: "Brand Code"
+                  example: "01"
+                model_code:
+                  type: string
+                  description: "Model Code"
+                  example: "0021"
+                dl_code:
+                  type: string
+                  description: "Dealer Code"
+                  example: "20220004"
+                
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /paymentvaluetdr:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get TDR payment value"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                net_finance:
+                  type: number
+                  description: net_finance of Product
+                  example: 92555
+                term:
+                  type: number
+                  description: "Term"
+                  example: 24
+                rate:
+                  type: number
+                  description: "Rate"
+                  example: 1.07
+
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+          
+  /termtdr:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get term range from data from contract_no"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                size_model:
+                  type: string
+                  description: "Size of model"
+                  example: "03"
+                pro_code:
+                  type: string
+                  description: "Product Code"
+                  example: "01"
+                rate:
+                  type: number
+                  description: "Rate"
+                  example: 1.07
+                net_finance:
+                  type: number
+                  description: "ยอดกู้รวม"
+                  example: 92555
+                bussiness_code:
+                  type: string
+                  description: "Bussiness Code"
+                  example: "004"
+      responses:
+        200:
+          description: "successful operation"
+        500:
+          description: "Error Connect API"
+
+  /coveragetotallosstdr:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get coverrage totalloss tdr value"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                insurance_code:
+                  type: string
+                  description: "Insurance code"
+                  example: "10004"
+                factory_price:
+                  type: number
+                  description: "Factory Price"
+                  example: 123743
+                bussi_code:
+                  type: string
+                  description: "Bussiness Code"
+                  example: "004"
+                brand_code:
+                  type: string
+                  description: "Brand Code"
+                  example: "01"
+                model_code:
+                  type: string
+                  description: "Model Code"
+                  example: "01"
+                dl_code:
+                  type: string
+                  description: "Dealer Code"
+                  example: "20220002"
+      responses:
+        200:
+          description: "successful operation"
+        500:
           description: "Error Connect API"
 
 components:

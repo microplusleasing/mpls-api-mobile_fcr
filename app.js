@@ -34,6 +34,7 @@ const btwService = require('./service/btwService')
 const imageUtilService = require('./service/_imageUtilService')
 const welcomeCallService = require('./service/welcomeCallService')
 const agnetService = require(`./service/agentmenuService`)
+const tdrService = require(`./service/tdrService`)
 const bodyParser = require("body-parser")
 const swaggerJSDoc = YAML.load("./api.yaml")
 const test2 = require('./service/test2')
@@ -130,6 +131,8 @@ app.post('/MPLS_create_send_car_deliver_and_loyalty_consent', auth, qeconsentSer
 app.get('/MPLS_gen_application_no', auth, qeconsentService.MPLS_gen_application_no)
 
 app.get('/MPLS_getservertime', auth, qeconsentService.MPLS_getservertime)
+
+app.get('/MPLS_getservertimeoracle', auth, qeconsentService.MPLS_getservertimeoracle)
 
 app.get('/MPLS_getbrand', auth, masterService.MPLS_getbrand)
 
@@ -448,6 +451,22 @@ app.post('/insertnegotocalltrack', auth, callMobileService.insertnegotocalltrack
 app.post(`/getagentwaitingpaymentlist`, auth, agnetService.getagentwaitingpaymentlist)
 
 app.post(`/getagentlastduelist`, auth, agnetService.getagentlastduelist)
+
+/* ... tdr Service ... */
+app.post(`/tdrcalculate`, auth, tdrService.tdrcalculate)
+
+app.post(`/tdrdetailbycontractno`, auth, tdrService.tdrdetailbycontractno)
+
+app.post(`/ratetdr`, auth, tdrService.ratetdr)
+
+app.post(`/insurancetdr`, auth, tdrService.insurancetdr)
+
+app.post(`/paymentvaluetdr`, auth, tdrService.paymentvaluetdr)
+
+app.post(`/termtdr`, auth, tdrService.termtdr)
+
+app.post(`/coveragetotallosstdr`, auth, tdrService.coveragetotallosstdr)
+
 
 // app.get('/genqr', barcodeService.genqr)
 // switch on lissten port s
