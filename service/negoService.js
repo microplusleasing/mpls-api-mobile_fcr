@@ -5183,14 +5183,16 @@ async function gettaxdetailbycontractno(req, res, next) {
                     WHERE 
                         NEG_R_CODE = 'M06'
                         AND NEGO_INFO.HP_NO = :hp_no
-                        AND TO_CHAR(NEGO_INFO.REC_DATE, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY')
+                        --AND TO_CHAR(NEGO_INFO.REC_DATE, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY')
+                        AND TRUNC(NEGO_INFO.REC_DATE) BETWEEN TRUNC(add_months(trunc(sysdate),-12 )) AND TRUNC(sysdate)
                     ORDER BY REC_DATE DESC
                 ) 
                 WHERE ROWNUM = 1
             ) NEG ON 1=1
             WHERE 
-            VAT.CONTRACT_NO = :hp_no 
-            AND TO_CHAR(VAT.PROCESS_DATETIME, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY')
+            VAT.CONTRACT_NO = :hp_no
+            --AND TO_CHAR(VAT.PROCESS_DATETIME, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY')
+            AND TRUNC(VAT.PROCESS_DATETIME) BETWEEN TRUNC(add_months(trunc(sysdate),-12 )) AND TRUNC(sysdate)
             `
             , {
                 hp_no: reqData.hp_no

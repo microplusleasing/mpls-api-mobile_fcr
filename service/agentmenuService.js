@@ -568,8 +568,6 @@ async function getagentlastduelist(req, res, next) {
 
         const sqlcount = ` SELECT COUNT ( LINE_NUMBER ) AS ROWCOUNT FROM (${sqlbase}) `
 
-        // console.log(`sqlstr: ${sqlcount}`)
-
         const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
 
         // console.log(`result count : ${JSON.stringify(resultCount.rows)}`)
