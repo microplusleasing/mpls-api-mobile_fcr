@@ -2989,6 +2989,57 @@ async function MPLS_getservertime(req, res, next) {
     }
 }
 
+async function MPLS_getservertimeoracle(req, res, next) {
+    let connection;
+
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+
+        const getdate = await connection.execute(
+            `
+                SELECT SYSDATE FROM DUAL
+            `, {
+
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (getdate.rows.leng == 0) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถดึงค่าเวลาจาก server ได้ (0 rows)`,
+                data: []
+            })
+        } else {
+            const date = getdate.rows[0].SYSDATE
+
+            if (!date) {
+                return res.status(200).send({
+                    status: 500,
+                    message: `ไม่พบค่าเวลาจากรายการ`,
+                    data: []
+                })
+            } else {
+                // return date to client 
+                return res.status(200).send({
+                    status: 200,
+                    message: `success`,
+                    data: {
+                        date: date
+                    }
+                })
+            }
+        }
+    } catch (e) {
+        return res.status(200).send({
+            status: 500,
+            message: `server error with status : ${e.message}`,
+            data: []
+        })
+    }
+}
+
 // ***** step 2 (credit: MPLS_CREDIT) *****
 async function MPLS_create_or_update_credit(req, res, next) {
     let connection;
@@ -6340,7 +6391,7 @@ async function MPLS_fix_gen_econsent_image(req, res, next) {
     let connection;
     try {
 
-        const { firstname, lastname, birthdate, citizenid, phone_number, application_no, currentDate, currentDateTime, witness_name, witness_lname} = req.body
+        const { firstname, lastname, birthdate, citizenid, phone_number, application_no, currentDate, currentDateTime, witness_name, witness_lname } = req.body
 
         connection = await oracledb.getConnection(config.database)
 
@@ -7287,6 +7338,7 @@ module.exports.MPLS_check_application_no = MPLS_check_application_no
 module.exports.MPLS_gen_application_no = MPLS_gen_application_no
 
 module.exports.MPLS_getservertime = MPLS_getservertime
+module.exports.MPLS_getservertimeoracle = MPLS_getservertimeoracle
 
 module.exports.MPLS_create_or_update_credit = MPLS_create_or_update_credit
 module.exports.MPLS_create_or_update_careerandpurpose = MPLS_create_or_update_careerandpurpose

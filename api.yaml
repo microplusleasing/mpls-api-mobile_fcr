@@ -584,7 +584,7 @@ paths:
                 holder:
                   type: string
                   example: "654089"
-                stage: 
+                stage:
                   type: string
                   example: 1
       responses:
@@ -592,7 +592,7 @@ paths:
           description: "successful get data"
         400:
           description: "error"
-  
+
   /getagentsitevisit:
     post:
       tags:
@@ -615,12 +615,12 @@ paths:
                 surname:
                   type: string
                   example: ""
-                hp_no: 
+                hp_no:
                   type: string
-                  example: ''
+                  example: ""
                 branch:
                   type: string
-                  example: '30'
+                  example: "30"
                 staffid:
                   type: string
                   example: "654004"
@@ -629,6 +629,151 @@ paths:
           description: "successful get data"
         400:
           description: "error"
+
+  /getagentassigntofcr:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get data from collection (agent)
+      description: load data from "Database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  example: 1
+                hp_no:
+                  type: string
+                  example: ""
+                branch:
+                  type: string
+                  example: ""
+                rec_date:
+                  type: string
+                  example: ""
+                holder:
+                  type: string
+                  example: ""
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /updateagentassignfcr:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: update data assign to fcr (coll_info_monthly)
+      description: update row in "Database"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                hp_no:
+                  type: string
+                  example: "110202200000006"
+                agent_id:
+                  type: string
+                  example: "654004"
+
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /getaddrtypemaster:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get address type masterdata
+      description: get address type masterdata
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                hp_no:
+                  type: string
+                  example: "110202200000006"
+
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /getresultsitevisitmaster:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get result site visit masterdata
+      description: get result site visit masterdata
+
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /gettaxdetailbycontractno:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: เรียกตารางดูข้อมูล ภาษี พรบ จาก contract_no (hp_no)
+      description: เรียกตารางดูข้อมูล ภาษี พรบ จาก contract_no (hp_no)
+      requestBody:
+        description: item of list to create
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                hp_no:
+                  type: string
+                  example: "110202200006703"
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /sendsmstaxconfirm:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Resend sms Tax Act"
+      description: "Resend sms Tax Act"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                phone_no:
+                  type: string
+                message:
+                  type: string
+      responses:
+        "200":
+          description: "success send sms"
+        "400":
+          description: "Invalid input"
 
   /getnegotiationlist:
     get:
@@ -764,7 +909,7 @@ paths:
                   example: 1
                 applicationid:
                   type: string
-                  example: '110202200000006'
+                  example: "110202200000006"
       responses:
         200:
           description: "successful operation and not found"
@@ -975,6 +1120,34 @@ paths:
         400:
           description: "return error"
 
+  /getagentparameter:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get list of agent name and id"
+      description: ""
+      responses:
+        200:
+          description: "successfu"
+        400:
+          description: "return error"
+
+  /getagentassigntofcragentparameter:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get list of agent for assing fcr name and id"
+      description: ""
+      responses:
+        200:
+          description: "successfu"
+        400:
+          description: "return error"
+
   /getagentholdermaster:
     get:
       tags:
@@ -1004,8 +1177,8 @@ paths:
               properties:
                 contractno:
                   type: string
-                  example: "GGGGGGG" 
-            
+                  example: "GGGGGGG"
+
       responses:
         200:
           description: "successfu"
@@ -1028,13 +1201,13 @@ paths:
                 keyid:
                   type: string
                   example: "92c300e5f1a540a7a7b7ae1252de0387" # for id 110202200000006
-            
+
       responses:
         200:
           description: "successfu"
         400:
           description: "return error"
-  
+
   /getsitevisitimagebyindex:
     post:
       tags:
@@ -1051,10 +1224,10 @@ paths:
                 keyid:
                   type: string
                   example: "92c300e5f1a540a7a7b7ae1252de0387" # for id 110202200000006
-                indeximage: 
+                indeximage:
                   type: number
                   example: 0
-            
+
       responses:
         200:
           description: "successfu"
@@ -2506,6 +2679,18 @@ paths:
         "200":
           description: "success"
 
+  /gettermremain:
+    get:
+      tags:
+        - "master"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Return term remain left
+      responses:
+        "200":
+          description: "success"
+
   /getStageno:
     get:
       tags:
@@ -3449,6 +3634,21 @@ paths:
         "500":
           description: "Error with message"
 
+  /MPLS_getservertimeoracle:
+    get:
+      tags:
+        - "E-CONSENT"
+      security:
+        - bearerAuth: []
+      summary: This return a single Object
+      description: Get Server current time (oracle)
+
+      responses:
+        "200":
+          description: "success"
+        "500":
+          description: "Error with message"
+
   /MPLS_is_check_face_valid:
     get:
       tags:
@@ -3597,7 +3797,7 @@ paths:
                   example: "key1"
                 phone_no:
                   type: string
-                  description: 'phone Number'
+                  description: "phone Number"
                   example: "0999999999"
       responses:
         200:
@@ -3622,7 +3822,7 @@ paths:
               properties:
                 branch_code:
                   type: string
-                  description: 'branch_code'
+                  description: "branch_code"
                   example: "10"
                 con_r_code:
                   type: string
@@ -3669,7 +3869,7 @@ paths:
               properties:
                 uuid:
                   type: string
-                  description: 'branch_code'
+                  description: "branch_code"
                   example: "5b44e6534a9f4dc0b7cdae00afffa930"
       responses:
         200:
@@ -3692,12 +3892,325 @@ paths:
               properties:
                 key1:
                   type: string
-                  description: 'key1'
+                  description: "key1"
                   example: "1"
       responses:
         200:
           description: "successful operation"
         400:
+          description: "Error Connect API"
+
+  /getagentwaitingpaymentlist:
+    post:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: "get agent list data for waiting payment"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  description: "Page no of data"
+                  example: 1
+                hp_no:
+                  type: string
+                  description: "hp_no"
+                  example: ""
+                branch:
+                  type: string
+                  description: "branch"
+                  example: ""
+                paid_status:
+                  type: number
+                  description: "(1: ยังไม่ได้ชำระ , 2: ชำระเงินแล้ว)"
+                  example: ""
+                sort_type:
+                  type: string
+                  description: "sort_type"
+                  example: ""
+                sort_field:
+                  type: string
+                  description: "sort_field"
+                  example: ""
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /getagentlastduelist:
+    post:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: "get agent list data for waiting payment"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  description: "Page no of data"
+                  example: 1
+                term_remain:
+                  type: number
+                  description: "จำนวนเดือนที่เหลือในการชำระค่างวด"
+                  example: 47
+                sort_type:
+                  type: string
+                  description: "sort_type"
+                  example: ""
+                sort_field:
+                  type: string
+                  description: "sort_field"
+                  example: ""
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /tdrcalculate:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: "get calculate tdr from contract_no"
+      description: "get calculate tdr from contract_no"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contract_no:
+                  type: string
+                  description: "Contract Number"
+                  example: "110202200000026"
+                summary_tdr:
+                  type: number
+                  description: "variable for recieve BIND_OUT value from procedure"
+                  example: ""
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /tdrdetailbycontractno:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: "get detail relate data from contract_no"
+      description: "get detail relate data from contract_no"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contract_no:
+                  type: string
+                  description: "Contract Number"
+                  example: "110202200000026"
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /ratetdr:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get rate range from data from contract_no"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                size_model:
+                  type: string
+                  description: "Size of model"
+                  example: "03"
+                pro_code:
+                  type: string
+                  description: "Product Code"
+                  example: "01"
+                bussiness_code:
+                  type: string
+                  description: "Bussiness Code"
+                  example: "004"
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /insurancetdr:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get Insurance range from data from contract_no"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                bussiness_code:
+                  type: string
+                  description: "Bussiness Code"
+                  example: "004"
+                factory_price:
+                  type: number
+                  description: "Factory Price"
+                  example: 92555
+                brand_code:
+                  type: string
+                  description: "Brand Code"
+                  example: "01"
+                model_code:
+                  type: string
+                  description: "Model Code"
+                  example: "0021"
+                dl_code:
+                  type: string
+                  description: "Dealer Code"
+                  example: "20220004"
+                
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /paymentvaluetdr:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get TDR payment value"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                net_finance:
+                  type: number
+                  description: net_finance of Product
+                  example: 92555
+                term:
+                  type: number
+                  description: "Term"
+                  example: 24
+                rate:
+                  type: number
+                  description: "Rate"
+                  example: 1.07
+
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+          
+  /termtdr:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get term range from data from contract_no"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                size_model:
+                  type: string
+                  description: "Size of model"
+                  example: "03"
+                pro_code:
+                  type: string
+                  description: "Product Code"
+                  example: "01"
+                rate:
+                  type: number
+                  description: "Rate"
+                  example: 1.07
+                net_finance:
+                  type: number
+                  description: "ยอดกู้รวม"
+                  example: 92555
+                bussiness_code:
+                  type: string
+                  description: "Bussiness Code"
+                  example: "004"
+      responses:
+        200:
+          description: "successful operation"
+        500:
+          description: "Error Connect API"
+
+  /coveragetotallosstdr:
+    post:
+      tags:
+        - "TDR"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get coverrage totalloss tdr value"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                insurance_code:
+                  type: string
+                  description: "Insurance code"
+                  example: "10004"
+                factory_price:
+                  type: number
+                  description: "Factory Price"
+                  example: 123743
+                bussi_code:
+                  type: string
+                  description: "Bussiness Code"
+                  example: "004"
+                brand_code:
+                  type: string
+                  description: "Brand Code"
+                  example: "01"
+                model_code:
+                  type: string
+                  description: "Model Code"
+                  example: "01"
+                dl_code:
+                  type: string
+                  description: "Dealer Code"
+                  example: "20220002"
+      responses:
+        200:
+          description: "successful operation"
+        500:
           description: "Error Connect API"
 
 components:
