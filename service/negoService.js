@@ -2090,7 +2090,7 @@ async function gethistorypaymentlist(req, res, next) {
                                     COLL_RECIEPT.INST_NO DESC
                             ) ITEM
         `
-        const resultCountHistory = await connection.execute(` SELECT count (hp_no) ${mainquery} `, {
+        const resultCountHistory = await connection.execute(` SELECT COUNT (HP_NO) AS COUNT FROM ( ${mainquery} ) `, {
             applicationid: applicationid
         }, {
             outFormat: oracledb.OBJECT
