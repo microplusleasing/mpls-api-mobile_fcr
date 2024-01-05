@@ -2055,14 +2055,42 @@ async function gethistorypaymentlist(req, res, next) {
             config.database
         )
 
-        const resultCountHistory = await connection.execute(`
-        SELECT count (hp_no) as count 
-            FROM COLL_RECIEPT,COLL_PAYMENT_P 
-            WHERE COLL_RECIEPT.pay_code = COLL_PAYMENT_P.pay_code 
-            AND NVL(COLL_RECIEPT.CANCELL, 'F') = 'F'
-            AND HP_NO = :applicationid
-            ORDER BY TRUNC(COLL_RECIEPT.RECIEPT_D) DESC,COLL_RECIEPT.INST_NO DESC
-        `, {
+        const mainquery = `
+        SELECT
+                            ROWNUM AS LINE_NUMBER,
+                            ITEM.*
+                        FROM
+                            (
+                                SELECT
+                                    COLL_RECIEPT.HP_NO,
+                                    TRUNC (COLL_RECIEPT.RECIEPT_D) RECIEPT_D,
+                                    COLL_RECIEPT.INST_NO,
+                                    COLL_RECIEPT.inst_due,
+                                    COLL_RECIEPT.cash,
+                                    COLL_RECIEPT.out_stand,
+                                    COLL_PAYMENT_P.PAY_NAME,
+                                    COLL_RECIEPT.PAY_CODE,
+                                    COLL_RECIEPT.INST_NO AS ROUND_PAYMENT,
+                                    BTW.PKG_MONTH_END.GET_OUTSTAND_BALANCE (
+                                        'N',
+                                        :applicationid,
+                                        to_char (sysdate, 'dd/mm/yyyy'),
+                                        null,
+                                        'BTW.'
+                                    ) AS OUT_STAND_MAIN
+                                FROM
+                                    COLL_RECIEPT,
+                                    COLL_PAYMENT_P
+                                WHERE
+                                    COLL_RECIEPT.pay_code = COLL_PAYMENT_P.pay_code
+                                    AND COLL_RECIEPT.CANCELL = 'F'
+                                    AND HP_NO = :applicationid
+                                ORDER BY
+                                    TRUNC (COLL_RECIEPT.RECIEPT_D) DESC,
+                                    COLL_RECIEPT.INST_NO DESC
+                            ) ITEM
+        `
+        const resultCountHistory = await connection.execute(` SELECT count (hp_no) ${mainquery} `, {
             applicationid: applicationid
         }, {
             outFormat: oracledb.OBJECT
@@ -2081,21 +2109,7 @@ async function gethistorypaymentlist(req, res, next) {
 
                 rowCount = resultCountHistory.rows[0].COUNT
                 const { applicationid } = req.query
-                const resulstHistoryList = await connection.execute(`
-                SELECT * FROM (
-                    SELECT COLL_RECIEPT.HP_NO,TRUNC(COLL_RECIEPT.RECIEPT_D)RECIEPT_D,
-                            COLL_RECIEPT.INST_NO,COLL_RECIEPT.inst_due, COLL_RECIEPT.cash,COLL_RECIEPT.out_stand,COLL_PAYMENT_P.PAY_NAME,
-                            COLL_RECIEPT.PAY_CODE, 
-                            COLL_RECIEPT.INST_NO AS ROUND_PAYMENT, 
-                            BTW.PKG_MONTH_END.GET_OUTSTAND_BALANCE('N',:applicationid,to_char(sysdate,'dd/mm/yyyy'),null,'BTW.') AS OUT_STAND_MAIN,
-                            ROW_NUMBER() OVER (ORDER BY RECIEPT_D DESC) LINE_NUMBER 
-                            FROM COLL_RECIEPT,COLL_PAYMENT_P 
-                            WHERE COLL_RECIEPT.pay_code = COLL_PAYMENT_P.pay_code 
-                            AND COLL_RECIEPT.CANCELL = 'F'
-                            AND HP_NO = :applicationid
-                            ORDER BY TRUNC(COLL_RECIEPT.RECIEPT_D) DESC,COLL_RECIEPT.INST_NO DESC
-                    ) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend
-                `, {
+                const resulstHistoryList = await connection.execute(`SELECT * FROM ( ${mainquery} ) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `, {
                     applicationid: applicationid,
                     indexstart: indexstart,
                     indexend: indexend
