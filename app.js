@@ -452,6 +452,10 @@ app.post(`/getagentwaitingpaymentlist`, auth, agnetService.getagentwaitingpaymen
 
 app.post(`/getagentlastduelist`, auth, agnetService.getagentlastduelist)
 
+app.post(`/getagentlastduelistexcel`, auth, agnetService.getagentlastduelistexcel)
+
+app.post(`/getagentlastduelistexceldownload`, auth, agnetService.getagentlastduelistexceldownload)
+
 /* ... tdr Service ... */
 app.post(`/tdrcalculate`, auth, tdrService.tdrcalculate)
 

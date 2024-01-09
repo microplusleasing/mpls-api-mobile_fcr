@@ -3963,7 +3963,77 @@ paths:
                 term_remain:
                   type: number
                   description: "จำนวนเดือนที่เหลือในการชำระค่างวด"
-                  example: 47
+                  example: 39
+                sort_type:
+                  type: string
+                  description: "sort_type"
+                  example: ""
+                sort_field:
+                  type: string
+                  description: "sort_field"
+                  example: ""
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /getagentlastduelistexcel:
+    post:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: "get agent list data for waiting payment"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  description: "Page no of data"
+                  example: 1
+                term_remain:
+                  type: number
+                  description: "จำนวนเดือนที่เหลือในการชำระค่างวด"
+                  example: 39
+                sort_type:
+                  type: string
+                  description: "sort_type"
+                  example: ""
+                sort_field:
+                  type: string
+                  description: "sort_field"
+                  example: ""
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+
+  /getagentlastduelistexceldownload:
+    post:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: "get agent list data for waiting payment"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  description: "Page no of data"
+                  example: 1
+                term_remain:
+                  type: number
+                  description: "จำนวนเดือนที่เหลือในการชำระค่างวด"
+                  example: 39
                 sort_type:
                   type: string
                   description: "sort_type"
