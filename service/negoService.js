@@ -1760,6 +1760,120 @@ async function getmotocyclenego(req, res, next) {
     }
 }
 
+async function getcollectormotocyclenego(req, res, next) {
+    let connection;
+    try {
+
+        // === get param from query ===
+
+        const { hp_no } = req.query
+
+        connection = await oracledb.getConnection(
+            config.database
+        )
+
+        const resultmotorcycle = await connection.execute(`
+        SELECT 
+            CME.APPLICATION_NUM,
+            PD.BRAND_CODE,
+            BP.BRAND_NAME,
+            PD.MODELCODE AS MODEL_CODE,
+            MP.MODEL,
+            PD.ENGINE_NUMBER || PD.ENGINE_NO_RUNNING AS ENGINE_NUMBER,
+            PD.CHASSIS_NUMBER || PD.CHASSIS_NO_RUNNING AS CHASSIS_NUMBER,
+            PD.COLOR,
+            MP.CC,
+            AP.REG_NO,
+            (
+                SELECT PROV_NAME
+                FROM PROVINCE_P
+                WHERE PROV_CODE =  AP.REG_CITY 
+                
+            ) AS REG_CITY_NAME,
+            AP.REG_NO || ' ' ||    (
+                SELECT PROV_NAME
+                FROM PROVINCE_P
+                WHERE PROV_CODE =  AP.REG_CITY 
+                
+            ) AS REG_NO_FULL,
+            CME.DL_CODE,
+            DP.DL_NAME
+        FROM 
+            BTW.X_CUST_MAPPING_EXT CME,
+            BTW.AC_PROVE AP,
+            BTW.X_PRODUCT_DETAIL PD,
+            BTW.X_BRAND_P BP,
+            BTW.X_MODEL_P MP,
+            BTW.X_DEALER_P DP
+        WHERE    CME.APPLICATION_NUM = PD.APPLICATION_NUM
+        AND  CME.CONTRACT_NO = AP.HP_NO
+        
+            AND CME.LOAN_RESULT = 'Y'
+            AND PD.PRODUCT_CODE = '01'
+            AND PD.BRAND_CODE = BP.BRAND_CODE
+            AND MP.BRAND_CODE = BP.BRAND_CODE
+            AND PD.PRODUCT_CODE = BP.PRO_CODE
+            AND PD.MODELCODE = MP.MODEL_CODE
+            AND PD.PRODUCT_CODE = MP.PRO_CODE
+            AND DP.DL_CODE = CME.DL_CODE
+            AND CME.CONTRACT_NO = :hp_no
+        `, {
+            hp_no: hp_no
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+        // const resultnego = await connection.execute(`
+        // SELECT AP.HP_NO, AP.MONTHLY, AP.FIRST_DUE, AP.PERIOD, CI.NAME, CI.SNAME,
+        //     CIM.WILL_PAY_AMT, CIM.WILL_PAY_INST
+        //     FROM BTW.AC_PROVE AP
+        //     LEFT JOIN BTW.CUST_INFO CI
+        //     ON AP.CUST_NO_0 = CI.CUST_NO
+        //     LEFT JOIN COLL_INFO_MONTHLY CIM
+        //     ON AP.HP_NO = CIM.HP_NO
+        //     WHERE AP.HP_NO = :applicationid
+        // `, {
+        //     applicationid: applicationid
+        // }, {
+        //     outFormat: oracledb.OBJECT
+        // })
+
+        if (resultmotorcycle.rows.length == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: `ไม่เจอรายการรุ่นรถตามเลขสัญญา`,
+                data: []
+            })
+        } else {
+            // ==== return success data ==== 
+
+            let resData = resultmotorcycle.rows
+
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            res.status(200).json({
+                status: 200,
+                message: `Success`,
+                data: lowerResData
+            });
+        }
+
+    } catch (e) {
+        console.error(e)
+        return res.status(400).send({
+            status: 400,
+            message: `error with message : ${e.message}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close()
+            } catch (e) {
+                console.error(e)
+                return next(e)
+            }
+        }
+    }
+}
+
 async function getmotocyclenegohistory(req, res, next) {
     let connection;
     try {
@@ -5271,6 +5385,7 @@ module.exports.getphonenolistcust = getphonenolistcust
 module.exports.getlalon = getlalon
 module.exports.getaddressinfo = getaddressinfo
 module.exports.getmotocyclenego = getmotocyclenego
+module.exports.getcollectormotocyclenego = getcollectormotocyclenego
 module.exports.getmotocyclenegohistory = getmotocyclenegohistory
 module.exports.genqrcodenego = genqrcodenego
 module.exports.updatenegolalon = updatenegolalon

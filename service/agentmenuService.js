@@ -1198,7 +1198,12 @@ async function getagentlastduelistexceldownload(req, res, next) {
                                                                             CUST_INFO.CUST_NO,
                                                                             '02'
                                                                         ) AS ADDRESS1,
-                                                                        AC_PROVE.REG_NO || ' ' || PROVINCE_P.PROV_NAME AS REG_NUMBER,
+                                                                        AC_PROVE.REG_NO || ' ' ||    (
+                                                                            SELECT PROV_NAME
+                                                                            FROM PROVINCE_P
+                                                                            WHERE PROV_CODE =  AC_PROVE.REG_CITY 
+                                                                            
+                                                                        ) AS REG_NUMBER,
                                                                         AC_PROVE.LAST_DUE,
                                                                         TO_DATE (AC_PROVE.LAST_DUE, 'DD/MM/YYYY') AS LAST_DUE_DATE,
                                                                         M_RBC_BOOK_CONTROL.STATUS AS REG_STATUS,
@@ -1284,11 +1289,9 @@ async function getagentlastduelistexceldownload(req, res, next) {
                                                                         AND AC_PROVE.HP_NO = TR.HP_NO (+)
                                                                         AND NVL (AC_STATUS, 'XXX') NOT IN ('E', 'C')
                                                                         ${querytermremain}  
-                                                                        AND TERM_REMAIN = 39
                                                                         AND AC_PROVE.HP_NO = M_RBC_BOOK_CONTROL.CONTRACT_NO (+)
                                                                         AND CUST_INFO.FNAME = TITLE_P.TITLE_ID (+)
                                                                         AND X_CUST_MAPPING.CUST_NO = CUST_INFO.CUST_NO
-                                                                        AND AC_PROVE.REG_CITY = PROVINCE_P.PROV_CODE
                                                                         --ORDER BY TO_CHAR(TO_DATE(AC_PROVE.FIRST_DUE, 'DD/MM/YYYY'), 'DD') ASC, AC_PROVE.HP_NO ASC
                                                                 ) T
                                                         ) T2
@@ -1378,7 +1381,7 @@ async function getagentlastduelistexceldownload(req, res, next) {
                         // Generate a Blob containing the Excel file
                         // const excelBlob = XLSX.write(wb, { bookType: 'xlsx', type: 'blob' });
                         // const excelBlob = XLSX.writeFile(wb, "Presidents.xlsx");
-                        const excelBlob = XLSX.writeFile(wb, 'test1', { bookType: 'xlsx'});
+                        const excelBlob = XLSX.writeFile(wb, 'test1', { bookType: 'xlsx' });
 
                         console.log(`ho`)
                         // Stage 2: Send the file to the client
@@ -1447,6 +1450,394 @@ async function getagentlastduelistexceldownload(req, res, next) {
     }
 }
 
+async function getprefirstduelist(req, res, next) {
+
+    let connection;
+    try {
+
+        const { pageno, approve_month, approve_year, branch_code, sort_type, sort_field } = req.body
+
+
+        if (!(pageno)) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters`,
+                data: []
+            })
+        }
+        const indexstart = (pageno - 1) * 10 + 1
+        const indexend = (pageno * 10)
+        let rowCount;
+
+        let bindparams = {};
+
+        let query_approve_month = ''
+        let query_approve_year = ''
+        let query_branch_code = ''
+        let querysort = ''
+
+
+
+        if (approve_month) {
+            query_approve_month = ` AND EXTRACT(MONTH FROM XCME.APPROVE_DATE) = :approve_month `
+            bindparams.approve_month = approve_month
+        } else {
+            query_approve_month = ` AND EXTRACT(MONTH FROM XCME.APPROVE_DATE) = EXTRACT(MONTH FROM SYSDATE) `
+        }
+
+        if (approve_year) {
+            query_approve_year = ` AND EXTRACT(YEAR FROM XCME.APPROVE_DATE) = :approve_year `
+            bindparams.approve_year = approve_year
+        } else {
+            query_approve_year = ` AND EXTRACT(YEAR FROM XCME.APPROVE_DATE) = EXTRACT(YEAR FROM SYSDATE) `
+        }
+
+        if (branch_code) {
+            if (branch_code !== '0') {                
+                query_branch_code = ` AND DL.DL_BRANCH = :branch_code `
+                bindparams.branch_code = branch_code
+            } else {
+                query_branch_code = ``
+            }
+        }
+
+        if (sort_type && sort_field) {
+            querysort = ` ORDER BY ${sort_field} ${sort_type} `
+        } else {
+            querysort = ` ORDER BY APPROVE_DATE ASC `
+        }
+
+        connection = await oracledb.getConnection(config.database)
+        const sqlbase =
+            `
+            SELECT 
+                ROWNUM AS LINE_NUMBER,
+                PREFD.*
+            FROM    
+            (
+                SELECT
+                    XCME.CONTRACT_NO,
+                    CI.NAME AS CUSTOMER_NAME,
+                    CI.SNAME AS CUSTOMER_SURNAME,
+                    TP.TITLE_NAME || ' ' || CI.NAME || '  ' || CI.SNAME AS CUSTOMER_FULLNAME,
+                    DL.DL_BRANCH AS BRANCH_CODE, 
+                    XSC.FIRST_DUE,
+                    TO_DATE(TO_CHAR(XSC.FIRST_DUE,'DD')||'/'||TO_CHAR(sysdate,'MM')||'/'||TO_CHAR(sysdate,'YYYY'),'dd/mm/yyyy') AS NEXT_DUE, 
+                    XCME.APPROVE_DATE, 
+                    BTW.GET_BRANCH_SL_BY_HP_NO(XCME.CONTRACT_NO) AS BRANCH_NAME,
+                    AP.BILL,
+                    AP.BILL_SUB,
+                    AP.MONTHLY,
+                    NI.STATUS_RECALL
+                FROM 
+                    X_CUST_MAPPING_EXT XCME,
+                    X_CUST_MAPPING XCM,
+                    AC_PROVE AP,
+                    TITLE_P TP,
+                    CUST_INFO CI,
+                    PROVINCE_P PP,
+                    X_DEALER_P DL,
+                    BTW.X_SAMM_CONTRACT XSC,
+                    (
+                        SELECT HP_NO,
+                            CASE WHEN MAX(CASE WHEN neg_r_code = 'X01' THEN 1 ELSE 0 END) = 1 THEN 'ติดต่อแล้ว' ELSE 'รอการติดต่อ' END AS STATUS_RECALL
+                        FROM 
+                            NEGO_INFO
+                        GROUP BY HP_NO
+                    ) NI
+                WHERE 
+                    XCME.APPLICATION_NUM = XCM.APPLICATION_NUM
+                    AND XCME.CONTRACT_NO = AP.HP_NO
+                    AND XCM.CUST_STATUS = '0'
+                    AND XCME.LOAN_RESULT = 'Y'
+                    AND CI.FNAME = TP.TITLE_ID (+)
+                    AND XCM.CUST_NO = CI.CUST_NO
+                    AND NI.HP_NO = AP.HP_NO
+                    AND XCME.SL_CODE = DL.DL_CODE
+                    AND DL.DL_BRANCH = PP.PROV_CODE
+                    AND XCME.APPLICATION_NUM = XSC.APPLICATION_NUM
+                    ${query_approve_month}
+                    ${query_approve_year}
+                    ${query_branch_code}
+                ${querysort}
+            ) PREFD
+            `
+
+        const sqlcount = ` SELECT COUNT ( LINE_NUMBER ) AS ROWCOUNT FROM (${sqlbase}) `
+
+        const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
+
+        // console.log(`result count : ${JSON.stringify(resultCount.rows)}`)
+
+        if (resultCount.rows.length == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: 'NO RECORD FOUND',
+                data: []
+            })
+        } else {
+
+            try {
+                rowCount = resultCount.rows[0].ROWCOUNT
+                bindparams.indexstart = indexstart
+                bindparams.indexend = indexend
+                const finishsql = ` SELECT * FROM( ${sqlbase} ) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `
+
+                const resultSelect = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
+
+                if (resultSelect.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 200,
+                        message: 'No agent assign record ',
+                        data: []
+                    })
+                } else {
+
+                    let resData = resultSelect.rows
+
+                    const lowerResData = tolowerService.arrayobjtolower(resData)
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    returnData.status = 200
+                    returnData.message = 'success'
+                    returnData.CurrentPage = Number(pageno)
+                    returnData.pageSize = 10
+                    returnData.rowCount = rowCount
+                    returnData.pageCount = Math.ceil(rowCount / 10);
+
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+
+                    // res.status(200).json(results.rows[0]);
+                    res.status(200).json(returnDatalowerCase);
+                }
+            } catch (e) {
+                console.error(e)
+                return res.status(200).send({
+                    status: 400,
+                    mesasage: `error during get list data of colletion : ${e.message}`,
+                    data: []
+                })
+            }
+
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function getprefirstdueyearlist(req, res, next) {
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(
+            `
+                SELECT DISTINCT
+                    YEAR_VALUE
+                FROM (
+                    SELECT
+                        TO_CHAR(EXTRACT(YEAR FROM XCME.APPROVE_DATE)) AS YEAR_VALUE
+                    FROM 
+                        X_CUST_MAPPING_EXT XCME,
+                        X_CUST_MAPPING XCM,
+                        AC_PROVE AP,
+                        TITLE_P TP,
+                        CUST_INFO CI,
+                        PROVINCE_P PP,
+                        X_DEALER_P DL,
+                        BTW.X_SAMM_CONTRACT XSC,
+                        (
+                            SELECT HP_NO,
+                                CASE WHEN MAX(CASE WHEN neg_r_code = 'X01' THEN 1 ELSE 0 END) = 1 THEN 'ติดต่อแล้ว' ELSE 'รอการติดต่อ' END AS STATUS_RECALL
+                            FROM 
+                                NEGO_INFO
+                            GROUP BY HP_NO
+                        ) NI
+                    WHERE 
+                        XCME.APPLICATION_NUM = XCM.APPLICATION_NUM
+                        AND XCME.CONTRACT_NO = AP.HP_NO
+                        AND XCM.CUST_STATUS = '0'
+                        AND XCME.LOAN_RESULT = 'Y'
+                        AND CI.FNAME = TP.TITLE_ID (+)
+                        AND XCM.CUST_NO = CI.CUST_NO
+                        AND AP.REG_CITY = PP.PROV_CODE
+                        AND NI.HP_NO = AP.HP_NO
+                        AND XCME.SL_CODE = DL.DL_CODE
+                        AND DL.DL_BRANCH = PP.PROV_CODE
+                        AND XCME.APPLICATION_NUM = XSC.APPLICATION_NUM
+                )
+                ORDER BY YEAR_VALUE ASC
+            `
+            , {
+
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'No data',
+                data: []
+            })
+        } else {
+            const resData = result.rows
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 500,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function getcollectordetailbyid(req, res, next) {
+
+    let connection;
+    try {
+
+        // === get param from query ===
+
+        const { applicationid } = req.query
+
+        connection = await oracledb.getConnection(
+            config.database
+        )
+
+        const result = await connection.execute(
+            `
+            SELECT
+                XCME.CONTRACT_NO AS HP_NO,
+                TP.TITLE_NAME,
+                CI.NAME AS NAME,
+                CI.SNAME AS SNAME,
+                TP.TITLE_NAME || ' ' || CI.NAME || '  ' || CI.SNAME AS CUSTOMER_FULLNAME,
+                CI.BIRTH_DATE,
+                DL.DL_BRANCH AS BRANCH_CODE,
+                BTW.GET_BRANCH_SL_BY_HP_NO(XCME.CONTRACT_NO) AS BRANCH_NAME,
+                XCME.BUSSINESS_CODE,
+                XCME.CREATE_CONTRACT_DATE,
+                CI.CUST_NO,
+                CI.IDCARD_NUM,
+                TO_DATE(TO_CHAR(XSC.FIRST_DUE,'DD')||'/'||TO_CHAR(sysdate,'MM')||'/'||TO_CHAR(sysdate,'YYYY'),'dd/mm/yyyy') AS PAYMENTDATE,
+                XCME.TERM,
+                XCM.CUST_STATUS AS TYPE_CODE,
+                TYP.TYPE_NAME AS TYPE_NAME,
+                XCME.DL_CODE,
+                XSC.FIRST_DUE,
+                XCME.APPROVE_DATE, 
+                AP.MONTHLY,
+                DL.DL_BRANCH
+            FROM 
+                X_CUST_MAPPING_EXT XCME,
+                X_CUST_MAPPING XCM,
+                AC_PROVE AP,
+                TITLE_P TP,
+                CUST_INFO CI,
+                PROVINCE_P PP,
+                X_DEALER_P DL,
+                BTW.X_SAMM_CONTRACT XSC,
+                BTW.TYPE_P TYP
+            WHERE 
+                XCME.APPLICATION_NUM = XCM.APPLICATION_NUM
+                AND XCME.APPLICATION_NUM = XSC.APPLICATION_NUM
+                AND XCME.CONTRACT_NO = AP.HP_NO
+                AND XCM.CUST_STATUS = '0'
+                AND XCME.LOAN_RESULT = 'Y'
+                AND CI.FNAME = TP.TITLE_ID (+)
+                AND XCM.CUST_NO = CI.CUST_NO
+                AND XCME.SL_CODE = DL.DL_CODE
+                AND DL.DL_BRANCH = PP.PROV_CODE
+                AND TYP.TYPE_CODE = XCM.CUST_STATUS
+                AND XCME.CONTRACT_NO = :applicationid
+            `
+            , {
+                applicationid: applicationid
+            }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (result.rows.length == 0) {
+            return res.status(200).send({
+                status: 400,
+                message: 'ไม่เจอรายการสัญญาที่เลือก',
+                data: []
+            })
+        } else {
+            // ==== return success data ==== 
+
+            const resData = result.rows
+            
+            const lowerResData = tolowerService.arrayobjtolower(resData)
+            return res.status(200).send({
+                status: 200,
+                message: 'Success',
+                data: lowerResData
+            })
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 500,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
 // line_number: number
 // hp_no: string
 // contract_no: string
@@ -1490,3 +1881,6 @@ module.exports.getagentwaitingpaymentlist = getagentwaitingpaymentlist
 module.exports.getagentlastduelist = getagentlastduelist
 module.exports.getagentlastduelistexcel = getagentlastduelistexcel
 module.exports.getagentlastduelistexceldownload = getagentlastduelistexceldownload
+module.exports.getprefirstduelist = getprefirstduelist
+module.exports.getprefirstdueyearlist = getprefirstdueyearlist
+module.exports.getcollectordetailbyid = getcollectordetailbyid

@@ -318,9 +318,13 @@ app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
 
+app.get('/getcollectordetailbyid', auth, agnetService.getcollectordetailbyid)
+
 app.get('/getnegotiationhistorybyid', auth, negoService.getnegotiationhistorybyid)
 
 app.get('/getmotocyclenego', auth, negoService.getmotocyclenego)
+
+app.get('/getcollectormotocyclenego', auth, negoService.getcollectormotocyclenego)
 
 app.get('/getmotocyclenegohistory', auth, negoService.getmotocyclenegohistory)
 
@@ -455,6 +459,10 @@ app.post(`/getagentlastduelist`, auth, agnetService.getagentlastduelist)
 app.post(`/getagentlastduelistexcel`, auth, agnetService.getagentlastduelistexcel)
 
 app.post(`/getagentlastduelistexceldownload`, auth, agnetService.getagentlastduelistexceldownload)
+
+app.post(`/getprefirstduelist`, auth, agnetService.getprefirstduelist)
+
+app.get(`/getprefirstdueyearlist`, auth, agnetService.getprefirstdueyearlist)
 
 /* ... tdr Service ... */
 app.post(`/tdrcalculate`, auth, tdrService.tdrcalculate)

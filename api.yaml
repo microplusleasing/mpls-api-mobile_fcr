@@ -1070,6 +1070,71 @@ paths:
         400:
           description: "other errror status"
 
+  /getmotocyclenego:
+    get:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: "Get motocycle detail by id"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "hp_no"
+          description: "This is hp_no"
+          schema:
+            type: number
+            example: 110202200000014
+      responses:
+        200:
+          description: "successful operation and not found"
+        400:
+          description: "other errror status"
+
+  /getcollectormotocyclenego:
+    get:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: "Get motocycle detail by id"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "hp_no"
+          description: "This is hp_no"
+          schema:
+            type: number
+            example: 110202200000014
+      responses:
+        200:
+          description: "successful operation and not found"
+        400:
+          description: "other errror status"
+
+  /getcollectordetailbyid:
+    get:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: "Get negotiation by id"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "applicationid"
+          description: "This is applicationid"
+          schema:
+            type: number
+            example: 110202200000014
+      responses:
+        200:
+          description: "successful operation and not found"
+        404:
+          description: "Not found data"
+        400:
+          description: "other errror status"
+
   /getmotocycle:
     get:
       tags:
@@ -4047,6 +4112,62 @@ paths:
           description: "successful operation"
         400:
           description: "Error Connect API"
+
+  /getprefirstduelist:
+    post:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: "get pre-Frist-due list"
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  description: "Page no of data"
+                  example: 1
+                approve_month:
+                  type: string
+                  description: "เดือนที่อนุมัติสินเชื่อ"
+                  example: '06'
+                approve_year:
+                  type: string
+                  description: "ปีที่อนุมัติสินเชื่อ"
+                  example: '2022'
+                branch_code:
+                  type: string
+                  description: "สาขา"
+                  example: '40'
+                sort_type:
+                  type: string
+                  description: "sort_type"
+                  example: ""
+                sort_field:
+                  type: string
+                  description: "sort_field"
+                  example: ""
+      responses:
+        200:
+          description: "successful operation"
+        400:
+          description: "Error Connect API"
+  
+  /getprefirstdueyearlist:
+    get:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      description: get result year of pre firstdue
+      responses:
+        "200":
+          description: "sucess"
+        "400":
+          description: "all type error"
 
   /tdrcalculate:
     post:
