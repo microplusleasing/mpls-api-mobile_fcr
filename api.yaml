@@ -4056,10 +4056,6 @@ paths:
           application/json:
             schema:
               properties:
-                pageno:
-                  type: number
-                  description: "Page no of data"
-                  example: 1
                 term_remain:
                   type: number
                   description: "จำนวนเดือนที่เหลือในการชำระค่างวด"

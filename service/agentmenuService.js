@@ -1,7 +1,7 @@
 const oracledb = require('oracledb')
 const config = require('./connectdb')
 const tolowerService = require('./tolowerkey')
-// const XLSX = require('xlsx');
+// const XLSX = require('xlsx')
 const moment = require('moment');
 const _util = require('./_selfutil');
 
@@ -655,19 +655,8 @@ async function getagentlastduelistexcel(req, res, next) {
     let connection;
     try {
 
-        const { pageno, term_remain, sort_type, sort_field } = req.body
+        const { term_remain, sort_type, sort_field } = req.body
 
-
-        // if (!(pageno && due && holder)) {
-        if (!(pageno)) {
-            return res.status(200).send({
-                status: 400,
-                message: `missing parameters`,
-                data: []
-            })
-        }
-        // const indexstart = (pageno - 1) * 10 + 1
-        // const indexend = (pageno * 10)
         let rowCount;
 
         let bindparams = {};
@@ -817,7 +806,12 @@ async function getagentlastduelistexcel(req, res, next) {
                                                                             CUST_INFO.CUST_NO,
                                                                             '02'
                                                                         ) AS ADDRESS1,
-                                                                        AC_PROVE.REG_NO || ' ' || PROVINCE_P.PROV_NAME AS REG_NUMBER,
+                                                                        AC_PROVE.REG_NO || ' ' ||    (
+                                                                            SELECT PROV_NAME
+                                                                            FROM PROVINCE_P
+                                                                            WHERE PROV_CODE =  AC_PROVE.REG_CITY 
+                                                                            
+                                                                        ) AS REG_NUMBER,
                                                                         AC_PROVE.LAST_DUE,
                                                                         TO_DATE (AC_PROVE.LAST_DUE, 'DD/MM/YYYY') AS LAST_DUE_DATE,
                                                                         M_RBC_BOOK_CONTROL.STATUS AS REG_STATUS,
@@ -903,11 +897,9 @@ async function getagentlastduelistexcel(req, res, next) {
                                                                         AND AC_PROVE.HP_NO = TR.HP_NO (+)
                                                                         AND NVL (AC_STATUS, 'XXX') NOT IN ('E', 'C')
                                                                         ${querytermremain}  
-                                                                        AND TERM_REMAIN = 39
                                                                         AND AC_PROVE.HP_NO = M_RBC_BOOK_CONTROL.CONTRACT_NO (+)
                                                                         AND CUST_INFO.FNAME = TITLE_P.TITLE_ID (+)
                                                                         AND X_CUST_MAPPING.CUST_NO = CUST_INFO.CUST_NO
-                                                                        AND AC_PROVE.REG_CITY = PROVINCE_P.PROV_CODE
                                                                         --ORDER BY TO_CHAR(TO_DATE(AC_PROVE.FIRST_DUE, 'DD/MM/YYYY'), 'DD') ASC, AC_PROVE.HP_NO ASC
                                                                 ) T
                                                         ) T2
@@ -978,10 +970,13 @@ async function getagentlastduelistexcel(req, res, next) {
                         data: []
                     })
                 } else {
+                    
 
                     let resData = resultSelect.rows
 
-                    const lowerResData = tolowerService.arrayobjtolower(resData)
+                    let lowerResData = tolowerService.arrayobjtolower(resData)
+                    /* .... mapping key name for return json ... */
+                    lowerResData = mapAndRenameKeys(lowerResData)
                     let returnData = new Object
                     returnData.data = lowerResData
                     returnData.status = 200
@@ -1372,51 +1367,51 @@ async function getagentlastduelistexceldownload(req, res, next) {
 
                     // try to create excel 
 
-                    try {
+                    // try {
 
-                        const wb = XLSX.utils.book_new();
-                        const ws = XLSX.utils.json_to_sheet(jsonData);
-                        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+                    //     const wb = XLSX.utils.book_new();
+                    //     const ws = XLSX.utils.json_to_sheet(jsonData);
+                    //     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 
-                        // Generate a Blob containing the Excel file
-                        // const excelBlob = XLSX.write(wb, { bookType: 'xlsx', type: 'blob' });
-                        // const excelBlob = XLSX.writeFile(wb, "Presidents.xlsx");
-                        const excelBlob = XLSX.writeFile(wb, 'test1', { bookType: 'xlsx' });
+                    //     // Generate a Blob containing the Excel file
+                    //     // const excelBlob = XLSX.write(wb, { bookType: 'xlsx', type: 'blob' });
+                    //     // const excelBlob = XLSX.writeFile(wb, "Presidents.xlsx");
+                    //     const excelBlob = XLSX.writeFile(wb, 'test1', { bookType: 'xlsx' });
 
-                        console.log(`ho`)
-                        // Stage 2: Send the file to the client
-                        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-                        res.setHeader('Content-Disposition', 'attachment; filename=test1.xlsx');
+                    //     console.log(`ho`)
+                    //     // Stage 2: Send the file to the client
+                    //     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                    //     res.setHeader('Content-Disposition', 'attachment; filename=test1.xlsx');
 
-                        excelBlob.arrayBuffer().then((buffer) => {
-                            // Stream the buffer to the response
-                            res.end(Buffer.from(buffer));
-                        });
-
-
-                    } catch (e) {
-                        console.error(e)
-                        return res.status(200).send({
-                            status: 400,
-                            message: `Fail during export to excel via api : ${e.message ? e.message : `no msg`}`,
-                            data: []
-                        })
-                    }
+                    //     excelBlob.arrayBuffer().then((buffer) => {
+                    //         // Stream the buffer to the response
+                    //         res.end(Buffer.from(buffer));
+                    //     });
 
 
-                    // let returnData = new Object
-                    // returnData.data = lowerResData
-                    // returnData.status = 200
-                    // returnData.message = 'success'
-                    // returnData.rowCount = rowCount
+                    // } catch (e) {
+                    //     console.error(e)
+                    //     return res.status(200).send({
+                    //         status: 400,
+                    //         message: `Fail during export to excel via api : ${e.message ? e.message : `no msg`}`,
+                    //         data: []
+                    //     })
+                    // }
 
-                    // // === tran all upperCase to lowerCase === 
-                    // let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
-                    //     result[key.toLowerCase()] = val;
-                    // });
 
-                    // // res.status(200).json(results.rows[0]);
-                    // res.status(200).json(returnDatalowerCase);
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    returnData.status = 200
+                    returnData.message = 'success'
+                    returnData.rowCount = rowCount
+
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+
+                    // res.status(200).json(results.rows[0]);
+                    res.status(200).json(returnDatalowerCase);
                 }
             } catch (e) {
                 console.error(e)
@@ -1465,6 +1460,7 @@ async function getprefirstduelist(req, res, next) {
                 data: []
             })
         }
+
         const indexstart = (pageno - 1) * 10 + 1
         const indexend = (pageno * 10)
         let rowCount;
@@ -1493,7 +1489,7 @@ async function getprefirstduelist(req, res, next) {
         }
 
         if (branch_code) {
-            if (branch_code !== '0') {                
+            if (branch_code !== '0') {
                 query_branch_code = ` AND DL.DL_BRANCH = :branch_code `
                 bindparams.branch_code = branch_code
             } else {
@@ -1808,7 +1804,7 @@ async function getcollectordetailbyid(req, res, next) {
             // ==== return success data ==== 
 
             const resData = result.rows
-            
+
             const lowerResData = tolowerService.arrayobjtolower(resData)
             return res.status(200).send({
                 status: 200,
@@ -1860,13 +1856,36 @@ async function getcollectordetailbyid(req, res, next) {
 // reg_status_client: string
 // is_paid40_client: string
 
+// {
+//     "line_number": 1,
+//     "hp_no": "110202200000575",
+//     "contract_no": "110202200000575",
+//     "customer_fullname": "นาง มะลิ  ด่านขุนทด",
+//     "create_contract_date": "2022-06-20T10:27:16.000Z",
+//     "term": 12,
+//     "monthly": "2925.00",
+//     "address1": "288 บ้านซับรังกา ม.9  ต.สุขไพบูลย์  อ.เสิงสาง  จ.นครราชสีมา  30330",
+//     "reg_number": "2กล3322 นครราชสีมา",
+//     "last_due": "01/07/2023",
+//     "last_due_date": "2023-06-30T17:00:00.000Z",
+//     "reg_status": "B",
+//     "branch_code": "30",
+//     "branch_name": "นครราชสีมา",
+//     "is_paid40": "N",
+//     "term_remain": 4,
+//     "staff_id": null,
+//     "rec_date": null,
+//     "staff_name": null,
+//     "rn": 1
+// },
+
 // Function to map and rename keys
 function mapAndRenameKeys(data) {
     return data.map(item => {
         return {
             'ชื่อ-นามสกุล': item.customer_fullname,
             'หมายเลขทะเบียนรถ': item.reg_number,
-            'เลขที่สัญญา': item.customer_fullname,
+            'เลขที่สัญญา': item.hp_no,
             'สาขาที่ทำสัญญา': item.branch_name,
             'วันที่ทำสัญญา': moment(item.create_contract_date).format('DD/MM/YYYY'),
             'จำนวนงวดที่ผ่อนชำระทั้งหมด': item.term,
