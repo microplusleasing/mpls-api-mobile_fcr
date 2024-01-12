@@ -970,7 +970,7 @@ async function getagentlastduelistexcel(req, res, next) {
                         data: []
                     })
                 } else {
-                    
+
 
                     let resData = resultSelect.rows
 
@@ -1524,7 +1524,7 @@ async function getprefirstduelist(req, res, next) {
                     AP.BILL,
                     AP.BILL_SUB,
                     AP.MONTHLY,
-                    NI.STATUS_RECALL
+                    NVL(CASE WHEN NI.STATUS_RECALL IS NULL OR NI.STATUS_RECALL = '' THEN 'รอการติดต่อ' ELSE NI.STATUS_RECALL END, 'nullorempty') AS STATUS_RECALL
                 FROM 
                     X_CUST_MAPPING_EXT XCME,
                     X_CUST_MAPPING XCM,
@@ -1536,7 +1536,7 @@ async function getprefirstduelist(req, res, next) {
                     BTW.X_SAMM_CONTRACT XSC,
                     (
                         SELECT HP_NO,
-                            CASE WHEN MAX(CASE WHEN neg_r_code = 'X01' THEN 1 ELSE 0 END) = 1 THEN 'ติดต่อแล้ว' ELSE 'รอการติดต่อ' END AS STATUS_RECALL
+                            CASE WHEN MAX(CASE WHEN neg_r_code = 'M07' THEN 1 ELSE 0 END) = 1 THEN 'ติดต่อแล้ว' ELSE 'รอการติดต่อ' END AS STATUS_RECALL
                         FROM 
                             NEGO_INFO
                         GROUP BY HP_NO
@@ -1548,7 +1548,7 @@ async function getprefirstduelist(req, res, next) {
                     AND XCME.LOAN_RESULT = 'Y'
                     AND CI.FNAME = TP.TITLE_ID (+)
                     AND XCM.CUST_NO = CI.CUST_NO
-                    AND NI.HP_NO = AP.HP_NO
+                    AND AP.HP_NO = NI.HP_NO (+)
                     AND XCME.SL_CODE = DL.DL_CODE
                     AND DL.DL_BRANCH = PP.PROV_CODE
                     AND XCME.APPLICATION_NUM = XSC.APPLICATION_NUM
@@ -1649,41 +1649,40 @@ async function getprefirstdueyearlist(req, res, next) {
         connection = await oracledb.getConnection(config.database)
         const result = await connection.execute(
             `
-                SELECT DISTINCT
-                    YEAR_VALUE
-                FROM (
-                    SELECT
-                        TO_CHAR(EXTRACT(YEAR FROM XCME.APPROVE_DATE)) AS YEAR_VALUE
-                    FROM 
-                        X_CUST_MAPPING_EXT XCME,
-                        X_CUST_MAPPING XCM,
-                        AC_PROVE AP,
-                        TITLE_P TP,
-                        CUST_INFO CI,
-                        PROVINCE_P PP,
-                        X_DEALER_P DL,
-                        BTW.X_SAMM_CONTRACT XSC,
-                        (
-                            SELECT HP_NO,
-                                CASE WHEN MAX(CASE WHEN neg_r_code = 'X01' THEN 1 ELSE 0 END) = 1 THEN 'ติดต่อแล้ว' ELSE 'รอการติดต่อ' END AS STATUS_RECALL
-                            FROM 
-                                NEGO_INFO
-                            GROUP BY HP_NO
-                        ) NI
-                    WHERE 
-                        XCME.APPLICATION_NUM = XCM.APPLICATION_NUM
-                        AND XCME.CONTRACT_NO = AP.HP_NO
-                        AND XCM.CUST_STATUS = '0'
-                        AND XCME.LOAN_RESULT = 'Y'
-                        AND CI.FNAME = TP.TITLE_ID (+)
-                        AND XCM.CUST_NO = CI.CUST_NO
-                        AND AP.REG_CITY = PP.PROV_CODE
-                        AND NI.HP_NO = AP.HP_NO
-                        AND XCME.SL_CODE = DL.DL_CODE
-                        AND DL.DL_BRANCH = PP.PROV_CODE
-                        AND XCME.APPLICATION_NUM = XSC.APPLICATION_NUM
-                )
-                ORDER BY YEAR_VALUE ASC
+            SELECT DISTINCT
+                YEAR_VALUE
+            FROM (
+                SELECT
+                    TO_CHAR(EXTRACT(YEAR FROM XCME.APPROVE_DATE)) AS YEAR_VALUE
+                FROM 
+                    X_CUST_MAPPING_EXT XCME,
+                    X_CUST_MAPPING XCM,
+                    AC_PROVE AP,
+                    TITLE_P TP,
+                    CUST_INFO CI,
+                    PROVINCE_P PP,
+                    X_DEALER_P DL,
+                    BTW.X_SAMM_CONTRACT XSC,
+                    (
+                        SELECT HP_NO,
+                            CASE WHEN MAX(CASE WHEN neg_r_code = 'M07' THEN 1 ELSE 0 END) = 1 THEN 'ติดต่อแล้ว' ELSE 'รอการติดต่อ' END AS STATUS_RECALL
+                        FROM 
+                            NEGO_INFO
+                        GROUP BY HP_NO
+                    ) NI
+                WHERE 
+                    XCME.APPLICATION_NUM = XCM.APPLICATION_NUM
+                    AND XCME.CONTRACT_NO = AP.HP_NO
+                    AND XCM.CUST_STATUS = '0'
+                    AND XCME.LOAN_RESULT = 'Y'
+                    AND CI.FNAME = TP.TITLE_ID (+)
+                    AND XCM.CUST_NO = CI.CUST_NO
+                    AND AP.HP_NO = NI.HP_NO (+)
+                    AND XCME.SL_CODE = DL.DL_CODE
+                    AND DL.DL_BRANCH = PP.PROV_CODE
+                    AND XCME.APPLICATION_NUM = XSC.APPLICATION_NUM
+            )
+            ORDER BY YEAR_VALUE ASC
             `
             , {
 
@@ -1691,19 +1690,32 @@ async function getprefirstdueyearlist(req, res, next) {
             outFormat: oracledb.OBJECT
         })
 
-        if (result.rows.length == 0) {
+        const resultsysdate = await connection.execute(
+            ` 
+            SELECT 
+                TO_CHAR(EXTRACT(MONTH FROM SYSDATE), 'FM00') AS MONTH_VALUE,
+                TO_CHAR(EXTRACT(YEAR FROM SYSDATE)) AS YEAR_VALUE
+            FROM DUAL 
+          `, {}, { outFormat: oracledb.OBJECT })
+
+        if (result.rows.length == 0 || resultsysdate.rows.length == 0) {
             return res.status(200).send({
                 status: 400,
-                message: 'No data',
+                message: `No data or can't get sysdate`,
                 data: []
             })
         } else {
             const resData = result.rows
+            const resSysdateData = resultsysdate.rows
             const lowerResData = tolowerService.arrayobjtolower(resData)
+            const lowerResSysdateData = tolowerService.arrayobjtolower(resSysdateData)
             return res.status(200).send({
                 status: 200,
                 message: 'success',
-                data: lowerResData
+                data: {
+                    result: lowerResData,
+                    sysdate: lowerResSysdateData[0]
+                }
             })
         }
 
