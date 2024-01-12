@@ -1805,9 +1805,9 @@ async function getcollectormotocyclenego(req, res, next) {
             BTW.X_BRAND_P BP,
             BTW.X_MODEL_P MP,
             BTW.X_DEALER_P DP
-        WHERE    CME.APPLICATION_NUM = PD.APPLICATION_NUM
-        AND  CME.CONTRACT_NO = AP.HP_NO
-        
+        WHERE    
+            CME.APPLICATION_NUM = PD.APPLICATION_NUM
+            AND CME.CONTRACT_NO = AP.HP_NO
             AND CME.LOAN_RESULT = 'Y'
             AND PD.PRODUCT_CODE = '01'
             AND PD.BRAND_CODE = BP.BRAND_CODE
@@ -1815,7 +1815,7 @@ async function getcollectormotocyclenego(req, res, next) {
             AND PD.PRODUCT_CODE = BP.PRO_CODE
             AND PD.MODELCODE = MP.MODEL_CODE
             AND PD.PRODUCT_CODE = MP.PRO_CODE
-            AND DP.DL_CODE = CME.DL_CODE
+            AND CME.SL_CODE = DP.DL_CODE
             AND CME.CONTRACT_NO = :hp_no
         `, {
             hp_no: hp_no
