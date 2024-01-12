@@ -859,6 +859,33 @@ paths:
         400:
           description: "return error"
 
+  /getcollectoraddresscustlist:
+    get:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: "Get Address customer record"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "pageno"
+          description: "This is pageno"
+          schema:
+            type: number
+            example: 1
+        - in: "query"
+          name: "hp_no"
+          description: "This is contract no (hp_no)"
+          schema:
+            type: string
+            example: "110202400010947"
+      responses:
+        200:
+          description: "successful operation and not found"
+        400:
+          description: "return error"
+
   /getaddressncblist:
     get:
       tags:

@@ -348,6 +348,8 @@ app.get('/gethistorypaymentlist', auth, negoService.gethistorypaymentlist)
 
 app.get('/getaddresscustlist', auth, negoService.getaddresscustlist)
 
+app.get('/getcollectoraddresscustlist', auth, negoService.getcollectoraddresscustlist)
+
 app.get('/getaddressncblist', auth, negoService.getaddressncblist)
 
 app.post('/getfollowuppaymentlist', auth, negoService.getfollowuppaymentlist)

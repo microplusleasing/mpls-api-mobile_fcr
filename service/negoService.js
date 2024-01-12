@@ -2426,6 +2426,184 @@ async function getaddresscustlist(req, res, next) {
 
 }
 
+async function getcollectoraddresscustlist(req, res, next) {
+    let connection;
+
+    try {
+        const { pageno, hp_no } = req.query
+
+        const indexstart = (pageno - 1) * 5 + 1
+        const indexend = (pageno * 5)
+        let rowCount;
+
+
+        connection = await oracledb.getConnection(
+            config.database
+        )
+
+        const resultCountdata = await connection.execute(`
+        SELECT
+            COUNT (AP.HP_NO) AS COUNT
+        FROM
+            btw.X_CUST_MAPPING_EXT XCME,
+            btw.X_CUST_MAPPING XCM,
+            btw.AC_PROVE AP,
+            BTW.ADDRESS_MAP AM,
+            BTW.ADDRESS_INFO AI,
+            BTW.ADDRESS_TYPE_P ATP,
+            BTW.CUST_INFO CI,
+            BTW.PROVINCE_P PP
+        WHERE
+            XCME.APPLICATION_NUM = XCM.APPLICATION_NUM
+            AND XCME.CONTRACT_NO = AP.HP_NO
+            AND XCM.CUST_STATUS = '0'
+            AND XCME.LOAN_RESULT = 'Y'
+            and XCM.CUST_NO = CI.CUST_NO
+            AND AM.ADDR_NO = AI.ADDR_NO
+            AND AM.ADDR_STATUS_CODE = 'CN'
+            AND AM.ADDR_TYPE_CODE = ATP.ADDR_TYPE_CODE
+            AND AI.PROV_CODE = PP.PROV_CODE (+)
+            AND AM.CUST_ID = CI.CUST_NO
+            AND AP.HP_NO = :hp_no
+        `, {
+            hp_no: hp_no
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+
+
+
+        if (resultCountdata.rows[0].COUNT == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: 'ไม่พบรายการที่อยู่ภายใต้สัญญา',
+                data: []
+            })
+        } else {
+            try {
+
+                rowCount = resultCountdata.rows[0].COUNT
+
+                const resultAddressList = await connection.execute(
+                    `
+                    SELECT
+                        *
+                    FROM
+                        (
+                            (
+                                SELECT
+                                    AP.HP_NO,
+                                    AM.CUST_ID,
+                                    AM.ADDR_TYPE_CODE,
+                                    ATP.ADDR_TYPE_NAME,
+                                    PP.PROV_NAME,
+                                    AI.ADDR_NO,
+                                    AI.HOME_NO,
+                                    AI.HOME_NAME,
+                                    AI.SAI,
+                                    AI.TROK,
+                                    AI.MHOD,
+                                    AI.ROAD,
+                                    AI.KWANG,
+                                    AI.KHET,
+                                    AI.PROV_CODE,
+                                    AI.POST_CODE,
+                                    AI.LATITUDE,
+                                    AI.LONGITUDE,
+                                    ROW_NUMBER() OVER (
+                                        ORDER BY
+                                            AM.ADDR_TYPE_CODE ASC
+                                    ) LINE_NUMBER
+                                FROM
+                                    btw.X_CUST_MAPPING_EXT XCME,
+                                    btw.X_CUST_MAPPING XCM,
+                                    BTW.AC_PROVE AP,
+                                    BTW.ADDRESS_MAP AM,
+                                    BTW.ADDRESS_INFO AI,
+                                    BTW.ADDRESS_TYPE_P ATP,
+                                    BTW.CUST_INFO CI,
+                                    BTW.PROVINCE_P PP
+                                WHERE
+                                    XCME.APPLICATION_NUM = XCM.APPLICATION_NUM
+                                    AND XCME.CONTRACT_NO = AP.HP_NO
+                                    AND XCM.CUST_STATUS = '0'
+                                    AND XCME.LOAN_RESULT = 'Y'
+                                    and XCM.CUST_NO = CI.CUST_NO
+                                    AND AM.ADDR_NO = AI.ADDR_NO
+                                    AND AM.ADDR_STATUS_CODE = 'CN'
+                                    AND AM.ADDR_TYPE_CODE = ATP.ADDR_TYPE_CODE
+                                    AND AI.PROV_CODE = PP.PROV_CODE (+)
+                                    AND AM.CUST_ID = CI.CUST_NO
+                                    AND AP.HP_NO = :hp_no
+                            )
+                        )
+                    WHERE
+                        LINE_NUMBER BETWEEN :indexstart AND :indexend
+                    `,
+                    {
+                        hp_no: hp_no,
+                        indexstart: indexstart,
+                        indexend: indexend
+                    }, {
+                    outFormat: oracledb.OBJECT
+                })
+
+                if (resultAddressList.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 200,
+                        message: `ไม่พบรายการที่อยู่ตามเลขที่สัญญา`,
+                        data: []
+                    })
+                } else {
+                    // === resturn success data via http ===
+                    const resData = resultAddressList.rows
+                    const lowerResData = tolowerService.arrayobjtolower(resData)
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    returnData.status = 200
+                    returnData.message = 'success'
+                    returnData.CurrentPage = Number(pageno)
+                    returnData.pageSize = 5
+                    returnData.rowCount = rowCount
+                    returnData.pageCount = Math.ceil(rowCount / 5);
+
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+
+                    // res.status(200).json(results.rows[0]);
+                    res.status(200).json(returnDatalowerCase);
+                }
+
+            } catch (e) {
+                console.error(e)
+                return res.status(200).send({
+                    status: 400,
+                    message: `เกิดข้อผิดพลาดในการหาที่อยู่ตามเลขสัญญา : ${e.message}`
+                })
+            }
+        }
+
+    } catch (e) {
+        console.error(e)
+        return res.status(200).send({
+            status: 400,
+            message: `ไม่สามารถหาข้อมูลที่อยู่ที่ผูกกับสัญญาได้ (Count not found) : ${e.message}`
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close()
+            } catch (e) {
+                console.error(e)
+                return next(e)
+            }
+        }
+    }
+
+}
+
 async function getaddressncblist(req, res, next) {
     let connection;
 
@@ -5371,6 +5549,7 @@ module.exports.getnegotiationbyid = getnegotiationbyid
 module.exports.getnegotiationhistorybyid = getnegotiationhistorybyid
 module.exports.gethistorypaymentlist = gethistorypaymentlist
 module.exports.getaddresscustlist = getaddresscustlist
+module.exports.getcollectoraddresscustlist = getcollectoraddresscustlist
 module.exports.getaddressncblist = getaddressncblist
 module.exports.getfollowuppaymentlist = getfollowuppaymentlist
 module.exports.getviewcontractlist = getviewcontractlist
