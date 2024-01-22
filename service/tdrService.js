@@ -203,15 +203,16 @@ async function insurancetdr(req, res, next) {
 
     /* ... check parameters ... */
 
-    if (!(reqData.factory_price && reqData.bussiness_code && reqData.brand_code && reqData.model_code && reqData.dl_code)) {
+    if (!(reqData.factory_price && reqData.bussiness_code && reqData.brand_code && reqData.model_code && reqData.dl_code && reqData.loan_amount)) {
         return res.status(200).send({
             status: 500,
             message: `missing parameters \n
-            factory_price : ${reqData.factory_price ? reqData.factory_price : '-'}, \n
-            bussiness_code : ${reqData.bussiness_code ? reqData.bussiness_code : '-'}, \n
-            brand_code : ${reqData.brand_code ? reqData.brand_code : '-'}, \n
-            reqData.model_name : ${reqData.model_name ? reqData.model_name : '-'}, \n
-            dl_code : ${reqData.dl_code ? reqData.dl_code : '-'}`
+            factory_price : ${reqData.factory_price ? reqData.factory_price : '-'}, 
+            bussiness_code : ${reqData.bussiness_code ? reqData.bussiness_code : '-'}, 
+            brand_code : ${reqData.brand_code ? reqData.brand_code : '-'}, 
+            reqData.model_name : ${reqData.model_name ? reqData.model_name : '-'}, 
+            dl_code : ${reqData.dl_code ? reqData.dl_code : '-'}, 
+            loan_amount : ${reqData.loan_amount ? reqData.loan_amount : '-'}`
         })
     }
     try {
@@ -229,15 +230,17 @@ async function insurancetdr(req, res, next) {
             AND A.BUSINESS_CODE = :bussiness_code 
             AND (BTW.GET_COVERAGE_COMPARE_MAX_LTV(
                     B.INSURANCE_CODE, 
-                    TRUNC((:factory_price * BTW.GET_VALUE_NUM_MARKET_SETTING('004', :bussiness_code, '01', :brand_code, :model_code, :dl_code, SYSDATE)) / 100)
+                    TRUNC((BTW.PKG_ABOUT_PRODUCT.GET_VALUE_TO_CAL_TOTAL_LOSS(:factory_price, :bussiness_code, :LOAN_AMOUNT) * BTW.GET_VALUE_NUM_MARKET_SETTING('004', :bussiness_code, '01', :brand_code, :model_code, :dl_code, SYSDATE)) / 100)
                 ) BETWEEN B.COVERAGE_INSUR_MIN AND B.COVERAGE_INSUR_MAX)
             ORDER BY B.YEARS_INSUR, B.PREMIUM_INSUR, A.INSURER_CODE, B.INSURANCE_CODE 
+            
         `, {
             factory_price: reqData.factory_price,
             bussiness_code: reqData.bussiness_code,
             brand_code: reqData.brand_code,
             model_code: reqData.model_code,
-            dl_code: reqData.dl_code
+            dl_code: reqData.dl_code,
+            loan_amount: reqData.loan_amount
         }, {
             outFormat: oracledb.OBJECT
         })
@@ -345,7 +348,7 @@ async function termtdr(req, res, next) {
     const reqData = req.body
 
     if (!(reqData.size_model && reqData.rate && reqData.net_finance && reqData.pro_code)) {
-        return res.satus(400).send({
+        return res.status(400).send({
             status: 5000,
             message: `mission parameter (size_model : ${reqData.size_model ? reqData.size_model : '-'}, rate : ${reqData.rate ? reqData.rate : '-'}, net_finance : ${reqData.net_finance ? reqData.net_finance : '-'}), pro_code : ${reqData.pro_code ? reqData.pro_code : '-'}`,
             data: []
@@ -408,13 +411,15 @@ async function termtdr(req, res, next) {
 }
 
 async function coveragetotallosstdr(req, res, next) {
+    /* ... use PKG_ABOUT_PRODUCT.GET_VALUE_TO_CAL_TOTAL_LOSS instead of 
+    SELECT TO_NUMBER(BTW.GET_COVERAGE_COMPARE_MAX_LTV(:INSURANCE_CODE,TRUNC((:FACTORY_PRICE*BTW.GET_VALUE_NUM_MARKET_SETTING('004',:BUSSI_CODE,'01',:BRAND_CODE,:MODEL_CODE,:DL_CODE,SYSDATE))/100))) AS COVERAGE_TOTAL_LOSS FROM DUAL... */
     let connection;
     const reqData = req.body
 
-    if (!(reqData.insurance_code && reqData.factory_price && reqData.bussi_code && reqData.brand_code && reqData.model_code && reqData.dl_code)) {
-        return res.satus(400).send({
+    if (!(reqData.factory_price && reqData.bussi_code && reqData.loan_amount)) {
+        return res.status(400).send({
             status: 5000,
-            message: `mission parameter (insurance_code : ${reqData.insurance_code ? reqData.insurance_code : '-'}, factory_price : ${reqData.factory_price ? reqData.factory_price : '-'}, bussi_code : ${reqData.bussi_code ? reqData.bussi_code : '-'}, brand_code : ${reqData.brand_code ? reqData.brand_code : '-'}, model_code : ${reqData.model_code ? reqData.model_code : '-'}, dl_code : ${reqData.dl_code ? reqData.dl_code : '-'})`,
+            message: `mission parameter (factory_price : ${reqData.factory_price ? reqData.factory_price : '-'}, bussi_code : ${reqData.bussi_code ? reqData.bussi_code : '-'}, loan_amount : ${reqData.loan_amount ? reqData.loan_amount : '-'})`,
             data: []
         })
     }
@@ -425,15 +430,12 @@ async function coveragetotallosstdr(req, res, next) {
         )
         const results = await connection.execute(
             `
-                SELECT TO_NUMBER(BTW.GET_COVERAGE_COMPARE_MAX_LTV(:INSURANCE_CODE,TRUNC((:FACTORY_PRICE*BTW.GET_VALUE_NUM_MARKET_SETTING('004',:BUSSI_CODE,'01',:BRAND_CODE,:MODEL_CODE,:DL_CODE,SYSDATE))/100))) AS COVERAGE_TOTAL_LOSS FROM DUAL
+                SELECT TO_NUMBER(BTW.PKG_ABOUT_PRODUCT.GET_VALUE_TO_CAL_TOTAL_LOSS(:FACTORY_PRICE, :BUSSI_CODE, :LOAN_AMOUNT)) AS COVERAGE_TOTAL_LOSS FROM DUAL
             `,
             {
-                INSURANCE_CODE: reqData.insurance_code,
                 FACTORY_PRICE: reqData.factory_price,
                 BUSSI_CODE: reqData.bussi_code,
-                BRAND_CODE: reqData.brand_code,
-                MODEL_CODE: reqData.model_code,
-                DL_CODE: reqData.dl_code
+                LOAN_AMOUNT: reqData.loan_amount
             }, {
             outFormat: oracledb.OBJECT
         })

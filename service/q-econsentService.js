@@ -994,7 +994,7 @@ async function MPLS_create_or_update_citizendata(req, res, next) {
                     }
                 } catch (e) {
                     console.error(e)
-                    return res.satus(200).send({
+                    return res.status(200).send({
                         status: 500,
                         message: `ไม่สามารถอัพเดทข้อมูลได้ : ${e.message ? e.message : 'No return message'}`
                     })
@@ -6080,7 +6080,7 @@ async function MPLS_stamp_face_verification_log_iapp(req, res, next) {
                 data: []
             })
         } else {
-            return res.satus(200).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ไม่สามารถบันทึก log ได้ (Insert into MPLS_IAPP_FACE_VERIFY_LOG fail)`,
                 data: []
