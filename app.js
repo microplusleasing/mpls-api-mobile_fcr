@@ -300,6 +300,8 @@ app.post('/getagentgroupdpd', auth, negoService.getagentgroupdpd)
 
 app.post('/getagentgroupstage', auth, negoService.getagentgroupstage)
 
+app.post('/getagentgroupstageimpact', auth, negoService.getagentgroupstageimpact)
+
 app.post('/getagentsitevisit', auth, negoService.getagentsitevisit)
 
 app.post('/getagentassigntofcr', auth, negoService.getagentassigntofcr)

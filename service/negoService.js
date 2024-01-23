@@ -1132,6 +1132,225 @@ async function getagentgroupstage(req, res, next) {
         connection = await oracledb.getConnection(config.database)
         const sqlbase =
             `SELECT ROWNUM AS LINE_NUMBER, T.*
+                FROM(
+                SELECT   
+                        CM.HP_NO,
+                        BTW.PKG_CUST_INFO.F_GET_FNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_NAME,
+                        BTW.PKG_CUST_INFO.F_GET_SNAME_BY_CONTRACT(CM.HP_NO) AS CUSTOMER_LASTNAME,
+                        CM.BILL_BEG,
+                        CM.BILL_SUB_BEG,
+                        CM.BILL_CURR,
+                        CM.BILL_SUB_CURR,
+                        CM.MONTHLY,
+                        CM.WILL_PAY_AMT, 
+                        CM.COLLECTED_AMT, 
+                        (CM.WILL_PAY_AMT - CM.COLLECTED_AMT) AS BALANCE_AMT,
+                        TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) AS DUE,
+                        CM.FIRST_DUE,
+                        TO_DATE(TO_CHAR(CM.first_due,'DD')||'/'||TO_CHAR(sysdate,'MM')||'/'||TO_CHAR(sysdate,'YYYY'),'dd/mm/yyyy') AS DUEDATE, 
+                        BTW.GET_BRANCH_SL_BY_HP_NO(CM.HP_NO) As branch_name_hp_no,
+                        (        SELECT  PV.PROV_CODE
+                            FROM X_CUST_MAPPING_EXT CME,X_CUST_MAPPING CM,X_DEALER_P DL,PROVINCE_P PV
+                            WHERE CME.APPLICATION_NUM = CM.APPLICATION_NUM
+                            AND  CME.SL_CODE = DL.DL_CODE
+                            AND  DL.DL_BRANCH = PV.PROV_CODE
+                            AND CM.CUST_STATUS = '0'
+                            AND CME.CONTRACT_NO = CM.HP_NO) AS branch_code,
+                        STAGE_NO as STAGE,  --
+                        dpd_mth.DPD,
+                        dpd_mth.GROUP_DPD, 
+                        dpd_mth.GROUP_DPD_ID, 
+                        BTW.GET_CALL_STATUS(CM.HP_NO) as STATUS_CALL_TRACK_INFO,  --สถานะการติดตาม ล่าสุด(รอการติดต่อ,Recall)
+                        BTW.GET_lastcall_rec_day(CM.HP_NO) as LASTCALL_REC_DAYTIME, ---rec_day ติดตามล่าสุด 
+                        (
+                            SELECT appoint_date
+                            FROM
+                            (
+                                SELECT
+                                    CT.HP_NO,
+                                    NG.REC_DATE,
+                                    NG.NEG_R_CODE,
+                                    NG.APPOINT_DATE
+                                FROM
+                                    BTW.CALL_TRACK_INFO CT,
+                                    BTW.NEGO_INFO NG,
+                                    NEG_RESULT_P NG_DESC
+                                WHERE
+                                    CT.HP_NO = NG.HP_NO
+                                    AND TO_CHAR(CT.REC_DAY, 'DD/MM/YYYY HH24:MI:SS') = TO_CHAR(NG.REC_DATE, 'DD/MM/YYYY HH24:MI:SS')
+                                    AND NG.NEG_R_CODE = NG_DESC.NEG_R_CODE
+                                    AND NG.APPOINT_DATE IS NOT NULL
+                                    AND trunc( NG.APPOINT_DATE,'MM') >= trunc(sysdate,'MM')
+                                ORDER BY
+                                    NG.REC_DATE DESC
+                            )
+                        WHERE  ROWNUM < 2
+                        AND HP_NO = CM.HP_NO
+                        ) AS LAST_APPOINT_DATE 
+                    FROM COLL_INFO_MONTHLY CM,
+                            BTW.COLL_INFO_DPD  dpd_mth
+                    WHERE   CM.HP_NO =  dpd_mth.HP_NO
+                            AND CM.month_end = dpd_mth.MONTH_END
+                            AND CM.year_end = dpd_mth.YEAR_END
+                            -- AND CM.month_end = TO_CHAR (SYSDATE, 'MM')
+                            -- AND CM.year_end = TO_CHAR (SYSDATE, 'YYYY')
+                            AND CM.month_end = BTW.GET_COLL_MONTH(SYSDATE) 
+                            AND CM.year_end = BTW.GET_COLL_YEAR_END(SYSDATE) 
+                            AND CM.STAPAY1 IS NULL 
+                            AND CM.IMPACT_STATUS IS NULL
+                            ${querystage}
+                        ${querydue}${queryholder}
+                    --ORDER BY TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) , CM.hp_no  ASC
+                    ${querysort}
+                    ) T
+                WHERE STATUS_CALL_TRACK_INFO IN('W','R') 
+              ${querybranch}`
+
+        const sqlcount = `select count(LINE_NUMBER) as rowCount from (${sqlbase})`
+
+        // console.log(`sqlstr: ${sqlcount}`)
+
+        const resultCount = await connection.execute(sqlcount, bindparams, { outFormat: oracledb.OBJECT })
+
+        if (resultCount.rows.length == 0) {
+            return res.status(200).send({
+                status: 200,
+                message: 'NO RECORD FOUND',
+                data: []
+            })
+        } else {
+
+            try {
+                rowCount = resultCount.rows[0].ROWCOUNT
+                bindparams.indexstart = indexstart
+                bindparams.indexend = indexend
+                const finishsql = `SELECT * FROM(${sqlbase}) WHERE LINE_NUMBER BETWEEN :indexstart AND :indexend `
+
+                const result = await connection.execute(finishsql, bindparams, { outFormat: oracledb.OBJECT })
+
+                if (result.rows.length == 0) {
+                    return res.status(200).send({
+                        status: 200,
+                        message: 'No negotaiation agent record',
+                        data: []
+                    })
+                } else {
+
+                    let resData = result.rows
+
+                    const lowerResData = tolowerService.arrayobjtolower(resData)
+                    let returnData = new Object
+                    returnData.data = lowerResData
+                    returnData.status = 200
+                    returnData.message = 'success'
+                    returnData.CurrentPage = Number(pageno)
+                    returnData.pageSize = 10
+                    returnData.rowCount = rowCount
+                    returnData.pageCount = Math.ceil(rowCount / 10);
+
+                    // === tran all upperCase to lowerCase === 
+                    let returnDatalowerCase = _.transform(returnData, function (result, val, key) {
+                        result[key.toLowerCase()] = val;
+                    });
+
+                    // res.status(200).json(results.rows[0]);
+                    res.status(200).json(returnDatalowerCase);
+                }
+            } catch (e) {
+                console.error(e)
+                return res.status(200).send({
+                    status: 400,
+                    mesasage: `error during get list data of colletion : ${e.message}`,
+                    data: []
+                })
+            }
+
+        }
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 500,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 200,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function getagentgroupstageimpact(req, res, next) {
+
+    let connection;
+    try {
+
+        const { pageno, due, branch, holder, sort_type, sort_field, stage } = req.body
+
+
+        // if (!(pageno && due && holder)) {
+        if (!(pageno)) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters`,
+                data: []
+            })
+        }
+        const indexstart = (pageno - 1) * 10 + 1
+        const indexend = (pageno * 10)
+        let rowCount;
+
+        let bindparams = {};
+        let querydue = ''
+        let querybranch = ''
+        let queryholder = ''
+        let querysort = ''
+        let querystage = ''
+
+        if (due) {
+
+            querydue = ` AND SUBSTR(TO_CHAR(CM.FIRST_DUE, 'dd/mm/yyyy'), 1,2) = :due `
+            const formatdue = _util.build2digitstringdate(due)
+            bindparams.due = formatdue
+
+        }
+
+        if (holder) {
+            queryholder = ` AND CM.HP_HOLD = :holder `
+            bindparams.holder = holder
+        }
+
+        if (branch) {
+
+            if (branch !== 0 && branch !== '0') {
+                querybranch = ` AND BRANCH_CODE = :branch `
+                bindparams.branch = branch
+            }
+        }
+
+        if (sort_type && sort_field) {
+            querysort = ` ORDER BY ${sort_field} ${sort_type} `
+        } else {
+            querysort = ``
+        }
+
+        if (stage) {
+            querystage = ' AND CM.STAGE_NO IN :stage '
+            bindparams.stage = stage
+
+        }
+
+        connection = await oracledb.getConnection(config.database)
+        const sqlbase =
+            `SELECT ROWNUM AS LINE_NUMBER, T.*
             FROM(
             SELECT   
                     CM.HP_NO,
@@ -1197,6 +1416,7 @@ async function getagentgroupstage(req, res, next) {
                         AND CM.month_end = BTW.GET_COLL_MONTH(SYSDATE) 
                         AND CM.year_end = BTW.GET_COLL_YEAR_END(SYSDATE) 
                         AND CM.STAPAY1 IS NULL 
+                        AND CM.IMPACT_STATUS = '1'
                         ${querystage}
                       ${querydue}${queryholder}
                 --ORDER BY TO_NUMBER(TO_CHAR (CM.first_due, 'DD')) , CM.hp_no  ASC
@@ -1373,6 +1593,7 @@ async function getnegotiationbyid(req, res, next) {
                 AND coll_info_monthly_view.hp_no = :applicationid )
                 AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_CUST_MAPPING.APPLICATION_NUM
                 AND X_CUST_MAPPING.CUST_NO = CUST_INFO.CUST_NO
+                AND coll_info_monthly_view.impact = '1'
         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
         `, {
             applicationid: applicationid
@@ -5556,6 +5777,7 @@ module.exports.getviewcontractlist = getviewcontractlist
 module.exports.getagentcollinfomonthly = getagentcollinfomonthly
 module.exports.getagentgroupdpd = getagentgroupdpd
 module.exports.getagentgroupstage = getagentgroupstage
+module.exports.getagentgroupstageimpact = getagentgroupstageimpact
 module.exports.getagentsitevisit = getagentsitevisit
 module.exports.getagentassigntofcr = getagentassigntofcr
 module.exports.insertnegolist = insertnegolist

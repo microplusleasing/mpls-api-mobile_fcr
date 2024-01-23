@@ -593,6 +593,40 @@ paths:
         400:
           description: "error"
 
+  /getagentgroupstageimpact:
+    post:
+      tags:
+        - "collection"
+      security:
+        - bearerAuth: []
+      summary: get data from collection (agent)
+      description: load data from "Database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  example: 1
+                due:
+                  type: string
+                  example: "01"
+                branch:
+                  type: string
+                  example: ""
+                holder:
+                  type: string
+                  example: "654089"
+                stage:
+                  type: string
+                  example: 1
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
   /getagentsitevisit:
     post:
       tags:
