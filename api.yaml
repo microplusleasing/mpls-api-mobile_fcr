@@ -4400,15 +4400,19 @@ paths:
                 insurance_code:
                   type: string
                   description: "Insurance code"
-                  example: "10004"
+                  example: "10007"
                 factory_price:
                   type: number
                   description: "Factory Price"
-                  example: 123743
+                  example: 59064
                 bussi_code:
                   type: string
                   description: "Bussiness Code"
                   example: "004"
+                loan_amount:
+                  type: number
+                  description: "loan Amount"
+                  example: 87511
                 brand_code:
                   type: string
                   description: "Brand Code"
@@ -4416,11 +4420,12 @@ paths:
                 model_code:
                   type: string
                   description: "Model Code"
-                  example: "01"
+                  example: "0134"
                 dl_code:
                   type: string
-                  description: "Dealer Code"
-                  example: "20220002"
+                  description: "Dealer code"
+                  example: "20220059"
+
       responses:
         200:
           description: "successful operation"

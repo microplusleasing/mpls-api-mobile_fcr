@@ -416,10 +416,15 @@ async function coveragetotallosstdr(req, res, next) {
     let connection;
     const reqData = req.body
 
-    if (!(reqData.factory_price && reqData.bussi_code && reqData.loan_amount)) {
+    if (!(reqData.insurance_code && reqData.factory_price && reqData.bussi_code && reqData.loan_amount && reqData.brand_code && reqData.model_code && reqData.dl_code)) {
         return res.status(400).send({
             status: 5000,
-            message: `mission parameter (factory_price : ${reqData.factory_price ? reqData.factory_price : '-'}, bussi_code : ${reqData.bussi_code ? reqData.bussi_code : '-'}, loan_amount : ${reqData.loan_amount ? reqData.loan_amount : '-'})`,
+            message: `mission parameter (factory_price : ${reqData.factory_price ? reqData.factory_price : '-'}, 
+            bussi_code : ${reqData.bussi_code ? reqData.bussi_code : '-'}, 
+            loan_amount : ${reqData.loan_amount ? reqData.loan_amount : '-'},
+            brand_code: ${reqData.brand_code ? reqData.brand_code : '-'}, 
+            model_code: ${reqData.model_code ? reqData.model_code : '-'},
+            dl_code: ${reqData.dl_code ? reqData.dl_code : '-'})`,
             data: []
         })
     }
@@ -430,12 +435,16 @@ async function coveragetotallosstdr(req, res, next) {
         )
         const results = await connection.execute(
             `
-                SELECT TO_NUMBER(BTW.PKG_ABOUT_PRODUCT.GET_VALUE_TO_CAL_TOTAL_LOSS(:FACTORY_PRICE, :BUSSI_CODE, :LOAN_AMOUNT)) AS COVERAGE_TOTAL_LOSS FROM DUAL
+                SELECT TO_NUMBER(BTW.GET_COVERAGE_COMPARE_MAX_LTV(:INSURANCE_CODE,TRUNC((BTW.PKG_ABOUT_PRODUCT.GET_VALUE_TO_CAL_TOTAL_LOSS(:FACTORY_PRICE, :BUSSI_CODE, :LOAN_AMOUNT)*BTW.GET_VALUE_NUM_MARKET_SETTING('004',:BUSSI_CODE,'01',:BRAND_CODE,:MODEL_CODE,:DL_CODE,SYSDATE))/100))) AS COVERAGE_TOTAL_LOSS FROM DUAL
             `,
             {
+                INSURANCE_CODE: reqData.insurance_code,
                 FACTORY_PRICE: reqData.factory_price,
                 BUSSI_CODE: reqData.bussi_code,
-                LOAN_AMOUNT: reqData.loan_amount
+                LOAN_AMOUNT: reqData.loan_amount,
+                BRAND_CODE: reqData.brand_code,
+                MODEL_CODE: reqData.model_code,
+                DL_CODE: reqData.dl_code
             }, {
             outFormat: oracledb.OBJECT
         })
