@@ -200,7 +200,7 @@ async function getviewcontractlist(req, res, next) {
     let connection;
     try {
         // let cust_id = [];
-        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus, holder, apd, group_dpd, stage_no } = req.query
+        const { pageno, name, surname, due, applicationid, branchcode, billcode, trackcode, carcheckstatus, holder, apd, group_dpd, stage_no, impact_status } = req.query
 
         const indexstart = (pageno - 1) * 5 + 1
         const indexend = (pageno * 5)
@@ -231,6 +231,7 @@ async function getviewcontractlist(req, res, next) {
         // *** add query dpd on 02/06/2023 ****
         let querydpd = ''
         let querystageno = ''
+        let queryimpactstatus = ''
 
         // ==== build query string form execute ====
 
@@ -323,6 +324,11 @@ async function getviewcontractlist(req, res, next) {
             } else {
                 querystageno = ` and coll_info_monthly_view.stage_no IS NULL `
             }
+        }
+
+        if (impact_status && impact_status !== 'A') {
+            queryimpactstatus = ` and coll_info_monthly_view.impact_status = :impactstatus`
+            bindparams.impactstatus = impact_status
         }
 
         const sqlbase = `
@@ -427,7 +433,7 @@ async function getviewcontractlist(req, res, next) {
                                         AND COLL_INFO_MONTHLY_VIEW.YEAR_END = COLL_INFO_DPD.YEAR_END (+)
                                         AND COLL_INFO_MONTHLY_VIEW.HP_NO = X_REPOSSESS_STOCK.CONTRACT_NO (+) 
                                         AND COLL_INFO_MONTHLY_VIEW.HP_NO = ESTIMATE_REPO_CHECK_MASTER.CONTACT_NO (+) 
-                                        ${querydpd}${querystageno}${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
+                                        ${querydpd}${querystageno}${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryimpactstatus}${queryapd2}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) a
                         `
@@ -579,7 +585,7 @@ async function getviewcontractlist(req, res, next) {
                                         AND COLL_INFO_MONTHLY_VIEW.YEAR_END = COLL_INFO_DPD.YEAR_END (+)  
                                         AND COLL_INFO_MONTHLY_VIEW.HP_NO = X_REPOSSESS_STOCK.CONTRACT_NO (+) 
                                         AND COLL_INFO_MONTHLY_VIEW.HP_NO = ESTIMATE_REPO_CHECK_MASTER.CONTACT_NO (+) 
-                                        ${querydpd}${querystageno}${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryapd2}
+                                        ${querydpd}${querystageno}${queryname}${querysurname}${queryappid}${querydue}${querybranch}${queryholder}${queryimpactstatus}${queryapd2}
                                         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
                                 ) A
                 `
