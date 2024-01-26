@@ -327,8 +327,12 @@ async function getviewcontractlist(req, res, next) {
         }
 
         if (impact_status && impact_status !== 'A') {
-            queryimpactstatus = ` and coll_info_monthly_view.impact_status = :impactstatus`
-            bindparams.impactstatus = impact_status
+            if (impact_status !== 'N') {
+                queryimpactstatus = ` and coll_info_monthly_view.impact_status = :impactstatus`
+                bindparams.impactstatus = impact_status
+            } else {
+                queryimpactstatus = ` and coll_info_monthly_view.impact_status is null `
+            }
         }
 
         const sqlbase = `
@@ -1599,7 +1603,6 @@ async function getnegotiationbyid(req, res, next) {
                 AND coll_info_monthly_view.hp_no = :applicationid )
                 AND X_CUST_MAPPING_EXT.APPLICATION_NUM = X_CUST_MAPPING.APPLICATION_NUM
                 AND X_CUST_MAPPING.CUST_NO = CUST_INFO.CUST_NO
-                AND coll_info_monthly_view.impact = '1'
         ORDER BY TO_CHAR (coll_info_monthly_view.first_due, 'DD') ASC, hp_no ASC
         `, {
             applicationid: applicationid
