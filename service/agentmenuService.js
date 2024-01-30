@@ -1776,7 +1776,8 @@ async function getcollectordetailbyid(req, res, next) {
                 XSC.FIRST_DUE,
                 XCME.APPROVE_DATE, 
                 AP.MONTHLY,
-                DL.DL_BRANCH
+                DL.DL_BRANCH,
+                BTW.F_GET_NATIONALITY_P(CI.IDCARD_NUM) AS NATIONALITY
             FROM 
                 X_CUST_MAPPING_EXT XCME,
                 X_CUST_MAPPING XCM,

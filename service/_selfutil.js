@@ -60,6 +60,7 @@ function getnextmonth(date) {
     if (date) {
 
         try {
+            console.log(`this is date data : ${data}`)
             const dateValue = moment(date).date()
             let currentDate = moment()
             const paymentdate = moment(currentDate).set('date', dateValue)
