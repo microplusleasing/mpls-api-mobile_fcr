@@ -3465,6 +3465,17 @@ async function insertnegolist(req, res, next) {
             coverImageArray = fileData.coverimages ? fileData.coverimages : []
         }
 
+        let timesplit = []
+        let hoursplit = ''
+        let minsplit = ''
+        if (reqData.recall_time && typeof reqData.recall_time == 'string') {
+            timesplit = reqData.recall_time.split(':')
+            if (timesplit.length == 2) {
+                hoursplit = timesplit[0]
+                minsplit = timesplit[1]
+            }
+        }
+
         // Generate a UUID
         const uuid = uuidv4();
         // Remove hyphens from the UUID
@@ -3561,7 +3572,7 @@ async function insertnegolist(req, res, next) {
                 latitude: reqData.latitude,
                 longitude: reqData.longitude,
                 err_lati_longi_desc: reqData.errmsg ? reqData.errmsg : '',
-                call_keyapp_id: key
+                call_keyapp_id: key,
 
             }, {
                 autoCommit: true
@@ -3598,8 +3609,10 @@ async function insertnegolist(req, res, next) {
         // ==== insert nego record ====
         try {
 
-            let appointmentquerynego1 = '';
-            let appointmentquerynego2 = '';
+            let addonfield1 = '';
+            let addonfield2 = '';
+            // let appointmentquerynego1 = '';
+            // let appointmentquerynego2 = '';
             let bindparamnego = {}
             let mainquerynego1 = `INSERT INTO BTW.NEGO_INFO (
                         BRANCH_CODE,
@@ -3616,8 +3629,9 @@ async function insertnegolist(req, res, next) {
                         REQ_ASSIGN_FCR, 
                         LOCATION_SITEVISIT_ADDR_TYPE, 
                         RESULT_SITEVISIT_CODE, 
-                        CALL_KEYAPP_ID`
-            let mainqerynego2 = ` ) VALUES (
+                        CALL_KEYAPP_ID,
+                        AGENT_CALL_UUID`
+            let mainquerynego2 = ` ) VALUES (
                         :branch_code,
                         :hp_no,
                         :neg_r_code,
@@ -3632,7 +3646,8 @@ async function insertnegolist(req, res, next) {
                         :req_assign_fcr, 
                         :location_sitevisit_addr_type, 
                         :result_sitevisit_code, 
-                        :call_keyapp_id 
+                        :call_keyapp_id,
+                        :agent_call_uuid 
                     `
 
             bindparamnego.branch_code = branch_code
@@ -3651,15 +3666,22 @@ async function insertnegolist(req, res, next) {
             bindparamnego.location_sitevisit_addr_type = reqData.location_sitevisit_addr_type
             bindparamnego.result_sitevisit_code = reqData.result_sitevisit_code
             bindparamnego.call_keyapp_id = key
+            bindparamnego.agent_call_uuid = reqData.uuidagentcall
 
             if (appoint_date_dtype) {
-                appointmentquerynego1 = `, APPOINT_DATE `
-                appointmentquerynego2 = `, BTW.BUDDHIST_TO_CHRIS_F(:appoint_date) `
+                addonfield1 = `, APPOINT_DATE `
+                addonfield2 = `, BTW.BUDDHIST_TO_CHRIS_F(:appoint_date) `
                 bindparamnego.appoint_date = (new Date(appoint_date_dtype)) ?? null
             }
 
+            if (timesplit.length == 2) {
+                addonfield1 += `, RECALL_DATETIME`
+                addonfield2 += `, TO_DATE(TO_CHAR(SYSDATE,'dd/mm/yyyy')||' '||:time,'dd/mm/yyyy hh24:mi')`
+                bindparamnego.time = reqData.recall_time
+            }
 
-            const finalqueryinsertnego = `${mainquerynego1}${appointmentquerynego1}${mainqerynego2}${appointmentquerynego2})`
+
+            const finalqueryinsertnego = `${mainquerynego1}${addonfield1}${mainquerynego2}${addonfield2})`
 
             // console.log(`sql final : ${finalqueryinsertnego}`)
             // console.log(`bind final : ${JSON.stringify(bindparamnego)}`)

@@ -435,6 +435,17 @@ async function insertnegotocalltrack(req, res, next) {
             appoint_date_dtype = moment(reqData.appoint_date, 'DD/MM/YYYY').format('LL')
         }
 
+        let timesplit = []
+        let hoursplit = ''
+        let minsplit = ''
+        if (reqData.recall_time && typeof reqData.recall_time == 'string') {
+            timesplit = reqData.recall_time.split(':')
+            if (timesplit.length == 2) {
+                hoursplit = timesplit[0]
+                minsplit = timesplit[1]
+            }
+        }
+
         connection = await oracledb.getConnection(config.database)
         // *** check call_track_info record is waiting ****
         const result_check_wait = await connection.execute(`
@@ -670,8 +681,10 @@ async function insertnegotocalltrack(req, res, next) {
 
                         try {
 
-                            let appointmentquerynego1 = '';
-                            let appointmentquerynego2 = '';
+                            // let appointmentquerynego1 = '';
+                            // let appointmentquerynego2 = '';
+                            let addonfield1 = '';
+                            let addonfield2 = '';
                             let bindparamnego = {}
                             let mainquerynego1 = `INSERT INTO BTW.NEGO_INFO (
                                         BRANCH_CODE,
@@ -688,8 +701,9 @@ async function insertnegotocalltrack(req, res, next) {
                                         REQ_ASSIGN_FCR, 
                                         LOCATION_SITEVISIT_ADDR_TYPE, 
                                         RESULT_SITEVISIT_CODE, 
-                                        CALL_KEYAPP_ID`
-                            let mainqerynego2 = ` ) VALUES (
+                                        CALL_KEYAPP_ID,
+                                        AGENT_CALL_UUID`
+                            let mainquerynego2 = ` ) VALUES (
                                         :branch_code,
                                         :hp_no,
                                         :neg_r_code,
@@ -704,13 +718,14 @@ async function insertnegotocalltrack(req, res, next) {
                                         :req_assign_fcr, 
                                         :location_sitevisit_addr_type, 
                                         :result_sitevisit_code, 
-                                        :call_keyapp_id
+                                        :call_keyapp_id,
+                                        :agent_call_uuid 
                                     `
 
                             bindparamnego.branch_code = branch_code
                             bindparamnego.hp_no = reqData.hp_no,
-                            bindparamnego.neg_r_code = reqData.neg_r_code,
-                            bindparamnego.rec_date = (new Date(rec_day)) ?? null
+                                bindparamnego.neg_r_code = reqData.neg_r_code,
+                                bindparamnego.rec_date = (new Date(rec_day)) ?? null
                             bindparamnego.message1 = reqData.message1
                             bindparamnego.message2 = reqData.message2
                             bindparamnego.staff_id = userid
@@ -719,18 +734,25 @@ async function insertnegotocalltrack(req, res, next) {
                             // *** add more 3 optional field (31/07/2023) ***
                             bindparamnego.status_recall = reqData.recall
                             bindparamnego.req_dunning_letter = reqData.dunning_letter
-                            bindparamnego.req_assign_fcr = reqData.assign_fcr 
-                            bindparamnego.location_sitevisit_addr_type = reqData.location_sitevisit_addr_type 
-                            bindparamnego.result_sitevisit_code = reqData.result_sitevisit_code 
+                            bindparamnego.req_assign_fcr = reqData.assign_fcr
+                            bindparamnego.location_sitevisit_addr_type = reqData.location_sitevisit_addr_type
+                            bindparamnego.result_sitevisit_code = reqData.result_sitevisit_code
                             bindparamnego.call_keyapp_id = call_keyapp_id
+                            bindparamnego.agent_call_uuid = reqData.uuidagentcall
 
                             if (appoint_date_dtype) {
-                                appointmentquerynego1 = `, APPOINT_DATE `
-                                appointmentquerynego2 = `, BTW.BUDDHIST_TO_CHRIS_F(:appoint_date) `
+                                addonfield1 = `, APPOINT_DATE `
+                                addonfield2 = `, BTW.BUDDHIST_TO_CHRIS_F(:appoint_date) `
                                 bindparamnego.appoint_date = (new Date(appoint_date_dtype)) ?? null
                             }
 
-                            const finalqueryinsertnego = `${mainquerynego1}${appointmentquerynego1}${mainqerynego2}${appointmentquerynego2})`
+                            if (timesplit.length == 2) {
+                                addonfield1 += `, RECALL_DATETIME`
+                                addonfield2 += `, TO_DATE(TO_CHAR(sysdate,'dd/mm/yyyy')||' '||:time,'dd/mm/yyyy hh24:mi')`
+                                bindparamnego.time = reqData.recall_time
+                             }
+
+                            const finalqueryinsertnego = `${mainquerynego1}${addonfield1}${mainquerynego2}${addonfield2})`
 
                             // console.log(`sql final : ${finalqueryinsertnego}`)
                             // console.log(`bind final : ${JSON.stringify(bindparamnego)}`)
