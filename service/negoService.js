@@ -3436,7 +3436,8 @@ async function insertnegolist(req, res, next) {
 
         //=== get parameter ====
         const token = req.user
-        const userid = token.ID
+        const id = token.ID
+        const userid = token.user_id
 
         let fileData
         let formData
@@ -3756,6 +3757,29 @@ async function insertnegolist(req, res, next) {
 
                 const resultInsertImageAttachSitevisit = await connection.executeMany(sql, binds, { options, autoCommit: true })
                 console.log(`success insert image attach Site visit : ${resultInsertImageAttachSitevisit.rowsAffected}`)
+
+                // === call aun procedure ====
+                if (reqData.uuidagentcall) {
+                    try {
+                        const callstore = await connection.execute(
+                            `
+                    BEGIN BTW.NEGO_AGENT_CONTRACT_LIST_UPD (:user_code, :uuid, 'Y');
+                    END;
+                    `,
+                            {
+                                user_code: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: userid },
+                                uuid: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: reqData.uuidagentcall }
+                            })
+
+                        console.log('Success call AUN Procedure !!!')
+
+                    } catch (e) {
+                        return res.status(200).send({
+                            status: 400,
+                            message: `Call Procedure Fail : ${e.mesasage ? e.message : `No message`}`
+                        })
+                    }
+                }
             }
         } catch (e) {
             console.log(`error image attach : ${e}`)
