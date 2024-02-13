@@ -3332,33 +3332,66 @@ async function getfollowuppaymentlist(req, res, next) {
                 const resultFollowupList = await connection.execute(`
                     SELECT * FROM 
                     (
-                        SELECT CALL_TRACK_INFO.HP_NO,CALL_TRACK_INFO.CUST_ID,CALL_TRACK_INFO.PHONE_NO, 
-                                CALL_TRACK_INFO.CON_R_CODE,CALL_TRACK_INFO.REC_DAY, CALL_TRACK_INFO.CALL_DATE,CALL_TRACK_INFO.REC_DATE, 
-                                CALL_TRACK_INFO.USER_NAME,NEGO_INFO.NEG_R_CODE,CALL_TRACK_INFO.STAFF_ID, NEGO_INFO.APPOINT_DATE, NEGO_INFO.message1, 
-                                NEGO_INFO.MESSAGE2, NEGO_INFO.PAY, EM.EMP_NAME, EM.EMP_LNAME, NEG_RESULT_P.NEG_R_DETAIL, NEGO_INFO.CALL_KEYAPP_ID, 
-                                CALL_TRACK_INFO.LATITUDE, CALL_TRACK_INFO.LONGITUDE, BTW.RESULT_SITEVISIT_P.DETAIL AS RESULT_SITE_VISIT, 
-                                BTW.ADDRESS_TYPE_P.ADDR_TYPE_NAME, 
+                        SELECT
+                                CALL_TRACK_INFO.HP_NO,
+                                CALL_TRACK_INFO.CUST_ID,
+                                CALL_TRACK_INFO.PHONE_NO,
+                                CALL_TRACK_INFO.CON_R_CODE,
+                                CALL_TRACK_INFO.REC_DAY,
+                                CALL_TRACK_INFO.CALL_DATE,
+                                CALL_TRACK_INFO.REC_DATE,
+                                CALL_TRACK_INFO.USER_NAME,
+                                NEGO_INFO.NEG_R_CODE,
+                                CALL_TRACK_INFO.STAFF_ID,
+                                NEGO_INFO.APPOINT_DATE,
+                                NEGO_INFO.message1,
+                                NEGO_INFO.MESSAGE2,
+                                NEGO_INFO.PAY,
+                                EM.EMP_NAME,
+                                EM.EMP_LNAME,
+                                NEG_RESULT_P.NEG_R_DETAIL,
+                                NEGO_INFO.CALL_KEYAPP_ID,
+                                CALL_TRACK_INFO.LATITUDE,
+                                CALL_TRACK_INFO.LONGITUDE,
+                                BTW.RESULT_SITEVISIT_P.DETAIL AS RESULT_SITE_VISIT,
+                                BTW.ADDRESS_TYPE_P.ADDR_TYPE_NAME,
                                 (
-                                    SELECT COUNT(CALL_KEYAPP_ID)
-                                    FROM BTW.SITE_VISIT_IMAGE
-                                    WHERE SITE_VISIT_IMAGE.CALL_KEYAPP_ID = NEGO_INFO.CALL_KEYAPP_ID
-                                ) AS IMAGE_COUNT, 
-                                ROW_NUMBER() OVER (ORDER BY CALL_TRACK_INFO.REC_DAY DESC, NEGO_INFO.APPOINT_DATE DESC) LINE_NUMBER 
-                        FROM    NEGO_INFO, 
-                                CALL_TRACK_INFO, 
-                                NEG_RESULT_P, 
-                                BTW.RESULT_SITEVISIT_P, 
-                                BTW.ADDRESS_TYPE_P, 
+                                        SELECT
+                                                COUNT(CALL_KEYAPP_ID)
+                                        FROM
+                                                BTW.SITE_VISIT_IMAGE
+                                        WHERE
+                                                SITE_VISIT_IMAGE.CALL_KEYAPP_ID = NEGO_INFO.CALL_KEYAPP_ID
+                                ) AS IMAGE_COUNT,
+                                ROW_NUMBER() OVER (
+                                        ORDER BY
+                                                CALL_TRACK_INFO.REC_DAY DESC,
+                                                NEGO_INFO.APPOINT_DATE DESC
+                                ) LINE_NUMBER
+                        FROM
+                                NEGO_INFO,
+                                CALL_TRACK_INFO,
+                                NEG_RESULT_P,
+                                BTW.RESULT_SITEVISIT_P,
+                                BTW.ADDRESS_TYPE_P,
                                 EMP EM
-                        WHERE ( (CALL_TRACK_INFO.HP_NO = NEGO_INFO.hp_no(+)) 
-                                AND NEGO_INFO.STAFF_ID = EM.EMP_ID(+)
-                                AND (CALL_TRACK_INFO.CUST_ID = NEGO_INFO.CUST_ID(+)) 
-                                AND (CALL_TRACK_INFO.STAFF_ID = NEGO_INFO.STAFF_ID(+))
-                                AND (NEGO_INFO.NEG_R_CODE = NEG_RESULT_P.NEG_R_CODE(+)) 
-                                AND (TO_CHAR(CALL_TRACK_INFO.REC_DAY,'dd/mm/yyyy hh24:mi:ss') = TO_CHAR(NEGO_INFO.REC_DATE(+),'dd/mm/yyyy hh24:mi:ss')) 
-                                AND TO_DATE(CALL_TRACK_INFO.REC_DAY,'DD/MM/YYYY') 
-                                BETWEEN TRUNC(ADD_MONTHS(TO_DATE(SYSDATE,'DD/MM/YYYY'),-2),'MM') 
-                                AND LAST_DAY(TO_DATE(SYSDATE,'DD/MM/YYYY'))) 
+                        WHERE
+                                (
+                                        (CALL_TRACK_INFO.HP_NO = NEGO_INFO.hp_no (+))
+                                        AND NEGO_INFO.STAFF_ID = EM.EMP_ID (+)
+                                        AND (CALL_TRACK_INFO.CUST_ID = NEGO_INFO.CUST_ID (+))
+                                        AND (CALL_TRACK_INFO.STAFF_ID = NEGO_INFO.STAFF_ID (+))
+                                        AND (
+                                                NEGO_INFO.NEG_R_CODE = NEG_RESULT_P.NEG_R_CODE (+)
+                                        )
+                                        AND (
+                                                TO_CHAR (CALL_TRACK_INFO.REC_DAY, 'dd/mm/yyyy hh24:mi:ss') = TO_CHAR (NEGO_INFO.REC_DATE (+), 'dd/mm/yyyy hh24:mi:ss')
+                                        )
+                                        AND TO_DATE (CALL_TRACK_INFO.REC_DAY, 'DD/MM/YYYY') BETWEEN TRUNC (
+                                                ADD_MONTHS (TO_DATE (SYSDATE, 'DD/MM/YYYY'), -2),
+                                                'MM'
+                                        ) AND LAST_DAY  (TO_DATE (SYSDATE, 'DD/MM/YYYY'))
+                                )
                                 AND NEGO_INFO.RESULT_SITEVISIT_CODE = RESULT_SITEVISIT_P.CODE (+)
                                 AND NEGO_INFO.LOCATION_SITEVISIT_ADDR_TYPE = ADDRESS_TYPE_P.ADDR_TYPE_CODE (+)
                                 AND CALL_TRACK_INFO.HP_NO = :applicationid
