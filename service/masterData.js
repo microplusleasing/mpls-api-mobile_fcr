@@ -122,7 +122,7 @@ async function getTermNew(req, res, next) {
     const { pro_code, size_model, rate, net_finance } = req.query
 
     if(!(size_model && rate && net_finance)) {
-        return res.satus(400).send({
+        return res.status(400).send({
             status: 5000,
             message: `mission parameter (size_model : ${size_model ? size_model : '-'}, rate : ${rate ? rate : '-'}, net_finance : ${net_finance ? net_finance : '-'})`,
             data: []

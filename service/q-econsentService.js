@@ -994,7 +994,7 @@ async function MPLS_create_or_update_citizendata(req, res, next) {
                     }
                 } catch (e) {
                     console.error(e)
-                    return res.satus(200).send({
+                    return res.status(200).send({
                         status: 500,
                         message: `ไม่สามารถอัพเดทข้อมูลได้ : ${e.message ? e.message : 'No return message'}`
                     })
@@ -2980,6 +2980,57 @@ async function MPLS_getservertime(req, res, next) {
             message: `success`,
             date: date
         })
+    } catch (e) {
+        return res.status(200).send({
+            status: 500,
+            message: `server error with status : ${e.message}`,
+            data: []
+        })
+    }
+}
+
+async function MPLS_getservertimeoracle(req, res, next) {
+    let connection;
+
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+
+        const getdate = await connection.execute(
+            `
+                SELECT SYSDATE FROM DUAL
+            `, {
+
+        }, {
+            outFormat: oracledb.OBJECT
+        })
+
+        if (getdate.rows.leng == 0) {
+            return res.status(200).send({
+                status: 500,
+                message: `ไม่สามารถดึงค่าเวลาจาก server ได้ (0 rows)`,
+                data: []
+            })
+        } else {
+            const date = getdate.rows[0].SYSDATE
+
+            if (!date) {
+                return res.status(200).send({
+                    status: 500,
+                    message: `ไม่พบค่าเวลาจากรายการ`,
+                    data: []
+                })
+            } else {
+                // return date to client 
+                return res.status(200).send({
+                    status: 200,
+                    message: `success`,
+                    data: {
+                        date: date
+                    }
+                })
+            }
+        }
     } catch (e) {
         return res.status(200).send({
             status: 500,
@@ -6029,7 +6080,7 @@ async function MPLS_stamp_face_verification_log_iapp(req, res, next) {
                 data: []
             })
         } else {
-            return res.satus(200).send({
+            return res.status(200).send({
                 status: 400,
                 message: `ไม่สามารถบันทึก log ได้ (Insert into MPLS_IAPP_FACE_VERIFY_LOG fail)`,
                 data: []
@@ -6340,7 +6391,7 @@ async function MPLS_fix_gen_econsent_image(req, res, next) {
     let connection;
     try {
 
-        const { firstname, lastname, birthdate, citizenid, phone_number, application_no, currentDate, currentDateTime, witness_name, witness_lname} = req.body
+        const { firstname, lastname, birthdate, citizenid, phone_number, application_no, currentDate, currentDateTime, witness_name, witness_lname } = req.body
 
         connection = await oracledb.getConnection(config.database)
 
@@ -7287,6 +7338,7 @@ module.exports.MPLS_check_application_no = MPLS_check_application_no
 module.exports.MPLS_gen_application_no = MPLS_gen_application_no
 
 module.exports.MPLS_getservertime = MPLS_getservertime
+module.exports.MPLS_getservertimeoracle = MPLS_getservertimeoracle
 
 module.exports.MPLS_create_or_update_credit = MPLS_create_or_update_credit
 module.exports.MPLS_create_or_update_careerandpurpose = MPLS_create_or_update_careerandpurpose

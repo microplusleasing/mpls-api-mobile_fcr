@@ -34,6 +34,7 @@ const btwService = require('./service/btwService')
 const imageUtilService = require('./service/_imageUtilService')
 const welcomeCallService = require('./service/welcomeCallService')
 const agnetService = require(`./service/agentmenuService`)
+const tdrService = require(`./service/tdrService`)
 const bodyParser = require("body-parser")
 const swaggerJSDoc = YAML.load("./api.yaml")
 const test2 = require('./service/test2')
@@ -130,6 +131,8 @@ app.post('/MPLS_create_send_car_deliver_and_loyalty_consent', auth, qeconsentSer
 app.get('/MPLS_gen_application_no', auth, qeconsentService.MPLS_gen_application_no)
 
 app.get('/MPLS_getservertime', auth, qeconsentService.MPLS_getservertime)
+
+app.get('/MPLS_getservertimeoracle', auth, qeconsentService.MPLS_getservertimeoracle)
 
 app.get('/MPLS_getbrand', auth, masterService.MPLS_getbrand)
 
@@ -297,6 +300,8 @@ app.post('/getagentgroupdpd', auth, negoService.getagentgroupdpd)
 
 app.post('/getagentgroupstage', auth, negoService.getagentgroupstage)
 
+app.post('/getagentgroupstageimpact', auth, negoService.getagentgroupstageimpact)
+
 app.post('/getagentsitevisit', auth, negoService.getagentsitevisit)
 
 app.post('/getagentassigntofcr', auth, negoService.getagentassigntofcr)
@@ -307,13 +312,21 @@ app.post('/getaddrtypemaster', auth, negoService.getaddrtypemaster)
 
 app.get('/getresultsitevisitmaster', auth, negoService.getresultsitevisitmaster)
 
+app.post('/gettaxdetailbycontractno', auth, negoService.gettaxdetailbycontractno)
+
+app.post('/sendsmstaxconfirm', auth, smsService.sendsmstaxconfirm)
+
 app.get('/getnegotiationlist', auth, negoService.getnegotiationlist)
 
 app.get('/getnegotiationbyid', auth, negoService.getnegotiationbyid)
 
+app.get('/getcollectordetailbyid', auth, agnetService.getcollectordetailbyid)
+
 app.get('/getnegotiationhistorybyid', auth, negoService.getnegotiationhistorybyid)
 
 app.get('/getmotocyclenego', auth, negoService.getmotocyclenego)
+
+app.get('/getcollectormotocyclenego', auth, negoService.getcollectormotocyclenego)
 
 app.get('/getmotocyclenegohistory', auth, negoService.getmotocyclenegohistory)
 
@@ -336,6 +349,8 @@ app.post('/getsitevisitimagebyindex', auth, negoService.getsitevisitimagebyindex
 app.get('/gethistorypaymentlist', auth, negoService.gethistorypaymentlist)
 
 app.get('/getaddresscustlist', auth, negoService.getaddresscustlist)
+
+app.get('/getcollectoraddresscustlist', auth, negoService.getcollectoraddresscustlist)
 
 app.get('/getaddressncblist', auth, negoService.getaddressncblist)
 
@@ -444,6 +459,30 @@ app.post('/insertnegotocalltrack', auth, callMobileService.insertnegotocalltrack
 app.post(`/getagentwaitingpaymentlist`, auth, agnetService.getagentwaitingpaymentlist)
 
 app.post(`/getagentlastduelist`, auth, agnetService.getagentlastduelist)
+
+app.post(`/getagentlastduelistexcel`, auth, agnetService.getagentlastduelistexcel)
+
+app.post(`/getagentlastduelistexceldownload`, auth, agnetService.getagentlastduelistexceldownload)
+
+app.post(`/getprefirstduelist`, auth, agnetService.getprefirstduelist)
+
+app.get(`/getprefirstdueyearlist`, auth, agnetService.getprefirstdueyearlist)
+
+/* ... tdr Service ... */
+app.post(`/tdrcalculate`, auth, tdrService.tdrcalculate)
+
+app.post(`/tdrdetailbycontractno`, auth, tdrService.tdrdetailbycontractno)
+
+app.post(`/ratetdr`, auth, tdrService.ratetdr)
+
+app.post(`/insurancetdr`, auth, tdrService.insurancetdr)
+
+app.post(`/paymentvaluetdr`, auth, tdrService.paymentvaluetdr)
+
+app.post(`/termtdr`, auth, tdrService.termtdr)
+
+app.post(`/coveragetotallosstdr`, auth, tdrService.coveragetotallosstdr)
+
 
 // app.get('/genqr', barcodeService.genqr)
 // switch on lissten port s
