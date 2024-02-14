@@ -304,6 +304,10 @@ app.post('/getagentgroupstageimpact', auth, negoService.getagentgroupstageimpact
 
 app.post('/getagentsitevisit', auth, negoService.getagentsitevisit)
 
+app.post('/getbaddebtview', auth, agnetService.getbaddebtview)
+
+app.post('/getbaddebtviewexcel', auth, agnetService.getbaddebtviewexcel)
+
 app.post('/getagentassigntofcr', auth, negoService.getagentassigntofcr)
 
 app.post('/updateagentassignfcr', auth, negoService.updateagentassignfcr)

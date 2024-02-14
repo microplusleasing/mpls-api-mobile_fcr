@@ -664,6 +664,75 @@ paths:
         400:
           description: "error"
 
+  /getbaddebtview:
+    post:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: get data from bad debt
+      description: load data from "Database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                pageno:
+                  type: number
+                  example: 1
+                hp_no:
+                  type: string
+                  example: ""
+                branch:
+                  type: string
+                  example: "30"
+                sort_type:
+                  type: string
+                  description: "sort_type"
+                  example: ""
+                sort_field:
+                  type: string
+                  description: "sort_field"
+                  example: ""
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
+  /getbaddebtviewexcel:
+    post:
+      tags:
+        - "AGENT"
+      security:
+        - bearerAuth: []
+      summary: get data from bad debt excel
+      description: load data from "Database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                hp_no:
+                  type: string
+                  example: ""
+                branch:
+                  type: string
+                  example: "30"
+                sort_type:
+                  type: string
+                  description: "sort_type"
+                  example: ""
+                sort_field:
+                  type: string
+                  description: "sort_field"
+                  example: ""
+      responses:
+        200:
+          description: "successful get data"
+        400:
+          description: "error"
+
   /getagentassigntofcr:
     post:
       tags:
