@@ -1932,6 +1932,7 @@ async function getbaddebtview(req, res, next) {
                     and ACP.HP_NO = CMX.CONTRACT_NO
                     and CMX.APPLICATION_NUM = CM.APPLICATION_NUM
                     and CMX.SL_CODE = DP.DL_CODE
+                    and CMX.LOAN_RESULT = 'Y'
                     and DP.DL_BRANCH = BP.BRANCH_CODE
                     and CM.CUST_NO = CIF.CUST_NO
                     and TP.TITLE_ID = CIF.FNAME
@@ -2099,6 +2100,7 @@ async function getbaddebtviewexcel(req, res, next) {
                     and ACP.BILL = '900'
                     and ACP.HP_NO = CMX.CONTRACT_NO
                     and CMX.APPLICATION_NUM = CM.APPLICATION_NUM
+                    and CMX.LOAN_RESULT = 'Y'
                     and CMX.SL_CODE = DP.DL_CODE
                     and DP.DL_BRANCH = BP.BRANCH_CODE
                     and CM.CUST_NO = CIF.CUST_NO
