@@ -2272,6 +2272,7 @@ function mapAndRenameKeys_baddebtview(data) {
             'วันที่ทำสัญญา': item.contract_date ? moment(item.contract_date).format('DD/MM/YYYY') : '-',
             'ยอดหนี้คงเหลือ': item.debt_av,
             'รหัสอ้างอิงไปรษณีย์': item.post_ref_no,
+            'วันที่ดำเนินการไปรษณีย์': item.send_date,
             'วันที่ส่งจดหมายบอกเลิก': item.cancel_post_date ? moment(item.cancel_post_date).format('DD/MM/YYYY') : '-',
             'สถานะการดำเนินการไปรษณีย์': item.send_status,
             'วันที่ลูกค้าชำระเงินล่าสุด': item.recent_payment_date ? moment(item.recent_payment_date).format('DD/MM/YYYY') : '-',
