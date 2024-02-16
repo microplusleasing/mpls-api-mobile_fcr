@@ -2263,19 +2263,19 @@ function mapAndRenameKeys(data) {
 function mapAndRenameKeys_baddebtview(data) {
     return data.map(item => {
         return {
+            'สาขาที่ทำสัญญา': item.branch_name,
+            'รหัสสาขาที่ทำสัญญา': item.branch_name,
             'ชื่อ-นามสกุล': item.cust_name,
             'เลขที่สัญญา': item.hp_no,
-            'สาขาที่ทำสัญญา': item.branch_name,
             'Bill': item.bill,
             "Bill SUB.": item.bill_sub,
-            'รหัสสาขาที่ทำสัญญา': item.branch_name,
             'วันที่ทำสัญญา': item.contract_date ? moment(item.contract_date).format('DD/MM/YYYY') : '-',
             'ยอดหนี้คงเหลือ': item.debt_av,
-            'รหัสอ้างอิงไปรษณีย์': item.post_ref_no,
-            'วันที่ดำเนินการไปรษณีย์': item.send_date,
             'วันที่ส่งจดหมายบอกเลิก': item.cancel_post_date ? moment(item.cancel_post_date).format('DD/MM/YYYY') : '-',
-            'สถานะการดำเนินการไปรษณีย์': item.send_status,
+            'วันที่ดำเนินการไปรษณีย์': item.send_date ? moment(item.send_date).format('DD/MM/YYYY') : '-',
             'วันที่ลูกค้าชำระเงินล่าสุด': item.recent_payment_date ? moment(item.recent_payment_date).format('DD/MM/YYYY') : '-',
+            'สถานะการดำเนินการไปรษณีย์': item.send_status,
+            'รหัสอ้างอิงไปรษณีย์': item.post_ref_no,
             // Add more key mappings as needed
         };
     });
