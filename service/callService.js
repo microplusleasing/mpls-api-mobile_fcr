@@ -702,7 +702,8 @@ async function insertnegotocalltrack(req, res, next) {
                                         LOCATION_SITEVISIT_ADDR_TYPE, 
                                         RESULT_SITEVISIT_CODE, 
                                         CALL_KEYAPP_ID,
-                                        AGENT_CALL_UUID`
+                                        AGENT_CALL_UUID,
+                                        CHECK_SEC_DETAIL`
                             let mainquerynego2 = ` ) VALUES (
                                         :branch_code,
                                         :hp_no,
@@ -719,7 +720,8 @@ async function insertnegotocalltrack(req, res, next) {
                                         :location_sitevisit_addr_type, 
                                         :result_sitevisit_code, 
                                         :call_keyapp_id,
-                                        :agent_call_uuid 
+                                        :agent_call_uuid,
+                                        :check_sec_detail 
                                     `
 
                             bindparamnego.branch_code = branch_code
@@ -739,6 +741,7 @@ async function insertnegotocalltrack(req, res, next) {
                             bindparamnego.result_sitevisit_code = reqData.result_sitevisit_code
                             bindparamnego.call_keyapp_id = call_keyapp_id
                             bindparamnego.agent_call_uuid = reqData.uuidagentcall
+                            bindparamnego.check_sec_detail = reqData.checksecdetail
 
                             if (appoint_date_dtype) {
                                 addonfield1 = `, APPOINT_DATE `
@@ -793,12 +796,13 @@ async function insertnegotocalltrack(req, res, next) {
                             try {
                                 const callstore = await connection.execute(
                                     `
-                                                            BEGIN BTW.NEGO_AGENT_CONTRACT_LIST_UPD (:user_code, :uuid, 'Y');
+                                                            BEGIN BTW.NEGO_AGENT_CONTRACT_LIST_UPD (:user_code, :uuid, :recall);
                                                             END;
                                                         `,
                                     {
                                         user_code: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: userid },
-                                        uuid: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: reqData.uuidagentcall }
+                                        uuid: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: reqData.uuidagentcall },
+                                        recall: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: (reqData.recall).toString().toUpperCase() }
                                     })
 
                                 console.log('Success call AUN Procedure !!!')
