@@ -3500,16 +3500,17 @@ async function insertnegolist(req, res, next) {
             coverImageArray = fileData.coverimages ? fileData.coverimages : []
         }
 
-        let timesplit = []
-        let hoursplit = ''
-        let minsplit = ''
-        if (reqData.recall_time && typeof reqData.recall_time == 'string') {
-            timesplit = reqData.recall_time.split(':')
-            if (timesplit.length == 2) {
-                hoursplit = timesplit[0]
-                minsplit = timesplit[1]
-            }
-        }
+        // uncomment for next deploy (19/02/2024)
+        // let timesplit = []
+        // let hoursplit = ''
+        // let minsplit = ''
+        // if (reqData.recall_time && typeof reqData.recall_time == 'string') {
+        //     timesplit = reqData.recall_time.split(':')
+        //     if (timesplit.length == 2) {
+        //         hoursplit = timesplit[0]
+        //         minsplit = timesplit[1]
+        //     }
+        // }
 
         // Generate a UUID
         const uuid = uuidv4();
@@ -3712,11 +3713,12 @@ async function insertnegolist(req, res, next) {
                 bindparamnego.appoint_date = (new Date(appoint_date_dtype)) ?? null
             }
 
-            if (timesplit.length == 2) {
-                addonfield1 += `, RECALL_DATETIME`
-                addonfield2 += `, TO_DATE(TO_CHAR(SYSDATE,'dd/mm/yyyy')||' '||:time,'dd/mm/yyyy hh24:mi')`
-                bindparamnego.time = reqData.recall_time
-            }
+            // uncomment for next deploy (19/02/2024)
+            // if (timesplit.length == 2) {
+            //     addonfield1 += `, RECALL_DATETIME`
+            //     addonfield2 += `, TO_DATE(TO_CHAR(SYSDATE,'dd/mm/yyyy')||' '||:time,'dd/mm/yyyy hh24:mi')`
+            //     bindparamnego.time = reqData.recall_time
+            // }
 
 
             const finalqueryinsertnego = `${mainquerynego1}${addonfield1}${mainquerynego2}${addonfield2})`
@@ -3728,30 +3730,30 @@ async function insertnegolist(req, res, next) {
                 autoCommit: true
             })
 
+            // uncomment for next deploy (19/02/2024)
             // === call aun procedure ====
-            if (reqData.uuidagentcall) {
-                try {
-                    const callstore = await connection.execute(
-                        `
-                        BEGIN 
-                            BTW.NEGO_AGENT_CONTRACT_LIST_UPD (:user_code, :uuid, :recall);
-                        END;
-                        `,
-                        {
-                            user_code: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: userid },
-                            uuid: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: reqData.uuidagentcall },
-                            recall: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: (reqData.recall).toString().toUpperCase() },
-                        })
+            // if (reqData.uuidagentcall) {
+            //     try {
+            //         const callstore = await connection.execute(
+            //             `
+            //             BEGIN 
+            //                 BTW.NEGO_AGENT_CONTRACT_LIST_UPD (:user_code, :uuid, 'Y');
+            //             END;
+            //             `,
+            //             {
+            //                 user_code: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: userid },
+            //                 uuid: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: reqData.uuidagentcall }
+            //             })
 
-                    console.log('Success call AUN Procedure !!!')
+            //         console.log('Success call AUN Procedure !!!')
 
-                } catch (e) {
-                    return res.status(200).send({
-                        status: 400,
-                        message: `Call Procedure Fail : ${e.mesasage ? e.message : `No message`}`
-                    })
-                }
-            }
+            //     } catch (e) {
+            //         return res.status(200).send({
+            //             status: 400,
+            //             message: `Call Procedure Fail : ${e.mesasage ? e.message : `No message`}`
+            //         })
+            //     }
+            // }
 
             console.log(`create nego_info success : ${JSON.stringify(insertnegorecord)}`)
 
