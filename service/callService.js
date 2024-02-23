@@ -436,16 +436,16 @@ async function insertnegotocalltrack(req, res, next) {
         }
 
         // uncomment for next deploy (19/02/2024)
-        // let timesplit = []
-        // let hoursplit = ''
-        // let minsplit = ''
-        // if (reqData.recall_time && typeof reqData.recall_time == 'string') {
-        //     timesplit = reqData.recall_time.split(':')
-        //     if (timesplit.length == 2) {
-        //         hoursplit = timesplit[0]
-        //         minsplit = timesplit[1]
-        //     }
-        // }
+        let timesplit = []
+        let hoursplit = ''
+        let minsplit = ''
+        if (reqData.recall_time && typeof reqData.recall_time == 'string') {
+            timesplit = reqData.recall_time.split(':')
+            if (timesplit.length == 2) {
+                hoursplit = timesplit[0]
+                minsplit = timesplit[1]
+            }
+        }
 
         connection = await oracledb.getConnection(config.database)
         // *** check call_track_info record is waiting ****
@@ -751,11 +751,11 @@ async function insertnegotocalltrack(req, res, next) {
                             }
 
                             // uncomment for next deploy (19/02/2024)
-                            // if (timesplit.length == 2) {
-                            //     addonfield1 += `, RECALL_DATETIME`
-                            //     addonfield2 += `, TO_DATE(TO_CHAR(sysdate,'dd/mm/yyyy')||' '||:time,'dd/mm/yyyy hh24:mi')`
-                            //     bindparamnego.time = reqData.recall_time
-                            // }
+                            if (timesplit.length == 2) {
+                                addonfield1 += `, RECALL_DATETIME`
+                                addonfield2 += `, TO_DATE(TO_CHAR(sysdate,'dd/mm/yyyy')||' '||:time,'dd/mm/yyyy hh24:mi')`
+                                bindparamnego.time = reqData.recall_time
+                            }
 
                             const finalqueryinsertnego = `${mainquerynego1}${addonfield1}${mainquerynego2}${addonfield2})`
 
@@ -795,27 +795,27 @@ async function insertnegotocalltrack(req, res, next) {
 
                         // uncomment for next deploy (19/02/2024)
                         // === call aun procedure ====
-                        // if (reqData.uuidagentcall) {
-                        //     try {
-                        //         const callstore = await connection.execute(
-                        //             `
-                        //                                     BEGIN BTW.NEGO_AGENT_CONTRACT_LIST_UPD (:user_code, :uuid, 'Y');
-                        //                                     END;
-                        //                                 `,
-                        //             {
-                        //                 user_code: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: userid },
-                        //                 uuid: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: reqData.uuidagentcall }
-                        //             })
+                        if (reqData.uuidagentcall) {
+                            try {
+                                const callstore = await connection.execute(
+                                    `
+                                                            BEGIN BTW.NEGO_AGENT_CONTRACT_LIST_UPD (:user_code, :uuid, 'Y');
+                                                            END;
+                                                        `,
+                                    {
+                                        user_code: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: userid },
+                                        uuid: { dir: oracledb.BIND_IN, type: oracledb.STRING, val: reqData.uuidagentcall }
+                                    })
 
-                        //         console.log('Success call AUN Procedure !!!')
+                                console.log('Success call AUN Procedure !!!')
 
-                        //     } catch (e) {
-                        //         return res.status(200).send({
-                        //             status: 400,
-                        //             message: `Call Procedure Fail : ${e.mesasage ? e.message : `No message`}`
-                        //         })
-                        //     }
-                        // }
+                            } catch (e) {
+                                return res.status(200).send({
+                                    status: 400,
+                                    message: `Call Procedure Fail : ${e.mesasage ? e.message : `No message`}`
+                                })
+                            }
+                        }
 
                         return res.status(200).send({
                             status: 200,
