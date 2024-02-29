@@ -35,6 +35,7 @@ const imageUtilService = require('./service/_imageUtilService')
 const welcomeCallService = require('./service/welcomeCallService')
 const agnetService = require(`./service/agentmenuService`)
 const tdrService = require(`./service/tdrService`)
+const baddebtService = require(`./service/baddebtService`)
 const bodyParser = require("body-parser")
 const swaggerJSDoc = YAML.load("./api.yaml")
 const test2 = require('./service/test2')
@@ -154,13 +155,13 @@ app.get('/MPLS_get_dopa_valid_status', auth, qeconsentService.MPLS_get_dopa_vali
 
 app.get('/MPLS_get_dopa_valid_status_unlock', qeconsentService.MPLS_get_dopa_valid_status_unlock)
 
-app.get('/MPLS_canclequotation/:quotationid', auth,  qeconsentService.MPLS_canclequotation)
+app.get('/MPLS_canclequotation/:quotationid', auth, qeconsentService.MPLS_canclequotation)
 
-app.post('/MPLS_gen_econsent_image',  auth,  qeconsentService.MPLS_gen_econsent_image)
+app.post('/MPLS_gen_econsent_image', auth, qeconsentService.MPLS_gen_econsent_image)
 
-app.post('/MPLS_fix_gen_econsent_image',  auth,  qeconsentService.MPLS_fix_gen_econsent_image)
+app.post('/MPLS_fix_gen_econsent_image', auth, qeconsentService.MPLS_fix_gen_econsent_image)
 
-app.get('/MPLS_test_gen_econsent_image',  qeconsentService.MPLS_test_gen_econsent_image)
+app.get('/MPLS_test_gen_econsent_image', qeconsentService.MPLS_test_gen_econsent_image)
 
 app.post('/updatequotationimage', auth, quotationservice.updateQuotationImage)
 
@@ -486,6 +487,10 @@ app.post(`/paymentvaluetdr`, auth, tdrService.paymentvaluetdr)
 app.post(`/termtdr`, auth, tdrService.termtdr)
 
 app.post(`/coveragetotallosstdr`, auth, tdrService.coveragetotallosstdr)
+
+app.post(`/checkuserstage`, auth, baddebtService.checkuserstage)
+
+app.post(`/baddebtlistdashboard`, auth, baddebtService.baddebtlistdashboard)
 
 
 // app.get('/genqr', barcodeService.genqr)
