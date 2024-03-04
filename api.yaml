@@ -4569,7 +4569,7 @@ paths:
                 pagesize:
                   type: number
                   example: 50
-                branch:
+                branch_code:
                   type: string
                   example: "30"
                 sort_type:

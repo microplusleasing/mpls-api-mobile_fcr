@@ -19,11 +19,22 @@ async function checkuserstage(req, res, next) {
         connection = await oracledb.getConnection(config.database)
         const result = await connection.execute(
             `
-            SELECT
+            SELECT 
                 *
-            FROM BTW.X_REQUEST_WRITEOFF_STAGEFLOW
-            WHERE NVL(CANCEL, 'X') <> 'Y'
-            AND EMP_ID = :userid
+            FROM 
+                (
+                    SELECT
+                        ROWNUM AS LINE_NUMBER,
+                        XWS.*
+                    FROM 
+                        BTW.X_REQUEST_WRITEOFF_STAGEFLOW XWS
+                    WHERE 
+                        NVL(CANCEL, 'X') <> 'Y'
+                        AND EMP_ID = :userid
+                    ORDER BY CREATED_TIME
+                )
+            WHERE 
+                LINE_NUMBER = 1
             `
             , {
                 userid: userid
@@ -79,9 +90,9 @@ async function baddebtlistdashboard(req, res, next) {
         const user_name = token.user_id // *** 10 incluse ***
 
 
-        const { pageno, pagesize, branch, sort_type, sort_field } = req.body
+        const { page_no, page_size, branch_code, sort_type, sort_field } = req.body
 
-        if (!(pageno)) {
+        if (!(page_no)) {
             return res.status(200).send({
                 status: 400,
                 message: `missing parameters pageno`,
@@ -89,7 +100,7 @@ async function baddebtlistdashboard(req, res, next) {
             })
         }
 
-        if (!branch) {
+        if (!branch_code) {
             return res.status(200).send({
                 status: 400,
                 message: `missing parameters branch`,
@@ -97,27 +108,50 @@ async function baddebtlistdashboard(req, res, next) {
             })
         }
 
-        if (!pagesize && typeof parseInt(pageno) !== "number") {
+        if (!page_size && typeof parseInt(page_no) !== "number") {
             return res.status(200).send({
                 status: 400,
                 message: `missing parameters pagesize`,
                 data: []
             })
         }
-        const indexstart = (pageno - 1) * pagesize + 1
-        const indexend = (pageno * pagesize)
+
+        connection = await oracledb.getConnection(config.database)
+        /* ... check user permissage (only stage = 1 in X_REQUEST_WRITEOFF_STAGEFLOW) ... */
+
+        const checkstage = await getuserstage(userid)
+
+        if (!checkstage) return res.status(200).send({ status: 400, message: `ไม่มีสิทธ์ในการทำรายการ`, data: [] })
+        if (checkstage.stage_flow !== '1') return res.status(200).send({ status: 400, message: `ไม่มีสิทธ์ในการทำรายการ`, data: [] })
+
+        /* ... query data contrast ... */
+        const indexstart = (page_no - 1) * page_size + 1
+        const indexend = (page_no * page_size)
 
         let rowCount;
         let bindparams = {};
         let querybranch = ''
+        let filternorepeat =
+            `
+        AND ACP.HP_NO NOT IN
+            (
+                
+                SELECT 
+                    DISTINCT(HP_NO)
+                FROM
+                    BTW.X_REQUEST_WRITEOFF_DETAIL
+                WHERE
+                    NVL(CANCEL, 'X') <> 'Y'
+            )
+        `;
 
 
 
-        if (branch) {
+        if (branch_code) {
 
-            if (branch !== 0 && branch !== '0') {
+            if (branch_code !== 0 && branch_code !== '0') {
                 querybranch = ` AND BP.BRANCH_CODE = :branch `
-                bindparams.branch = branch
+                bindparams.branch = branch_code
             }
         }
 
@@ -128,7 +162,6 @@ async function baddebtlistdashboard(req, res, next) {
         }
 
 
-        connection = await oracledb.getConnection(config.database)
         const sqlbase =
             `
             SELECT 
@@ -173,6 +206,7 @@ async function baddebtlistdashboard(req, res, next) {
                     and DP.DL_BRANCH = BP.BRANCH_CODE
                     and CM.CUST_NO = CIF.CUST_NO
                     and TP.TITLE_ID = CIF.FNAME
+                    ${filternorepeat}
                     ${querybranch}
                     ) MAINQ
                     ${querysort}
@@ -216,8 +250,8 @@ async function baddebtlistdashboard(req, res, next) {
                     returnData.data = lowerResData
                     returnData.status = 200
                     returnData.message = 'success'
-                    returnData.CurrentPage = Number(pageno)
-                    returnData.pageSize = pagesize
+                    returnData.CurrentPage = Number(page_no)
+                    returnData.pageSize = page_size
                     returnData.rowCount = rowCount
                     returnData.pageCount = Math.ceil(rowCount / 10);
 
@@ -256,6 +290,61 @@ async function baddebtlistdashboard(req, res, next) {
                     status: 200,
                     message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
                 })
+            }
+        }
+    }
+}
+
+async function getuserstage(userid) {
+    if (!userid) return null;
+
+    let connection;
+    try {
+
+        connection = await oracledb.getConnection(config.database)
+        const result = await connection.execute(
+            `
+            SELECT 
+                *
+            FROM 
+                (
+                    SELECT
+                        ROWNUM AS LINE_NUMBER,
+                        XWS.*
+                    FROM 
+                        BTW.X_REQUEST_WRITEOFF_STAGEFLOW XWS
+                    WHERE 
+                        NVL(CANCEL, 'X') <> 'Y'
+                        AND EMP_ID = :userid
+                    ORDER BY CREATED_TIME
+                )
+            WHERE 
+                LINE_NUMBER = 1
+            `,
+            {
+                userid: userid
+            },
+            {
+                outFormat: oracledb.OBJECT
+            }
+        )
+
+        if (result.rows.length == 0) return null
+
+        const lowerResData = tolowerService.objtolower(result.rows[0])
+
+        return lowerResData
+
+    } catch (e) {
+        console.error(e)
+        return null
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+                console.log(`connection close complete!`)
+            } catch (e) {
+                console.error(e);
             }
         }
     }
