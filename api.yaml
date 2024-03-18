@@ -4542,13 +4542,287 @@ paths:
       security:
         - bearerAuth: []
       summary: ""
-      description: "get coverrage totalloss tdr value"
-
+      description: "check user permission in menu writeoff manage page"
       responses:
         200:
           description: "successful"
         500:
           description: "Error Connect API"
+
+  /fetchwriteoffheader:
+    post:
+      tags:
+        - "Baddebt"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get writeoff header list"
+      requestBody:
+              content:
+                application/json:
+                  schema:
+                    properties:
+                      page_no:
+                        type: number
+                        description: page of data
+                        example: 1
+                      stage_flow:
+                        type: string
+                        description: "Stage flow of user permission"
+                        example: "1"
+                      sort_field:
+                        type: string
+                        description: "sort_field"
+                        example: ""
+                      sort_type:
+                        type: string
+                        description: "sort_type"
+                        example: ""
+      responses:
+        200:
+          description: "successful"
+        500:
+          description: "Error Connect API"
+
+  /fetchwriteoffdetail:
+    post:
+      tags:
+        - "Baddebt"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "get writeoff detail list"
+      requestBody:
+              content:
+                application/json:
+                  schema:
+                    properties:
+                      page_no:
+                        type: number
+                        description: page of data
+                        example: 1
+                      stage_flow:
+                        type: string
+                        description: "Stage flow of user permission"
+                        example: "1"
+                      doc_id:
+                        type: string
+                        description: "doc_id of writeoff header"
+                        example: "202403022"
+                      sort_field:
+                        type: string
+                        description: "sort_field"
+                        example: ""
+                      sort_type:
+                        type: string
+                        description: "sort_type"
+                        example: ""
+                      
+      responses:
+        200:
+          description: "successful"
+        500:
+          description: "Error Connect API"
+
+  /fetchwriteoffheadercomment:
+    post:
+      tags:
+        - "Baddebt"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "fetch list of writeoff header comment"
+      requestBody:
+              content:
+                application/json:
+                  schema:
+                    properties:
+                      stage_flow:
+                        type: string
+                        description: "Stage flow of user permission"
+                        example: "1"
+                      doc_id:
+                        type: string
+                        description: "doc_id of writeoff header"
+                        example: "202403024"
+                      
+      responses:
+        200:
+          description: "successful"
+        500:
+          description: "Error Connect API"
+
+  /fetchwriteoffdetailcomment:
+    post:
+      tags:
+        - "Baddebt"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "fetch list of writeoff header comment"
+      requestBody:
+              content:
+                application/json:
+                  schema:
+                    properties:
+                      stage_flow:
+                        type: string
+                        description: "Stage flow of user permission"
+                        example: "1"
+                      doc_id:
+                        type: string
+                        description: "doc_id of writeoff header"
+                        example: "202403024"
+                      hp_no: 
+                        type: string
+                        description: "hp no of writeoff detail"
+                        example: "110202200000137"
+                      
+      responses:
+        200:
+          description: "successful"
+        500:
+          description: "Error Connect API"
+
+  /createwriteoffheadercomment:
+    post:
+      tags:
+        - "Baddebt"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "create writeoff header log"
+      requestBody:
+              content:
+                application/json:
+                  schema:
+                    properties:
+                      message:  
+                        type: string
+                        description: "message of comment"
+                        example: "test log"
+                      stage_flow:
+                        type: string
+                        description: "Stage flow of user permission"
+                        example: "1"
+                      doc_id:
+                        type: string
+                        description: "doc_id of writeoff header"
+                        example: "202403024"
+                      
+      responses:
+        200:
+          description: "successful"
+        500:
+          description: "Error Connect API"
+
+  /createwriteoffdetailcomment:
+    post:
+      tags:
+        - "Baddebt"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "create writeoff detail log"
+      requestBody:
+              content:
+                application/json:
+                  schema:
+                    properties:
+                      hp_no:
+                        type: string
+                        description: "hp no of detail log"
+                        example: "110202200000137"
+                      message:  
+                        type: string
+                        description: "message of comment"
+                        example: "test log"
+                      stage_flow:
+                        type: string
+                        description: "Stage flow of user permission"
+                        example: "1"
+                      doc_id:
+                        type: string
+                        description: "doc_id of writeoff detail"
+                        example: "202403024"
+                      
+      responses:
+        200:
+          description: "successful"
+        500:
+          description: "Error Connect API"
+
+  /updatewriteoffheadercomment:
+    post:
+      tags:
+        - "Baddebt"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "create writeoff header log"
+      requestBody:
+              content:
+                application/json:
+                  schema:
+                    properties:
+                      message:  
+                        type: string
+                        description: "message of comment"
+                        example: "test log"
+                      stage_flow:
+                        type: string
+                        description: "Stage flow of user permission"
+                        example: "1"
+                      doc_id:
+                        type: string
+                        description: "doc_id of writeoff header"
+                        example: "202403024"
+                      
+      responses:
+        200:
+          description: "successful"
+        400:
+          description: "Error Connect API"
+        500:
+          description: "Duplicate Comment header"
+
+  /updatewriteoffdetailcomment:
+    post:
+      tags:
+        - "Baddebt"
+      security:
+        - bearerAuth: []
+      summary: ""
+      description: "create writeoff detail log"
+      requestBody:
+              content:
+                application/json:
+                  schema:
+                    properties:
+                      hp_no:
+                        type: string
+                        description: "hp no of detail log"
+                        example: "110202200000137"
+                      message:  
+                        type: string
+                        description: "message of comment"
+                        example: "test log"
+                      stage_flow:
+                        type: string
+                        description: "Stage flow of user permission"
+                        example: "1"
+                      doc_id:
+                        type: string
+                        description: "doc_id of writeoff detail"
+                        example: "202403024"
+                      
+      responses:
+        200:
+          description: "successful"
+        400:
+          description: "Error Connect API"
+        500:
+          description: "Duplicate Comment detail"
 
   /baddebtlistdashboard:
     post:
@@ -4563,10 +4837,10 @@ paths:
           application/json:
             schema:
               properties:
-                pageno:
+                page_no:
                   type: number
                   example: 1
-                pagesize:
+                page_size:
                   type: number
                   example: 50
                 branch_code:

@@ -492,6 +492,30 @@ app.post(`/checkuserstage`, auth, baddebtService.checkuserstage)
 
 app.post(`/baddebtlistdashboard`, auth, baddebtService.baddebtlistdashboard)
 
+app.post(`/createwriteofflist`, auth, baddebtService.createwriteofflist)
+
+app.post(`/addwriteoffdetail`, auth, baddebtService.addwriteoffdetail)
+
+app.post(`/removewriteoffdetail`, auth, baddebtService.removewriteoffdetail)
+
+app.post(`/removewriteoffheader`, auth, baddebtService.removewriteoffheader)
+
+app.post(`/fetchwriteoffheader`, auth, baddebtService.fetchwriteoffheader)
+
+app.post(`/fetchwriteoffdetail`, auth, baddebtService.fetchwriteoffdetail)
+
+app.post(`/fetchwriteoffheadercomment`, auth, baddebtService.fetchwriteoffheadercomment)
+
+app.post(`/fetchwriteoffdetailcomment`, auth, baddebtService.fetchwriteoffdetailcomment)
+
+app.post(`/createwriteoffheadercomment`, auth, baddebtService.createwriteoffheadercomment)
+
+app.post(`/createwriteoffdetailcomment`, auth, baddebtService.createwriteoffdetailcomment)
+
+app.post(`/updatewriteoffheadercomment`, auth, baddebtService.updatewriteoffheadercomment)
+
+app.post(`/updatewriteoffdetailcomment`, auth, baddebtService.updatewriteoffdetailcomment)
+
 
 // app.get('/genqr', barcodeService.genqr)
 // switch on lissten port s
