@@ -516,6 +516,12 @@ app.post(`/updatewriteoffheadercomment`, auth, baddebtService.updatewriteoffhead
 
 app.post(`/updatewriteoffdetailcomment`, auth, baddebtService.updatewriteoffdetailcomment)
 
+app.post(`/sendworkwriteoff`, auth, baddebtService.sendworkwriteoff)
+
+app.post(`/rejectwriteoff`, auth, baddebtService.rejectwriteoff)
+
+app.post(`/approvewriteoff`, auth, baddebtService.approvewriteoff)
+
 
 // app.get('/genqr', barcodeService.genqr)
 // switch on lissten port s

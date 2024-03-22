@@ -1662,8 +1662,6 @@ async function fetchwriteoffheader(req, res, next) {
         let bindparams = {};
         let querystageflow = ''
 
-        bindparams.userid = token.ID
-
         if (stage_flow) {
             querystageflow = ` AND STAGE_FLOW = :stageflow `
             bindparams.stageflow = stage_flow
@@ -1681,17 +1679,20 @@ async function fetchwriteoffheader(req, res, next) {
             `
             SELECT
                 ROWNUM AS LINE_NUMBER,
-                MAINQ.*
+                MAINQ.*,
+                BTW.GET_SENDWORK_WRTIEOFF_STATUS(MAINQ.DOC_ID, MAINQ.STAGE_FLOW) AS IS_SEND,
+                BTW.GET_CURRENT_REWORK_WRITEOFF(MAINQ.DOC_ID) AS CURRENT_REWORK 
             FROM
                 (
                     SELECT
                         XRWH.*,
                         BTW.F_GET_BRANCH_NAME(XRWH.BRANCH_CODE) AS BRANCH_NAME,
-                        BTW.F_GET_EMP_NAME_ID(:userid) AS EMP_NAME
+                        BTW.F_GET_EMP_NAME_ID(XRWH.REQUESTER) AS EMP_NAME
                     FROM
                         BTW.X_REQUEST_WRITEOFF_HEADER XRWH
                     WHERE
                         NVL (CANCEL, 'X') <> 'Y'
+                        AND XRWH.CEO_CONCUR IS NULL
                         ${querystageflow}
                         ${querysort}
                 ) MAINQ
@@ -1859,7 +1860,8 @@ async function fetchwriteoffdetail(req, res, next) {
             `
             SELECT
                 ROWNUM AS LINE_NUMBER,
-                MAINQ.*
+                MAINQ.*,
+                BTW.GET_CURRENT_REWORK_WRITEOFF(MAINQ.DOC_ID) AS CURRENT_REWORK 
             FROM
                 (
                     SELECT
@@ -1974,7 +1976,7 @@ async function fetchwriteoffheadercomment(req, res, next) {
         const userid = token.ID // *** no 10 incluse ***
         const user_name = token.user_id // *** 10 incluse ***
 
-        const { doc_id, stage_flow } = req.body
+        const { doc_id, stage_flow, rework_id } = req.body
 
         /* ... check parameter doc_id... */
         if (!doc_id) {
@@ -1990,6 +1992,15 @@ async function fetchwriteoffheadercomment(req, res, next) {
             return res.status(200).send({
                 status: 400,
                 message: `missing parameters stage_flow`,
+                data: []
+            })
+        }
+
+        /* ... check parameter rework_id... */
+        if (!rework_id && rework_id !== 0) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters rework_id`,
                 data: []
             })
         }
@@ -2024,18 +2035,23 @@ async function fetchwriteoffheadercomment(req, res, next) {
             checkstagectrl = await connection.execute(
                 `
                 SELECT
-                    MQRY.*
+                    *
                 FROM
                     (
                         SELECT
-                            ROWNUM AS LINE_NUMBER,
-                            XRWSC.*
+                            MQRY_I.*,
+                            ROWNUM AS LINE_NUMBER
                         FROM
-                            BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
-                        WHERE
-                            DOC_ID = :doc_id 
-                        ORDER BY
-                            UPD_DATETIME DESC
+                            (
+                                SELECT
+                                    XRWSC.*
+                                FROM
+                                    BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
+                                WHERE
+                                    DOC_ID = :doc_id
+                                ORDER BY
+                                    UPD_DATETIME DESC
+                            ) MQRY_I
                     ) MQRY
                 WHERE
                     LINE_NUMBER = 1
@@ -2084,7 +2100,9 @@ async function fetchwriteoffheadercomment(req, res, next) {
                             DOC_ID
                         ORDER BY
                             CREATED_TIME desc
-                    ) = 1 THEN 'Y'
+                    ) = 1 
+                    AND REWORK_ID = :rework_id 
+                    THEN 'Y'
                     ELSE 'N'
                 END AS is_edit
             FROM
@@ -2094,6 +2112,7 @@ async function fetchwriteoffheadercomment(req, res, next) {
             `
             , {
                 stage_flow: stage_flow,
+                rework_id: rework_id,
                 doc_id: doc_id
             }, {
             outFormat: oracledb.OBJECT
@@ -2145,7 +2164,7 @@ async function fetchwriteoffdetailcomment(req, res, next) {
         const userid = token.ID // *** no 10 incluse ***
         const user_name = token.user_id // *** 10 incluse ***
 
-        const { doc_id, stage_flow, hp_no } = req.body
+        const { doc_id, stage_flow, hp_no, rework_id } = req.body
 
         /* ... check parameter doc_id... */
         if (!doc_id) {
@@ -2170,6 +2189,15 @@ async function fetchwriteoffdetailcomment(req, res, next) {
             return res.status(200).send({
                 status: 400,
                 message: `missing parameters hp_no`,
+                data: []
+            })
+        }
+
+        /* ... check parameter rework_id... */
+        if (!rework_id && rework_id !== 0) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters rework_id`,
                 data: []
             })
         }
@@ -2204,18 +2232,23 @@ async function fetchwriteoffdetailcomment(req, res, next) {
             checkstagectrl = await connection.execute(
                 `
                 SELECT
-                    MQRY.*
+                    *
                 FROM
                     (
                         SELECT
-                            ROWNUM AS LINE_NUMBER,
-                            XRWSC.*
+                            MQRY_I.*,
+                            ROWNUM AS LINE_NUMBER
                         FROM
-                            BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
-                        WHERE
-                            DOC_ID = :doc_id 
-                        ORDER BY
-                            UPD_DATETIME DESC
+                            (
+                                SELECT
+                                    XRWSC.*
+                                FROM
+                                    BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
+                                WHERE
+                                    DOC_ID = :doc_id
+                                ORDER BY
+                                    UPD_DATETIME DESC
+                            ) MQRY_I
                     ) MQRY
                 WHERE
                     LINE_NUMBER = 1
@@ -2264,7 +2297,9 @@ async function fetchwriteoffdetailcomment(req, res, next) {
                             DOC_ID
                         ORDER BY
                             CREATED_TIME desc
-                    ) = 1 THEN 'Y'
+                    ) = 1 
+                    AND REWORK_ID = :rework_id 
+                    THEN 'Y'
                     ELSE 'N'
                 END AS is_edit
             FROM
@@ -2276,6 +2311,7 @@ async function fetchwriteoffdetailcomment(req, res, next) {
             `
             , {
                 stage_flow: stage_flow,
+                rework_id: rework_id,
                 doc_id: doc_id,
                 hp_no: hp_no
             }, {
@@ -2386,18 +2422,23 @@ async function createwriteoffheadercomment(req, res, next) {
             checkstagectrl = await connection.execute(
                 `
                 SELECT
-                    MQRY.*
+                    *
                 FROM
                     (
                         SELECT
-                            ROWNUM AS LINE_NUMBER,
-                            XRWSC.*
+                            MQRY_I.*,
+                            ROWNUM AS LINE_NUMBER
                         FROM
-                            BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
-                        WHERE
-                            DOC_ID = :doc_id 
-                        ORDER BY
-                            UPD_DATETIME DESC
+                            (
+                                SELECT
+                                    XRWSC.*
+                                FROM
+                                    BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
+                                WHERE
+                                    DOC_ID = :doc_id
+                                ORDER BY
+                                    UPD_DATETIME DESC
+                            ) MQRY_I
                     ) MQRY
                 WHERE
                     LINE_NUMBER = 1
@@ -2677,18 +2718,23 @@ async function createwriteoffdetailcomment(req, res, next) {
             checkstagectrl = await connection.execute(
                 `
                 SELECT
-                    MQRY.*
+                    *
                 FROM
                     (
                         SELECT
-                            ROWNUM AS LINE_NUMBER,
-                            XRWSC.*
+                            MQRY_I.*,
+                            ROWNUM AS LINE_NUMBER
                         FROM
-                            BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
-                        WHERE
-                            DOC_ID = :doc_id 
-                        ORDER BY
-                            UPD_DATETIME DESC
+                            (
+                                SELECT
+                                    XRWSC.*
+                                FROM
+                                    BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
+                                WHERE
+                                    DOC_ID = :doc_id
+                                ORDER BY
+                                    UPD_DATETIME DESC
+                            ) MQRY_I
                     ) MQRY
                 WHERE
                     LINE_NUMBER = 1
@@ -2965,18 +3011,23 @@ async function updatewriteoffheadercomment(req, res, next) {
             checkstagectrl = await connection.execute(
                 `
                 SELECT
-                    MQRY.*
+                    *
                 FROM
                     (
                         SELECT
-                            ROWNUM AS LINE_NUMBER,
-                            XRWSC.*
+                            MQRY_I.*,
+                            ROWNUM AS LINE_NUMBER
                         FROM
-                            BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
-                        WHERE
-                            DOC_ID = :doc_id 
-                        ORDER BY
-                            UPD_DATETIME DESC
+                            (
+                                SELECT
+                                    XRWSC.*
+                                FROM
+                                    BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
+                                WHERE
+                                    DOC_ID = :doc_id
+                                ORDER BY
+                                    UPD_DATETIME DESC
+                            ) MQRY_I
                     ) MQRY
                 WHERE
                     LINE_NUMBER = 1
@@ -3260,18 +3311,23 @@ async function updatewriteoffdetailcomment(req, res, next) {
             checkstagectrl = await connection.execute(
                 `
                 SELECT
-                    MQRY.*
+                    *
                 FROM
                     (
                         SELECT
-                            ROWNUM AS LINE_NUMBER,
-                            XRWSC.*
+                            MQRY_I.*,
+                            ROWNUM AS LINE_NUMBER
                         FROM
-                            BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
-                        WHERE
-                            DOC_ID = :doc_id 
-                        ORDER BY
-                            UPD_DATETIME DESC
+                            (
+                                SELECT
+                                    XRWSC.*
+                                FROM
+                                    BTW.X_REQUEST_WRITEOFF_STAGE_CTRL XRWSC
+                                WHERE
+                                    DOC_ID = :doc_id
+                                ORDER BY
+                                    UPD_DATETIME DESC
+                            ) MQRY_I
                     ) MQRY
                 WHERE
                     LINE_NUMBER = 1
@@ -3484,6 +3540,893 @@ async function updatewriteoffdetailcomment(req, res, next) {
     }
 }
 
+async function sendworkwriteoff(req, res, next) {
+    let connection;
+    try {
+
+        console.log(`trigger start writeoff`)
+        const token = req.user
+        const userid = token.ID // *** no 10 incluse ***
+        const user_name = token.user_id // *** 10 incluse ***
+
+        const { doc_id, stage_flow } = req.body
+
+        /* ... check parameter doc_id... */
+        if (!doc_id) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters doc_id`,
+                data: []
+            })
+        }
+
+        /* ... check parameter stage_flow... */
+        if (!stage_flow) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters stage_flow`,
+                data: []
+            })
+        }
+
+        const stage_flow_cal = parseInt(stage_flow)
+
+        let current_rework_id = ''
+
+        connection = await oracledb.getConnection(config.database)
+
+        try {
+            /* ... check stage permission ... */
+            const checkstage = await getuserstage(userid)
+            if (checkstage.stage_flow !== stage_flow) return res.status(200).send({ status: 400, message: `ไม่มีสิทธ์ในการทำรายการ`, data: [] })
+
+
+            /* ... check doc_id in stage ... */
+            const checkdocidstage = await connection.execute(` SELECT STAGE_FLOW FROM BTW.X_REQUEST_WRITEOFF_HEADER WHERE DOC_ID = :doc_id `, { doc_id: doc_id }, { outFormat: oracledb.OBJECT })
+            if (checkdocidstage.rows.length == 0) return res.status(200).send({ status: 400, message: `ไม่พบรายการ doc_id ภายใต้ stage flow` })
+            if (checkdocidstage.rows[0].STAGE_FLOW !== checkstage.stage_flow) return res.status(200).send({ status: 400, message: `ไม่มีสิทธ์ในการทำรายการ (stage flow miss match)` })
+            if (!(stagectrl.stageControl.isSend.find(item => item == checkstage.stage_flow))) return res.status(200).send({ status: 400, message: `ไม่มีสิทธ์ในการสร้างรายการ (stage ctrl)`, data: [] })
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error when try to check permission of stage flow and doc_id (${e.message ?? 'No return message'})`,
+                data: []
+            })
+        }
+
+        /* ... check stage_ctrl is match stage ... */
+
+        try {
+            const checkstagectrl = await connection.execute(
+                `
+                SELECT
+                    *
+                FROM
+                    (
+                        SELECT
+                            XRWSC_INSIDE.*,
+                            ROWNUM AS LINE_NUMBER
+                        FROM
+                            (
+                                SELECT
+                                    *
+                                FROM
+                                    BTW.X_REQUEST_WRITEOFF_STAGE_CTRL
+                                WHERE
+                                    DOC_ID = :doc_id 
+                                    AND STAGE_FLOW = :stage_flow 
+                                ORDER BY
+                                    UPD_DATETIME DESC
+                            ) XRWSC_INSIDE
+                    ) XRWSC
+                WHERE
+                    LINE_NUMBER = 1
+                `, {
+                doc_id: doc_id,
+                stage_flow: stage_flow
+            }, {
+                outFormat: oracledb.OBJECT
+            }
+            )
+
+            if (checkstagectrl.rows.length !== 1) {
+                return res.status(200).send({
+                    statsu: 400,
+                    message: `ไม่สามารถระบุรายการ doc_id ได้ (Identity check fail`,
+                    data: []
+                })
+            }
+
+            if (checkstagectrl.rows[0].STAGE_FLOW !== stage_flow) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `stage ในการทำรายการไม่ตรง`
+                })
+            }
+
+            /* ... set recent_rework_id .. */
+            current_rework_id = checkstagectrl.rows[0].REWORK_ID
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error when try to check stage ctrl (${e.message ?? 'No error return'})`
+            })
+        }
+
+        /* .... get time for create writeoff headder ... */
+
+        let current_timestamp_value;
+        try {
+            const current_timestamp = await connection.execute(`SELECT CURRENT_TIMESTAMP FROM DUAL`, {}, { outFormat: oracledb.OBJECT })
+
+            if (current_timestamp.rows.length == 0) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `can't get current_timestamp value from server`,
+                    data: []
+                })
+            }
+
+            current_timestamp_value = current_timestamp.rows[0].CURRENT_TIMESTAMP
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error during get CUREENT_TIME from database ${e.message ?? 'No retrun message'}`,
+                data: []
+            })
+        }
+
+        /* ... update writeoff_header and writeoff stage_ctrl ... */
+        try {
+
+            /* ... update writeoff header ... */
+            try {
+
+                const fieldname = stagectrl.stageControl.updatefield.find(item => item.stage == stage_flow)?.field_name
+
+                console.log(`fieldname : ${fieldname}`)
+
+                if (!fieldname) {
+                    return res.status(200).send({
+                        status: 400,
+                        message: `ไม่พบ stage name ของ stage flow paramter`,
+                        data: []
+                    })
+                }
+
+                let sqlupdateconcur = ''
+                let bindparamsflagwriteoffheader = {};
+
+                sqlupdateconcur = ` ${fieldname} = :update_field `
+                bindparamsflagwriteoffheader.stage_flow = stage_flow_cal + 1,
+                    bindparamsflagwriteoffheader.update_field = token.ID
+                bindparamsflagwriteoffheader.doc_id = doc_id
+
+                const sqlflagwriteoffheaer =
+                    `
+                    UPDATE BTW.X_REQUEST_WRITEOFF_HEADER
+                    SET
+                        STAGE_FLOW = :stage_flow,
+                        ${sqlupdateconcur}
+                    WHERE
+                        DOC_ID = :doc_id 
+                        AND NVL (CANCEL, 'X') <> 'Y' 
+                `
+
+                const flagwriteoffheader = await connection.execute(sqlflagwriteoffheaer, bindparamsflagwriteoffheader, { autoCommit: false })
+
+                /* ... check result update writeoff header row = 1 ... */
+                if (flagwriteoffheader.rowsAffected !== 1) {
+                    return res.status(200).send({
+                        status: 400,
+                        message: `ไม่สามารถระบุรายการ header ได้ (Identity fail)`,
+                        data: []
+                    })
+                }
+
+            } catch (e) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `Error when try to update writeoff header (${e.message ?? 'No error message'})`,
+                    data: []
+                })
+            }
+
+            /* ... update writeoff stage ctrl ... */
+            try {
+                const flagwriteoffstagectrl = await connection.execute(
+                    `
+                    UPDATE BTW.X_REQUEST_WRITEOFF_STAGE_CTRL
+                    SET
+                        STAGE_FLOW = :stage_flow 
+                    WHERE
+                        DOC_ID = :doc_id 
+                        AND REWORK_ID = :rework_id
+                    `,
+                    {
+                        stage_flow: stage_flow_cal + 1,
+                        doc_id: doc_id,
+                        rework_id: current_rework_id
+                    },
+                    {
+                        autoCommit: false
+                    }
+                )
+
+                /* ... check result update writeoff header row = 1 ... */
+                if (flagwriteoffstagectrl.rowsAffected !== 1) {
+                    return res.status(200).send({
+                        status: 400,
+                        message: `ไม่สามารถระบุรายการ stage ctrl ได้ (Identity fail)`,
+                        data: []
+                    })
+                }
+
+            } catch (e) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `Error when try to update writeoff stage ctrl (${e.message ?? 'No error message'})`,
+                    data: []
+                })
+            }
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error during try to update writeoff_header and writeoff_stage_ctrl (${e.message ?? 'No error message'})`,
+                data: []
+            })
+        }
+
+        /* ... commit all and return status success ... */
+
+        try {
+            await connection.commit()
+
+            return res.status(200).send({
+                status: 200,
+                message: `ส่งงานสำเร็จ`,
+                data: []
+            })
+
+            /* ... End Process ... */
+        } catch (e) {
+            console.error(e)
+            return res.status(200).send({
+                status: 400,
+                message: `Error when try to commit database (${e.message ?? 'No return message'})`
+            })
+        }
+
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 400,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 400,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function rejectwriteoff(req, res, next) {
+    let connection;
+    try {
+
+        console.log(`trigger start writeoff`)
+        const token = req.user
+        const userid = token.ID // *** no 10 incluse ***
+        const user_name = token.user_id // *** 10 incluse ***
+
+        const { doc_id, stage_flow, rework_id } = req.body
+
+        /* ... check parameter doc_id... */
+        if (!doc_id) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters doc_id`,
+                data: []
+            })
+        }
+
+        /* ... check parameter stage_flow... */
+        if (!stage_flow) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters stage_flow`,
+                data: []
+            })
+        }
+
+        /* ... check parameter rework_id... */
+        if (!rework_id && rework_id !== 0) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters rework_id`,
+                data: []
+            })
+        }
+
+        const stage_flow_cal = parseInt(stage_flow)
+
+        let current_rework_id = ''
+        let current_rework_id_cal;
+
+        connection = await oracledb.getConnection(config.database)
+
+        try {
+            /* ... check stage permission ... */
+            const checkstage = await getuserstage(userid)
+            if (checkstage.stage_flow !== stage_flow) return res.status(200).send({ status: 400, message: `ไม่มีสิทธ์ในการทำรายการ`, data: [] })
+
+
+            /* ... check doc_id in stage ... */
+            const checkdocidstage = await connection.execute(` SELECT STAGE_FLOW FROM BTW.X_REQUEST_WRITEOFF_HEADER WHERE DOC_ID = :doc_id `, { doc_id: doc_id }, { outFormat: oracledb.OBJECT })
+            if (checkdocidstage.rows.length == 0) return res.status(200).send({ status: 400, message: `ไม่พบรายการ doc_id ภายใต้ stage flow` })
+            if (checkdocidstage.rows[0].STAGE_FLOW !== checkstage.stage_flow) return res.status(200).send({ status: 400, message: `ไม่มีสิทธ์ในการทำรายการ (stage flow miss match)` })
+            if (!(stagectrl.stageControl.isReject.find(item => item == checkstage.stage_flow))) return res.status(200).send({ status: 400, message: `ไม่มีสิทธ์ในการสร้างรายการ (stage ctrl)`, data: [] })
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error when try to check permission of stage flow and doc_id (${e.message ?? 'No return message'})`,
+                data: []
+            })
+        }
+
+        /* ... check stage_ctrl is match stage ... */
+
+        try {
+            const checkstagectrl = await connection.execute(
+                `
+                SELECT
+                    *
+                FROM
+                    (
+                        SELECT
+                            XRWSC_INSIDE.*,
+                            ROWNUM AS LINE_NUMBER
+                        FROM
+                            (
+                                SELECT
+                                    *
+                                FROM
+                                    BTW.X_REQUEST_WRITEOFF_STAGE_CTRL
+                                WHERE
+                                    DOC_ID = :doc_id 
+                                    AND STAGE_FLOW = :stage_flow 
+                                ORDER BY
+                                    UPD_DATETIME DESC
+                            ) XRWSC_INSIDE
+                    ) XRWSC
+                WHERE
+                    LINE_NUMBER = 1
+                `, {
+                doc_id: doc_id,
+                stage_flow: stage_flow
+            }, {
+                outFormat: oracledb.OBJECT
+            }
+            )
+
+            if (checkstagectrl.rows.length !== 1) {
+                return res.status(200).send({
+                    statsu: 400,
+                    message: `ไม่สามารถระบุรายการ doc_id ได้ (Identity check fail`,
+                    data: []
+                })
+            }
+
+            if (checkstagectrl.rows[0].STAGE_FLOW !== stage_flow) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `stage ในการทำรายการไม่ตรง`
+                })
+            }
+
+            /* ... set recent_rework_id .. */
+            current_rework_id = checkstagectrl.rows[0].REWORK_ID
+            current_rework_id_cal = parseInt(checkstagectrl.rows[0].REWORK_ID)
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error when try to check stage ctrl (${e.message ?? 'No error return'})`
+            })
+        }
+
+        /* .... get time for create writeoff headder ... */
+
+        let current_timestamp_value;
+        try {
+            const current_timestamp = await connection.execute(`SELECT CURRENT_TIMESTAMP FROM DUAL`, {}, { outFormat: oracledb.OBJECT })
+
+            if (current_timestamp.rows.length == 0) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `can't get current_timestamp value from server`,
+                    data: []
+                })
+            }
+
+            current_timestamp_value = current_timestamp.rows[0].CURRENT_TIMESTAMP
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error during get CUREENT_TIME from database ${e.message ?? 'No retrun message'}`,
+                data: []
+            })
+        }
+
+        /* ... update writeoff_header and create writeoff stage_ctrl ... */
+        try {
+
+            /* ... update writeoff header ... */
+            try {
+                const flagwriteoffheader = await connection.execute(
+                    `
+                    UPDATE BTW.X_REQUEST_WRITEOFF_HEADER
+                    SET
+                        STAGE_FLOW = :stage_flow 
+                    WHERE
+                        DOC_ID = :doc_id 
+                        AND NVL (CANCEL, 'X') <> 'Y' 
+                    `,
+                    {
+                        stage_flow: stage_flow_cal - 1,
+                        doc_id: doc_id
+                    },
+                    {
+                        autoCommit: false
+                    }
+                )
+
+                /* ... check result update writeoff header row = 1 ... */
+                if (flagwriteoffheader.rowsAffected !== 1) {
+                    return res.status(200).send({
+                        status: 400,
+                        message: `อัพเดท writeoff header ผิดพลาด (Identity fail after update)`,
+                        data: []
+                    })
+                }
+
+            } catch (e) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `Error when try to update writeoff header (${e.message ?? 'No error message'})`,
+                    data: []
+                })
+            }
+
+            /* ... update writeoff header log ... */
+            try {
+
+                /* ... CHECH WRITEOFF HEADER LOG RECENT MATCH .... */
+                const checkrecentwriteoffheaderlog = await connection.execute(
+                    `
+                    SELECT
+                        *
+                    FROM
+                        (
+                            SELECT
+                                ROWNUM AS LINE_NUMBER,
+                                XRWHL_I.*
+                            FROM
+                                (
+                                    SELECT
+                                        *
+                                    FROM
+                                        BTW.X_REQUEST_WRITEOFF_HEADER_LOG
+                                    WHERE
+                                        DOC_ID = :doc_id
+                                    ORDER BY
+                                        CREATED_TIME DESC
+                                ) XRWHL_I
+                        ) XRWHL
+                    WHERE
+                        LINE_NUMBER = 1
+                    `, {
+                    doc_id: doc_id
+                }, {
+                    outFormat: oracledb.OBJECT
+                })
+
+
+                if (checkrecentwriteoffheaderlog.rows.length !== 1) {
+                    return res.status(200).send({
+                        status: 400,
+                        message: `ไม่สามรถระบุรายการ writeoff header log ได้ (writeoff header log identity fail)`,
+                        data: []
+                    })
+                }
+
+                const recentwriteoffheader = checkrecentwriteoffheaderlog.rows[0]
+
+                /* ... check writeoff header log match with check value (doc_id , stage_flow , rework_id) .... */
+                if (
+                    recentwriteoffheader.REWORK_ID !== rework_id &&
+                    recentwriteoffheader.STAGE_FLOW !== stage_flow &&
+                    recentwriteoffheader.DOC_ID !== doc_id
+                ) {
+                    return res.status(200).send({
+                        status: 400,
+                        message: `รายการ writeoff header log ไม่ตรงเงื่อนไขการอัพเดท`,
+                        data: []
+                    })
+                }
+
+                /* ... update writoeff header log query ... */
+                console.log(`DOC_ID : ${recentwriteoffheader.DOC_ID}`)
+                console.log(`STAGE_FLOW : ${recentwriteoffheader.STAGE_FLOW}`)
+                console.log(`UPD_USER : ${recentwriteoffheader.UPD_USER}`)
+                const flagwriteoffheaderlog = await connection.execute(
+                    `
+                    UPDATE BTW.X_REQUEST_WRITEOFF_HEADER_LOG
+                      SET 
+                        REWORK_FLOW = 'Y'
+                      WHERE 
+                        DOC_ID = :doc_id 
+                        AND REWORK_ID = :rework_id 
+                        AND UPD_USER = :upd_user
+                    `, {
+                    doc_id: recentwriteoffheader.DOC_ID,
+                    rework_id: recentwriteoffheader.REWORK_ID,
+                    upd_user: recentwriteoffheader.UPD_USER
+                }, { autoCommit: false }
+                )
+
+                /* ... check result update writeoff header log row = 1 ... */
+                if (flagwriteoffheaderlog.rowsAffected !== 1) {
+                    return res.status(200).send({
+                        status: 400,
+                        message: `อัพเดท writeoff header log ผิดพลาด (Identity fail after update (rowsAffected : ${flagwriteoffheaderlog.rowsAffected}))`,
+                        data: []
+                    })
+                }
+
+            } catch (e) {
+                console.error(e)
+                return res.status(200).send({
+                    status: 400,
+                    message: `Error when try to update writeoff header log (${e.message ?? 'No error message'})`
+                })
+            }
+
+            /* ... create writeoff stage ctrl ... */
+            try {
+                const flagwriteoffstagectrl = await connection.execute(
+                    `
+                    INSERT INTO BTW.X_REQUEST_WRITEOFF_STAGE_CTRL (
+                        DOC_ID,
+                        STAGE_FLOW,
+                        REWORK_ID,
+                        UPD_USER,
+                        UPD_DATETIME
+                    ) VALUES (
+                        :doc_id,
+                        :stage_flow,
+                        :rework_id,
+                        :upd_user,
+                        :upd_datetime
+                    )
+                    `,
+                    {
+                        doc_id: doc_id,
+                        stage_flow: stage_flow_cal - 1,
+                        rework_id: current_rework_id_cal + 1,
+                        upd_user: token.ID,
+                        upd_datetime: { val: current_timestamp_value, type: oracledb.DATE }
+                    },
+                    {
+                        autoCommit: false
+                    }
+                )
+
+                console.log(`success create writeoff stage ctrl`)
+
+            } catch (e) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `Error when try to create writeoff stage ctrl (${e.message ?? 'No error message'})`,
+                    data: []
+                })
+            }
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error during try to update writeoff_header, update writeoff header log and create writeoff_stage_ctrl (${e.message ?? 'No error message'})`,
+                data: []
+            })
+        }
+
+        /* ... commit all and return status success ... */
+
+        try {
+            await connection.commit()
+
+            return res.status(200).send({
+                status: 200,
+                message: `ย้อน Stage สำเร็จ`,
+                data: []
+            })
+
+            /* ... End Process ... */
+        } catch (e) {
+            console.error(e)
+            return res.status(200).send({
+                status: 400,
+                message: `Error when try to commit database (${e.message ?? 'No return message'})`
+            })
+        }
+
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 400,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 400,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
+
+async function approvewriteoff(req, res, next) {
+    let connection;
+    try {
+
+        console.log(`trigger start writeoff`)
+        const token = req.user
+        const userid = token.ID // *** no 10 incluse ***
+        const user_name = token.user_id // *** 10 incluse ***
+
+        const { doc_id, stage_flow } = req.body
+
+        /* ... check parameter doc_id... */
+        if (!doc_id) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters doc_id`,
+                data: []
+            })
+        }
+
+        /* ... check parameter stage_flow... */
+        if (!stage_flow) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters stage_flow`,
+                data: []
+            })
+        }
+
+        const stage_flow_cal = parseInt(stage_flow)
+
+        let current_rework_id = ''
+
+        connection = await oracledb.getConnection(config.database)
+
+        try {
+            /* ... check stage permission ... */
+            const checkstage = await getuserstage(userid)
+            if (checkstage.stage_flow !== stage_flow) return res.status(200).send({ status: 400, message: `ไม่มีสิทธ์ในการทำรายการ`, data: [] })
+
+
+            /* ... check doc_id in stage ... */
+            const checkdocidstage = await connection.execute(` SELECT STAGE_FLOW FROM BTW.X_REQUEST_WRITEOFF_HEADER WHERE DOC_ID = :doc_id `, { doc_id: doc_id }, { outFormat: oracledb.OBJECT })
+            if (checkdocidstage.rows.length == 0) return res.status(200).send({ status: 400, message: `ไม่พบรายการ doc_id ภายใต้ stage flow` })
+            if (checkdocidstage.rows[0].STAGE_FLOW !== checkstage.stage_flow) return res.status(200).send({ status: 400, message: `ไม่มีสิทธ์ในการทำรายการ (stage flow miss match)` })
+            if (!(stagectrl.stageControl.isSend.find(item => item == checkstage.stage_flow))) return res.status(200).send({ status: 400, message: `ไม่มีสิทธ์ในการสร้างรายการ (stage ctrl)`, data: [] })
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error when try to check permission of stage flow and doc_id (${e.message ?? 'No return message'})`,
+                data: []
+            })
+        }
+
+        /* ... check stage_ctrl is match stage ... */
+
+        try {
+            const checkstagectrl = await connection.execute(
+                `
+                SELECT
+                    *
+                FROM
+                    (
+                        SELECT
+                            XRWSC_INSIDE.*,
+                            ROWNUM AS LINE_NUMBER
+                        FROM
+                            (
+                                SELECT
+                                    *
+                                FROM
+                                    BTW.X_REQUEST_WRITEOFF_STAGE_CTRL
+                                WHERE
+                                    DOC_ID = :doc_id 
+                                    AND STAGE_FLOW = :stage_flow 
+                                ORDER BY
+                                    UPD_DATETIME DESC
+                            ) XRWSC_INSIDE
+                    ) XRWSC
+                WHERE
+                    LINE_NUMBER = 1
+                `, {
+                doc_id: doc_id,
+                stage_flow: stage_flow
+            }, {
+                outFormat: oracledb.OBJECT
+            }
+            )
+
+            if (checkstagectrl.rows.length !== 1) {
+                return res.status(200).send({
+                    statsu: 400,
+                    message: `ไม่สามารถระบุรายการ doc_id ได้ (Identity check fail`,
+                    data: []
+                })
+            }
+
+            if (checkstagectrl.rows[0].STAGE_FLOW !== stage_flow) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `stage ในการทำรายการไม่ตรง`
+                })
+            }
+
+            /* ... set recent_rework_id .. */
+            current_rework_id = checkstagectrl.rows[0].REWORK_ID
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error when try to check stage ctrl (${e.message ?? 'No error return'})`
+            })
+        }
+
+        /* .... get time for create writeoff headder ... */
+
+        let current_timestamp_value;
+        try {
+            const current_timestamp = await connection.execute(`SELECT CURRENT_TIMESTAMP FROM DUAL`, {}, { outFormat: oracledb.OBJECT })
+
+            if (current_timestamp.rows.length == 0) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `can't get current_timestamp value from server`,
+                    data: []
+                })
+            }
+
+            current_timestamp_value = current_timestamp.rows[0].CURRENT_TIMESTAMP
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error during get CUREENT_TIME from database ${e.message ?? 'No retrun message'}`,
+                data: []
+            })
+        }
+
+
+        /* ... update writeoff header ... */
+        try {
+
+            const fieldname = stagectrl.stageControl.updatefield.find(item => item.stage == stage_flow)?.field_name
+
+            if (!fieldname) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `ไม่พบ stage name ของ stage flow paramter`,
+                    data: []
+                })
+            }
+
+            let sqlupdateconcur = ''
+            let bindparamsflagwriteoffheader = {};
+
+            sqlupdateconcur = ` ${fieldname} = :update_field `
+            bindparamsflagwriteoffheader.update_field = token.ID
+            bindparamsflagwriteoffheader.doc_id = doc_id
+
+            const sqlflagwriteoffheaer =
+                `
+                    UPDATE BTW.X_REQUEST_WRITEOFF_HEADER
+                    SET
+                        ${sqlupdateconcur}
+                    WHERE
+                        DOC_ID = :doc_id 
+                        AND NVL (CANCEL, 'X') <> 'Y' 
+                `
+
+            const flagwriteoffheader = await connection.execute(sqlflagwriteoffheaer, bindparamsflagwriteoffheader, { autoCommit: false })
+
+            /* ... check result update writeoff header row = 1 ... */
+            if (flagwriteoffheader.rowsAffected !== 1) {
+                return res.status(200).send({
+                    status: 400,
+                    message: `ไม่สามารถระบุรายการ header ได้ (Identity fail)`,
+                    data: []
+                })
+            }
+
+        } catch (e) {
+            return res.status(200).send({
+                status: 400,
+                message: `Error when try to update writeoff header (${e.message ?? 'No error message'})`,
+                data: []
+            })
+        }
+
+
+
+        /* ... commit all and return status success ... */
+
+        try {
+            await connection.commit()
+
+            return res.status(200).send({
+                status: 200,
+                message: `ส่งงานสำเร็จ`,
+                data: []
+            })
+
+            /* ... End Process ... */
+        } catch (e) {
+            console.error(e)
+            return res.status(200).send({
+                status: 400,
+                message: `Error when try to commit database (${e.message ?? 'No return message'})`
+            })
+        }
+
+
+    } catch (e) {
+        console.error(e);
+        return res.status(200).send({
+            status: 400,
+            message: `Fail : ${e.message ? e.message : 'No err msg'}`,
+        })
+    } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (e) {
+                console.error(e);
+                return res.status(200).send({
+                    status: 400,
+                    message: `Error to close connection : ${e.message ? e.message : 'No err msg'}`
+                })
+            }
+        }
+    }
+}
 
 module.exports.checkuserstage = checkuserstage
 module.exports.baddebtlistdashboard = baddebtlistdashboard
@@ -3506,3 +4449,9 @@ module.exports.createwriteoffdetailcomment = createwriteoffdetailcomment
 /* ... update comment ... */
 module.exports.updatewriteoffheadercomment = updatewriteoffheadercomment
 module.exports.updatewriteoffdetailcomment = updatewriteoffdetailcomment
+/* ... send work ... */
+module.exports.sendworkwriteoff = sendworkwriteoff
+/* ... reject work ... */
+module.exports.rejectwriteoff = rejectwriteoff
+/* ... apporve work ... */
+module.exports.approvewriteoff = approvewriteoff

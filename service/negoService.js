@@ -5533,13 +5533,22 @@ async function updateagentassignfcr(req, res, next) {
         /* ... get variable from body  ...*/
         const { hp_no, agent_id } = req.body
 
-        /*... check variable ...*/
-        if (!hp_no || !agent_id) {
-            return res.status(400).send({
-                status: 500,
-                message: !hp_no ? `No hp_no parameter` : `No agent_id parameter`,
+        /* ... check parameter hp_no... */
+        if (!hp_no) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters hp_no`,
                 data: []
-            });
+            })
+        }
+
+        /* ... check parameter agent_id... */
+        if (!agent_id) {
+            return res.status(200).send({
+                status: 400,
+                message: `missing parameters agent_id`,
+                data: []
+            })
         }
 
         /* ... declear connection ...*/
